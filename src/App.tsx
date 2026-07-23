@@ -33,6 +33,7 @@ export default function App() {
             <Route path="orcamentistas" element={<Orcamentistas />} />
             <Route path="orcamentos" element={<Budgets />} />
             <Route path="orcamentos/novo" element={<BudgetWizard />} />
+            <Route path="orcamentos/:id/editar" element={<BudgetWizard />} />
             <Route path="orcamentos/:id" element={<BudgetView />} />
             <Route path="ordens-servico" element={<ServiceOrdersList />} />
             <Route path="ordens-servico/:id" element={<ServiceOrderView />} />

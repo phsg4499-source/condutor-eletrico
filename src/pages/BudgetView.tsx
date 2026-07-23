@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Download, MessageCircle, ArrowLeft, Repeat } from 'lucide-react';
+import { Download, MessageCircle, ArrowLeft, Repeat, Pencil } from 'lucide-react';
 import { useStore } from '../lib/store';
 import { useToast } from '../lib/toast';
 import { calculateBudget, budgetAlerts } from '../lib/calculations';
@@ -67,6 +67,9 @@ export default function BudgetView() {
       </div>
 
       <div className="flex flex-wrap gap-3">
+        <Link to={`/app/orcamentos/${budget.id}/editar`} className="flex items-center gap-2 border border-white/10 text-gray-200 px-4 py-2 rounded-lg text-sm hover:bg-white/5">
+          <Pencil size={16} /> Editar
+        </Link>
         <button onClick={handleDownloadPdf} className="ce-btn-glow flex items-center gap-2 bg-[#f5c518] text-[#16181d] font-semibold px-4 py-2 rounded-lg text-sm hover:bg-[#e0b60f]">
           <Download size={16} /> Gerar PDF
         </button>

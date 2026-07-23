@@ -9,7 +9,7 @@ import { supabase, isSupabaseConfigured } from './supabaseClient';
 import {
   DEFAULT_ORG_ID, fetchOrganizationData, remoteUpdateOrganization, remoteInsertClient, remoteUpdateClient,
   remoteInsertMaterial, remoteUpdateMaterial, remoteInsertService, remoteUpdateService, remoteInsertBudget,
-  remoteUpdateBudgetStatus, remoteInsertServiceOrder, remoteSetServiceOrderStatus, remoteToggleChecklistItem,
+  remoteUpdateBudget, remoteUpdateBudgetStatus, remoteInsertServiceOrder, remoteSetServiceOrderStatus, remoteToggleChecklistItem,
   remoteInsertQuoteRequest, remoteInsertOrcamentista, remoteUpdateOrcamentista,
 } from './supabaseApi';
 import { todayISO } from './format';
@@ -265,6 +265,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const updateBudget = useCallback((id: string, data: Partial<Budget>) => {
     setDb(prev => ({ ...prev, budgets: prev.budgets.map(b => b.id === id ? { ...b, ...data, updated_at: todayISO() } : b) }));
+    if (isSupabaseConfigured) remoteUpdateBudget(id, data).catch(err => console.error('Erro ao atualizar orçamento', err));
   }, []);
 
   const setBudgetStatus = useCallback((id: string, status: BudgetStatus) => {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2 } from 'lucide-react';
+import { useNavigate, useParams, Link } from 'react-router-dom';
+import { Plus, Trash2, ArrowLeft } from 'lucide-react';
 import { useStore } from '../lib/store';
 import { useToast } from '../lib/toast';
 import { calculateBudget, budgetAlerts } from '../lib/calculations';
@@ -16,31 +16,35 @@ const formasPagamento: { value: FormaPagamento; label: string }[] = [
 ];
 
 export default function BudgetWizard() {
-  const { db, addBudget, addClient, nextBudgetNumber } = useStore();
+  const { db, addBudget, updateBudget, addClient, nextBudgetNumber } = useStore();
   const toast = useToast();
   const navigate = useNavigate();
+  const { id } = useParams();
 
-  const [clientMode, setClientMode] = useState<'existing' | 'new'>(db.clients.length ? 'existing' : 'new');
-  const [clientId, setClientId] = useState('');
+  const existingBudget = id ? db.budgets.find(b => b.id === id) : undefined;
+  const isEditing = Boolean(id);
+
+  const [clientMode, setClientMode] = useState<'existing' | 'new'>(isEditing || db.clients.length ? 'existing' : 'new');
+  const [clientId, setClientId] = useState(existingBudget?.client_id ?? '');
   const [novoClienteNome, setNovoClienteNome] = useState('');
   const [novoClienteTelefone, setNovoClienteTelefone] = useState('');
   const [novoClienteWhatsapp, setNovoClienteWhatsapp] = useState('');
-  const [titulo, setTitulo] = useState('');
-  const [tipoServico, setTipoServico] = useState('Instalação');
-  const [localServico, setLocalServico] = useState('');
-  const [prazo, setPrazo] = useState('');
+  const [titulo, setTitulo] = useState(existingBudget?.titulo ?? '');
+  const [tipoServico, setTipoServico] = useState(existingBudget?.tipo_servico ?? 'Instalação');
+  const [localServico, setLocalServico] = useState(existingBudget?.local_servico ?? '');
+  const [prazo, setPrazo] = useState(existingBudget?.prazo_estimado ?? '');
   const orcamentistasAtivos = db.orcamentistas.filter(o => o.status === 'ativo');
-  const [orcamentistaId, setOrcamentistaId] = useState(orcamentistasAtivos[0]?.id ?? '');
-  const [itens, setItens] = useState<BudgetLineItem[]>([]);
-  const [custosExtras, setCustosExtras] = useState<ExtraCost[]>([]);
-  const [descontoValor, setDescontoValor] = useState(0);
-  const [descontoPercentual, setDescontoPercentual] = useState(0);
-  const [formaPagamento, setFormaPagamento] = useState<FormaPagamento>('pix');
-  const [entrada, setEntrada] = useState(0);
-  const [parcelas, setParcelas] = useState(1);
-  const [garantia, setGarantia] = useState('90 dias');
-  const [obsInternas, setObsInternas] = useState('');
-  const [obsCliente, setObsCliente] = useState('');
+  const [orcamentistaId, setOrcamentistaId] = useState(existingBudget?.orcamentista_id ?? orcamentistasAtivos[0]?.id ?? '');
+  const [itens, setItens] = useState<BudgetLineItem[]>(existingBudget?.itens ?? []);
+  const [custosExtras, setCustosExtras] = useState<ExtraCost[]>(existingBudget?.custos_extras ?? []);
+  const [descontoValor, setDescontoValor] = useState(existingBudget?.desconto_valor ?? 0);
+  const [descontoPercentual, setDescontoPercentual] = useState(existingBudget?.desconto_percentual ?? 0);
+  const [formaPagamento, setFormaPagamento] = useState<FormaPagamento>(existingBudget?.forma_pagamento ?? 'pix');
+  const [entrada, setEntrada] = useState(existingBudget?.entrada ?? 0);
+  const [parcelas, setParcelas] = useState(existingBudget?.parcelas ?? 1);
+  const [garantia, setGarantia] = useState(existingBudget?.garantia ?? '90 dias');
+  const [obsInternas, setObsInternas] = useState(existingBudget?.observacoes_internas ?? '');
+  const [obsCliente, setObsCliente] = useState(existingBudget?.observacoes_cliente ?? '');
 
   const totals = calculateBudget({ itens, custos_extras: custosExtras, desconto_percentual: descontoPercentual, desconto_valor: descontoValor, entrada, parcelas });
   const alerts = budgetAlerts({ itens, prazo_estimado: prazo, forma_pagamento: formaPagamento }, totals, db.organization.margem_minima_percentual);
@@ -95,6 +99,21 @@ export default function BudgetWizard() {
     if (!finalClientId) return;
 
     const responsavelSelecionado = orcamentistasAtivos.find(o => o.id === orcamentistaId);
+
+    if (isEditing && existingBudget) {
+      updateBudget(existingBudget.id, {
+        client_id: finalClientId, titulo, tipo_servico: tipoServico,
+        local_servico: localServico, prazo_estimado: prazo,
+        responsavel: responsavelSelecionado?.nome ?? existingBudget.responsavel, orcamentista_id: orcamentistaId || undefined,
+        itens, custos_extras: custosExtras,
+        desconto_percentual: descontoPercentual, desconto_valor: descontoValor, forma_pagamento: formaPagamento,
+        entrada, parcelas, garantia, observacoes_internas: obsInternas, observacoes_cliente: obsCliente,
+      });
+      toast.show('Orçamento atualizado com sucesso!');
+      navigate(`/app/orcamentos/${existingBudget.id}`);
+      return;
+    }
+
     const budget = addBudget({
       numero: nextBudgetNumber(), client_id: finalClientId, titulo, tipo_servico: tipoServico,
       local_servico: localServico, data_emissao: todayISO(), validade_dias: 10, prazo_estimado: prazo,
@@ -108,11 +127,25 @@ export default function BudgetWizard() {
     navigate(`/app/orcamentos/${budget.id}`);
   }
 
+  if (isEditing && !existingBudget) {
+    return (
+      <div className="text-gray-400">
+        Orçamento não encontrado. <Link to="/app/orcamentos" className="text-[#f5c518] hover:underline">Voltar</Link>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 max-w-4xl">
+      <Link to={isEditing ? `/app/orcamentos/${id}` : '/app/orcamentos'} className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-white">
+        <ArrowLeft size={16} /> Voltar
+      </Link>
+
       <div className="ce-fade-up">
-        <h1 className="text-2xl font-semibold text-white">Novo orçamento</h1>
-        <p className="text-sm text-gray-400 mt-1">Preencha as etapas abaixo. O número será gerado automaticamente.</p>
+        <h1 className="text-2xl font-semibold text-white">{isEditing ? `Editar orçamento nº ${existingBudget?.numero}` : 'Novo orçamento'}</h1>
+        <p className="text-sm text-gray-400 mt-1">
+          {isEditing ? 'Ajuste os dados abaixo e salve para atualizar o orçamento.' : 'Preencha as etapas abaixo. O número será gerado automaticamente.'}
+        </p>
       </div>
 
       <div className="bg-[#f5c518]/10 border border-[#f5c518]/20 rounded-lg px-4 py-3 text-xs text-amber-300">
@@ -122,16 +155,18 @@ export default function BudgetWizard() {
       </div>
 
       <Section title="1. Cliente e dados do orçamento">
-        <div className="flex gap-2 mb-4">
-          <button type="button" onClick={() => setClientMode('existing')}
-            className={`flex-1 py-2 rounded-lg text-sm border ${clientMode === 'existing' ? 'bg-[#f5c518] text-[#16181d] border-[#f5c518]' : 'border-white/10 text-gray-300'}`}>
-            Cliente já cadastrado
-          </button>
-          <button type="button" onClick={() => setClientMode('new')}
-            className={`flex-1 py-2 rounded-lg text-sm border ${clientMode === 'new' ? 'bg-[#f5c518] text-[#16181d] border-[#f5c518]' : 'border-white/10 text-gray-300'}`}>
-            Cliente novo (cadastrar agora)
-          </button>
-        </div>
+        {!isEditing && (
+          <div className="flex gap-2 mb-4">
+            <button type="button" onClick={() => setClientMode('existing')}
+              className={`flex-1 py-2 rounded-lg text-sm border ${clientMode === 'existing' ? 'bg-[#f5c518] text-[#16181d] border-[#f5c518]' : 'border-white/10 text-gray-300'}`}>
+              Cliente já cadastrado
+            </button>
+            <button type="button" onClick={() => setClientMode('new')}
+              className={`flex-1 py-2 rounded-lg text-sm border ${clientMode === 'new' ? 'bg-[#f5c518] text-[#16181d] border-[#f5c518]' : 'border-white/10 text-gray-300'}`}>
+              Cliente novo (cadastrar agora)
+            </button>
+          </div>
+        )}
 
         <div className="grid sm:grid-cols-2 gap-4">
           {clientMode === 'existing' ? (
@@ -155,7 +190,10 @@ export default function BudgetWizard() {
               </div>
             </>
           )}
-          <Field label="Título do orçamento *" value={titulo} onChange={setTitulo} />
+          <div>
+            <Field label="Título do orçamento *" value={titulo} onChange={setTitulo} placeholder="Ex: Instalação elétrica completa - Apto 302" />
+            <p className="text-[11px] text-gray-500 mt-1">Esse texto aparece em destaque no topo do PDF que o cliente recebe.</p>
+          </div>
           <div>
             <label className="text-xs text-gray-400">Responsável pelo orçamento</label>
             <select value={orcamentistaId} onChange={e => setOrcamentistaId(e.target.value)}
@@ -188,6 +226,20 @@ export default function BudgetWizard() {
           <button type="button" onClick={() => addCustomItem('material')} className="text-xs px-3 py-2 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5">+ Material personalizado</button>
         </div>
 
+        {itens.length > 0 && (
+          <div className="grid grid-cols-12 gap-2 px-2 mb-1 text-[10px] uppercase text-gray-500">
+            <span className="col-span-1">Tipo</span>
+            <span className="col-span-4">Descrição</span>
+            <span className="col-span-1">Qtd</span>
+            <span className="col-span-2">Custo (interno)</span>
+            <span className="col-span-2">Valor (cliente)</span>
+            <span className="col-span-1 text-right">Total</span>
+          </div>
+        )}
+        <p className="text-[11px] text-gray-500 mb-2">
+          "Custo (interno)" é o quanto você gasta — nunca aparece pro cliente. "Valor (cliente)" é o preço que ele vê e paga.
+          A diferença entre os dois é o seu lucro.
+        </p>
         <div className="space-y-2">
           {itens.map(item => (
             <div key={item.id} className="grid grid-cols-12 gap-2 items-center bg-[#0f1115] border border-white/5 rounded-lg p-2">
@@ -226,6 +278,10 @@ export default function BudgetWizard() {
       </Section>
 
       <Section title="4. Condições comerciais">
+        <p className="text-[11px] text-gray-500 mb-3">
+          Estas informações aparecem no PDF como as condições da proposta. Use "Entrada" e "Parcelas" juntos se o pagamento
+          vai ser dividido (ex: entrada + 3x). Se for à vista, deixe parcelas em 1.
+        </p>
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
             <label className="text-xs text-gray-400">Forma de pagamento</label>
@@ -234,8 +290,14 @@ export default function BudgetWizard() {
               {formasPagamento.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
             </select>
           </div>
-          <Field label="Garantia" value={garantia} onChange={setGarantia} />
-          <NumField label="Desconto (%)" value={descontoPercentual} onChange={setDescontoPercentual} />
+          <div>
+            <Field label="Garantia" value={garantia} onChange={setGarantia} placeholder="Ex: 90 dias" />
+            <p className="text-[11px] text-gray-500 mt-1">Prazo de garantia do serviço executado, mostrado no PDF.</p>
+          </div>
+          <div>
+            <NumField label="Desconto (%)" value={descontoPercentual} onChange={setDescontoPercentual} />
+            <p className="text-[11px] text-gray-500 mt-1">Use % ou R$ — não os dois ao mesmo tempo, pra não descontar em dobro.</p>
+          </div>
           <NumField label="Desconto (R$)" value={descontoValor} onChange={setDescontoValor} />
           <NumField label="Entrada (R$)" value={entrada} onChange={setEntrada} />
           <NumField label="Número de parcelas" value={parcelas} onChange={setParcelas} />
@@ -265,8 +327,16 @@ export default function BudgetWizard() {
       </Section>
 
       <div className="flex gap-3 pb-8">
-        <button type="button" onClick={() => saveBudget('rascunho')} className="px-5 py-2.5 rounded-lg border border-white/10 text-gray-200 text-sm hover:bg-white/5">Salvar rascunho</button>
-        <button type="button" onClick={() => saveBudget('pronto_para_envio')} className="px-5 py-2.5 rounded-lg bg-[#f5c518] text-[#16181d] font-semibold text-sm hover:bg-[#e0b60f]">Salvar orçamento</button>
+        {isEditing ? (
+          <button type="button" onClick={() => saveBudget('pronto_para_envio')} className="ce-btn-glow px-5 py-2.5 rounded-lg bg-[#f5c518] text-[#16181d] font-semibold text-sm hover:bg-[#e0b60f]">
+            Salvar alterações
+          </button>
+        ) : (
+          <>
+            <button type="button" onClick={() => saveBudget('rascunho')} className="px-5 py-2.5 rounded-lg border border-white/10 text-gray-200 text-sm hover:bg-white/5">Salvar rascunho</button>
+            <button type="button" onClick={() => saveBudget('pronto_para_envio')} className="ce-btn-glow px-5 py-2.5 rounded-lg bg-[#f5c518] text-[#16181d] font-semibold text-sm hover:bg-[#e0b60f]">Salvar orçamento</button>
+          </>
+        )}
       </div>
     </div>
   );

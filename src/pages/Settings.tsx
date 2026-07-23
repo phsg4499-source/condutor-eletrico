@@ -24,16 +24,16 @@ export default function Settings() {
       </div>
       <form onSubmit={submit} className="bg-[#16181d] border border-white/5 rounded-xl p-5 space-y-4">
         <div className="grid sm:grid-cols-2 gap-4">
-          <Field label="Nome fantasia" value={form.nome_fantasia} onChange={v => setForm(f => ({ ...f, nome_fantasia: v }))} />
-          <Field label="Responsável" value={form.responsavel} onChange={v => setForm(f => ({ ...f, responsavel: v }))} />
-          <Field label="Telefone" value={form.telefone} onChange={v => setForm(f => ({ ...f, telefone: v }))} />
-          <Field label="WhatsApp (só números, com DDI)" value={form.whatsapp} onChange={v => setForm(f => ({ ...f, whatsapp: v }))} />
-          <Field label="E-mail" value={form.email} onChange={v => setForm(f => ({ ...f, email: v }))} />
-          <Field label="Instagram" value={form.instagram} onChange={v => setForm(f => ({ ...f, instagram: v }))} />
-          <Field label="CNPJ/CPF" value={form.documento} onChange={v => setForm(f => ({ ...f, documento: v }))} />
+          <Field label="Nome fantasia" value={form.nome_fantasia ?? ''} onChange={v => setForm(f => ({ ...f, nome_fantasia: v }))} />
+          <Field label="Responsável" value={form.responsavel ?? ''} onChange={v => setForm(f => ({ ...f, responsavel: v }))} />
+          <Field label="Telefone" value={form.telefone ?? ''} onChange={v => setForm(f => ({ ...f, telefone: v }))} />
+          <Field label="WhatsApp (só números, com DDI)" value={form.whatsapp ?? ''} onChange={v => setForm(f => ({ ...f, whatsapp: v }))} />
+          <Field label="E-mail" value={form.email ?? ''} onChange={v => setForm(f => ({ ...f, email: v }))} />
+          <Field label="Instagram" value={form.instagram ?? ''} onChange={v => setForm(f => ({ ...f, instagram: v }))} />
+          <Field label="CNPJ/CPF" value={form.documento ?? ''} onChange={v => setForm(f => ({ ...f, documento: v }))} />
           <Field label="Chave Pix" value={form.chave_pix ?? ''} onChange={v => setForm(f => ({ ...f, chave_pix: v }))} />
-          <Field label="Prazo de validade padrão (dias)" value={String(form.prazo_validade_padrao_dias)} onChange={v => setForm(f => ({ ...f, prazo_validade_padrao_dias: Number(v) || 0 }))} />
-          <Field label="Garantia padrão" value={form.garantia_padrao} onChange={v => setForm(f => ({ ...f, garantia_padrao: v }))} />
+          <Field label="Prazo de validade padrão (dias)" value={String(form.prazo_validade_padrao_dias ?? 10)} onChange={v => setForm(f => ({ ...f, prazo_validade_padrao_dias: Number(v) || 0 }))} />
+          <Field label="Garantia padrão" value={form.garantia_padrao ?? ''} onChange={v => setForm(f => ({ ...f, garantia_padrao: v }))} />
         </div>
         <div>
           <label className="text-xs text-gray-400">Frase de experiência (aparece no cabeçalho do PDF)</label>
@@ -53,7 +53,7 @@ export default function Settings() {
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
             <label className="text-xs text-gray-400">Modo de cálculo de margem</label>
-            <select value={form.modo_calculo_margem} onChange={e => setForm(f => ({ ...f, modo_calculo_margem: e.target.value as typeof f.modo_calculo_margem }))}
+            <select value={form.modo_calculo_margem ?? 'markup_sobre_custo'} onChange={e => setForm(f => ({ ...f, modo_calculo_margem: e.target.value as typeof f.modo_calculo_margem }))}
               className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white">
               <option value="markup_sobre_custo">Markup sobre o custo</option>
               <option value="margem_sobre_venda">Margem sobre a venda</option>
@@ -61,8 +61,8 @@ export default function Settings() {
               <option value="percentual_geral">Percentual geral do orçamento</option>
             </select>
           </div>
-          <Field label="Margem mínima aceitável (%)" value={String(form.margem_minima_percentual)} onChange={v => setForm(f => ({ ...f, margem_minima_percentual: Number(v) || 0 }))} />
-          <Field label="Impostos estimados (%)" value={String(form.impostos_estimados_percentual)} onChange={v => setForm(f => ({ ...f, impostos_estimados_percentual: Number(v) || 0 }))} />
+          <Field label="Margem mínima aceitável (%)" value={String(form.margem_minima_percentual ?? 20)} onChange={v => setForm(f => ({ ...f, margem_minima_percentual: Number(v) || 0 }))} />
+          <Field label="Impostos estimados (%)" value={String(form.impostos_estimados_percentual ?? 0)} onChange={v => setForm(f => ({ ...f, impostos_estimados_percentual: Number(v) || 0 }))} />
         </div>
         <p className="text-xs text-gray-500">
           Orçamentos com margem abaixo do mínimo configurado mostram um alerta na etapa de revisão e na tela do orçamento.

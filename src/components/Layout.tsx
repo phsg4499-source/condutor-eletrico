@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import OnboardingTour from './OnboardingTour';
 import Logo from './Logo';
+import ElectricBackground from './ElectricBackground';
 import { useStore } from '../lib/store';
 
 const navItems = [
@@ -43,7 +44,10 @@ export default function Layout() {
   if (!user) return <Navigate to="/login" replace />;
 
   return (
-    <div className="min-h-screen bg-[#0f1115] text-gray-100 flex">
+    <div className="relative min-h-screen bg-[#0f1115] text-gray-100 flex overflow-hidden">
+      <div className="fixed inset-0 z-0">
+        <ElectricBackground subtle />
+      </div>
       <aside className={`fixed z-30 inset-y-0 left-0 w-64 bg-[#16181d] border-r border-white/5 transform transition-transform lg:translate-x-0 lg:static ${open ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="h-16 flex items-center px-5 border-b border-white/5">
           <Logo variant="horizontal" theme="dark" />
@@ -73,7 +77,7 @@ export default function Layout() {
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="relative z-10 flex-1 flex flex-col min-w-0">
         <header className="h-16 border-b border-white/5 flex items-center justify-between px-4 lg:px-8 bg-[#0f1115]/80 backdrop-blur sticky top-0 z-20">
           <button className="lg:hidden text-gray-300" onClick={() => setOpen(o => !o)}>
             {open ? <X size={22} /> : <Menu size={22} />}

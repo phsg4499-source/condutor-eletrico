@@ -63,9 +63,14 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold text-white">Painel geral</h1>
-        <p className="text-sm text-gray-400 mt-1">Indicadores comerciais e financeiros da Condutor Elétrico.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-white">Painel geral</h1>
+          <p className="text-sm text-gray-400 mt-1">Indicadores comerciais e financeiros da Condutor Elétrico.</p>
+        </div>
+        <Link to="/app/orcamentos/novo" className="ce-btn-glow ce-cta-glow flex items-center justify-center gap-2 bg-[#f5c518] text-[#16181d] font-semibold px-4 py-2 rounded-lg text-sm hover:bg-[#e0b60f] shrink-0">
+          Novo orçamento
+        </Link>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">

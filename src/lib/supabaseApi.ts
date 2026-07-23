@@ -176,6 +176,44 @@ export async function remoteInsertBudget(budget: Budget) {
   if (historyError) throw historyError;
 }
 
+export async function remoteUpdateBudget(id: string, budget: Partial<Budget>) {
+  const db = must();
+  const { itens, custos_extras, historico_status, ...budgetRow } = budget as Budget;
+
+  if (Object.keys(budgetRow).length) {
+    const { error } = await db.from('budgets').update(budgetRow).eq('id', id);
+    if (error) throw error;
+  }
+
+  if (itens) {
+    const { error: delErr } = await db.from('budget_items').delete().eq('budget_id', id);
+    if (delErr) throw delErr;
+    if (itens.length) {
+      const { error: insErr } = await db.from('budget_items').insert(
+        itens.map((i, idx) => ({
+          id: i.id, budget_id: id, tipo: i.tipo,
+          referencia_service_id: i.tipo === 'servico' ? i.referencia_id ?? null : null,
+          referencia_material_id: i.tipo === 'material' ? i.referencia_id ?? null : null,
+          nome: i.nome, descricao: i.descricao ?? null, quantidade: i.quantidade, unidade: i.unidade,
+          custo_unitario: i.custo_unitario, valor_unitario: i.valor_unitario, desconto: i.desconto, ordem: idx,
+        })),
+      );
+      if (insErr) throw insErr;
+    }
+  }
+
+  if (custos_extras) {
+    const { error: delErr } = await db.from('budget_extra_costs').delete().eq('budget_id', id);
+    if (delErr) throw delErr;
+    if (custos_extras.length) {
+      const { error: insErr } = await db.from('budget_extra_costs').insert(
+        custos_extras.map(c => ({ id: c.id, budget_id: id, descricao: c.descricao, valor: c.valor })),
+      );
+      if (insErr) throw insErr;
+    }
+  }
+}
+
 export async function remoteUpdateBudgetStatus(id: string, status: string) {
   const db = must();
   const { error } = await db.from('budgets').update({ status }).eq('id', id);
