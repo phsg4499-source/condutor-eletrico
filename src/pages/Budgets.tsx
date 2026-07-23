@@ -5,6 +5,7 @@ import { useStore } from '../lib/store';
 import { calculateBudget } from '../lib/calculations';
 import { formatMoney, formatDate } from '../lib/format';
 import { BudgetStatusBadge, budgetStatusOptions } from '../components/StatusBadge';
+import { resolveClienteInfo } from '../lib/clientInfo';
 import type { BudgetStatus } from '../types';
 
 export default function Budgets() {
@@ -13,8 +14,8 @@ export default function Budgets() {
   const [status, setStatus] = useState<BudgetStatus | 'todos'>('todos');
 
   const filtered = db.budgets.filter(b => {
-    const client = db.clients.find(c => c.id === b.client_id);
-    const matchesQuery = b.numero.includes(query) || b.titulo.toLowerCase().includes(query.toLowerCase()) || (client?.nome ?? '').toLowerCase().includes(query.toLowerCase());
+    const cliente = resolveClienteInfo(b, db.clients);
+    const matchesQuery = b.numero.includes(query) || b.titulo.toLowerCase().includes(query.toLowerCase()) || cliente.nome.toLowerCase().includes(query.toLowerCase());
     const matchesStatus = status === 'todos' || b.status === status;
     return matchesQuery && matchesStatus;
   });
@@ -59,12 +60,15 @@ export default function Budgets() {
           </thead>
           <tbody>
             {filtered.map(b => {
-              const client = db.clients.find(c => c.id === b.client_id);
+              const cliente = resolveClienteInfo(b, db.clients);
               const totals = calculateBudget(b);
               return (
                 <tr key={b.id} className="border-b border-white/5 last:border-0 hover:bg-white/5">
                   <td className="px-5 py-3 text-gray-300">{b.numero}</td>
-                  <td className="px-5 py-3 text-white">{client?.nome ?? '—'}</td>
+                  <td className="px-5 py-3 text-white">
+                    {cliente.nome}
+                    {!cliente.cadastrado && <span className="ml-1.5 text-[9px] uppercase text-amber-400">sem cadastro</span>}
+                  </td>
                   <td className="px-5 py-3 text-gray-300">{b.titulo}</td>
                   <td className="px-5 py-3 text-gray-300">{formatDate(b.data_emissao)}</td>
                   <td className="px-5 py-3 text-white font-medium">{formatMoney(totals.totalVenda)}</td>

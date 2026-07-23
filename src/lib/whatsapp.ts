@@ -1,6 +1,6 @@
-import type { Budget, Client } from '../types';
+import type { Budget } from '../types';
 
-export function budgetWhatsappMessage(budget: Budget, client: Client, link: string): string {
+export function budgetWhatsappMessage(budget: Budget, client: { nome: string }, link: string): string {
   return `Olá, ${client.nome}! Preparamos o orçamento nº ${budget.numero} referente ao serviço "${budget.titulo}" em ${budget.local_servico}. Você pode visualizar todos os detalhes e condições neste link: ${link}. Ficamos à disposição para qualquer ajuste.`;
 }
 

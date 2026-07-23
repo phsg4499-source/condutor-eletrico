@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useStore } from '../lib/store';
 import { formatDate } from '../lib/format';
 import { ServiceOrderStatusBadge, serviceOrderStatusOptions } from '../components/StatusBadge';
+import { resolveClienteInfo } from '../lib/clientInfo';
 import type { ServiceOrderStatus } from '../types';
 
 export function ServiceOrdersList() {
@@ -26,11 +27,11 @@ export function ServiceOrdersList() {
           </thead>
           <tbody>
             {db.serviceOrders.map(o => {
-              const client = db.clients.find(c => c.id === o.client_id);
+              const cliente = resolveClienteInfo(o, db.clients);
               return (
                 <tr key={o.id} className="border-b border-white/5 last:border-0 hover:bg-white/5">
                   <td className="px-5 py-3 text-gray-300">{o.numero}</td>
-                  <td className="px-5 py-3 text-white">{client?.nome ?? '—'}</td>
+                  <td className="px-5 py-3 text-white">{cliente.nome}</td>
                   <td className="px-5 py-3 text-gray-300">{o.responsavel_tecnico}</td>
                   <td className="px-5 py-3 text-gray-300">{o.data_prevista ? formatDate(o.data_prevista) : '—'}</td>
                   <td className="px-5 py-3"><ServiceOrderStatusBadge status={o.status} /></td>
@@ -52,12 +53,13 @@ export function ServiceOrderView() {
   const { id } = useParams();
   const { db, setServiceOrderStatus, toggleChecklistItem } = useStore();
   const order = db.serviceOrders.find(o => o.id === id);
-  const client = order ? db.clients.find(c => c.id === order.client_id) : undefined;
   const budget = order ? db.budgets.find(b => b.id === order.budget_id) : undefined;
 
   if (!order) {
     return <div className="text-gray-400">Ordem de serviço não encontrada. <Link to="/app/ordens-servico" className="text-[#f5c518] hover:underline">Voltar</Link></div>;
   }
+
+  const cliente = resolveClienteInfo(order, db.clients);
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -65,7 +67,7 @@ export function ServiceOrderView() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-white">{order.numero}</h1>
-          <p className="text-sm text-gray-400 mt-1">Cliente: {client?.nome} {budget && `· Origem: orçamento ${budget.numero}`}</p>
+          <p className="text-sm text-gray-400 mt-1">Cliente: {cliente.nome} {budget && `· Origem: orçamento ${budget.numero}`}</p>
         </div>
         <ServiceOrderStatusBadge status={order.status} />
       </div>

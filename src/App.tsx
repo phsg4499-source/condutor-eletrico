@@ -15,12 +15,14 @@ import { ServiceOrdersList, ServiceOrderView } from './pages/ServiceOrders';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import Landing from './pages/public/Landing';
+import InstallPrompt from './components/InstallPrompt';
 
 export default function App() {
   return (
     <StoreProvider>
       <ToastProvider>
       <BrowserRouter>
+        <InstallPrompt />
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/site" element={<Landing />} />

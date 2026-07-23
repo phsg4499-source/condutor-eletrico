@@ -4,6 +4,7 @@ import CountUp from '../components/CountUp';
 import { calculateBudget } from '../lib/calculations';
 import { formatMoney } from '../lib/format';
 import { BudgetStatusBadge } from '../components/StatusBadge';
+import { resolveClienteInfo } from '../lib/clientInfo';
 import { Link } from 'react-router-dom';
 
 function Kpi({ label, value, hint, delay = 0, formatter }: { label: string; value: number; hint?: string; delay?: number; formatter?: (n: number) => string }) {
@@ -96,12 +97,12 @@ export default function Dashboard() {
         <table className="w-full text-sm">
           <tbody>
             {recentBudgets.map(b => {
-              const client = clients.find(c => c.id === b.client_id);
+              const cliente = resolveClienteInfo(b, clients);
               const t = calculateBudget(b);
               return (
                 <tr key={b.id} className="border-b border-white/5 last:border-0">
                   <td className="px-5 py-3 text-gray-300">{b.numero}</td>
-                  <td className="px-5 py-3 text-gray-300">{client?.nome ?? '—'}</td>
+                  <td className="px-5 py-3 text-gray-300">{cliente.nome}</td>
                   <td className="px-5 py-3 text-gray-300 hidden sm:table-cell">{b.titulo}</td>
                   <td className="px-5 py-3 text-white font-medium">{formatMoney(t.totalVenda)}</td>
                   <td className="px-5 py-3"><BudgetStatusBadge status={b.status} /></td>

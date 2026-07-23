@@ -7,6 +7,7 @@ import { formatMoney, formatDate, addDays } from '../lib/format';
 import { BudgetStatusBadge, budgetStatusOptions } from '../components/StatusBadge';
 import { generateBudgetPdf } from '../lib/pdf';
 import { budgetWhatsappMessage, whatsappLink } from '../lib/whatsapp';
+import { resolveClienteInfo } from '../lib/clientInfo';
 import type { BudgetStatus } from '../types';
 
 export default function BudgetView() {
@@ -15,9 +16,8 @@ export default function BudgetView() {
   const { db, setBudgetStatus, convertBudgetToServiceOrder } = useStore();
   const toast = useToast();
   const budget = db.budgets.find(b => b.id === id);
-  const client = budget ? db.clients.find(c => c.id === budget.client_id) : undefined;
 
-  if (!budget || !client) {
+  if (!budget) {
     return (
       <div className="text-gray-400">
         Orçamento não encontrado. <Link to="/app/orcamentos" className="text-[#f5c518] hover:underline">Voltar</Link>
@@ -25,13 +25,14 @@ export default function BudgetView() {
     );
   }
 
+  const cliente = resolveClienteInfo(budget, db.clients);
   const totals = calculateBudget(budget);
   const alerts = budgetAlerts(budget, totals, db.organization.margem_minima_percentual);
   const publicLink = `${window.location.origin}/proposta/${budget.id}`;
 
   function handleDownloadPdf() {
     try {
-      const doc = generateBudgetPdf(budget!, client!, db.organization);
+      const doc = generateBudgetPdf(budget!, cliente, db.organization);
       doc.save(`orcamento-${budget!.numero}.pdf`);
       toast.show('PDF gerado e baixado.');
     } catch (err) {
@@ -41,8 +42,12 @@ export default function BudgetView() {
   }
 
   function handleWhatsapp() {
-    const message = budgetWhatsappMessage(budget!, client!, publicLink);
-    window.open(whatsappLink(client!.whatsapp, message), '_blank');
+    if (!cliente.whatsapp) {
+      toast.show('Este cliente não tem WhatsApp cadastrado. Edite o orçamento para adicionar um telefone.', 'warning');
+      return;
+    }
+    const message = budgetWhatsappMessage(budget!, cliente, publicLink);
+    window.open(whatsappLink(cliente.whatsapp, message), '_blank');
     toast.show('WhatsApp aberto com a mensagem pronta.', 'info');
   }
 
@@ -61,7 +66,10 @@ export default function BudgetView() {
       <div className="flex flex-wrap items-start justify-between gap-4 ce-fade-up">
         <div>
           <h1 className="text-2xl font-semibold text-white">{budget.titulo}</h1>
-          <p className="text-sm text-gray-400 mt-1">Orçamento nº {budget.numero} · Cliente: {client.nome}</p>
+          <p className="text-sm text-gray-400 mt-1">
+            Orçamento nº {budget.numero} · Cliente: {cliente.nome}
+            {!cliente.cadastrado && <span className="ml-2 text-[10px] uppercase text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded px-1.5 py-0.5">sem cadastro</span>}
+          </p>
         </div>
         <BudgetStatusBadge status={budget.status} />
       </div>

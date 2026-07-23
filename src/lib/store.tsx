@@ -251,7 +251,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const addBudget: StoreContextValue['addBudget'] = useCallback((data) => {
     const numero = data.numero || nextBudgetNumber();
     const budget: Budget = {
-      id: newId(), organization_id: orgId, numero, client_id: '', titulo: '', tipo_servico: 'Instalação',
+      id: newId(), organization_id: orgId, numero, titulo: '', tipo_servico: 'Instalação',
       local_servico: '', data_emissao: todayISO(), validade_dias: 10, responsavel: 'Felipe Ribeiro',
       status: 'rascunho', itens: [], custos_extras: [], desconto_percentual: 0, desconto_valor: 0,
       forma_pagamento: 'pix', entrada: 0, parcelas: 1, garantia: '90 dias',
@@ -284,6 +284,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const numero = `OS-${budget.numero}`;
     const order: ServiceOrder = {
       id: newId(), organization_id: orgId, numero, budget_id: budget.id, client_id: budget.client_id,
+      cliente_nome_avulso: budget.cliente_nome_avulso, cliente_telefone_avulso: budget.cliente_telefone_avulso,
+      cliente_whatsapp_avulso: budget.cliente_whatsapp_avulso,
       responsavel_tecnico: budget.responsavel, status: 'aguardando_agendamento',
       checklist: [
         { item: 'Energia desligada antes da intervenção', concluido: false },

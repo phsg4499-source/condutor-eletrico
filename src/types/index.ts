@@ -167,7 +167,10 @@ export interface Budget {
   id: string;
   organization_id: string;
   numero: string;
-  client_id: string;
+  client_id?: string | null;
+  cliente_nome_avulso?: string | null;
+  cliente_telefone_avulso?: string | null;
+  cliente_whatsapp_avulso?: string | null;
   titulo: string;
   tipo_servico: string;
   descricao_problema?: string;
@@ -203,7 +206,10 @@ export interface ServiceOrder {
   organization_id: string;
   numero: string;
   budget_id: string;
-  client_id: string;
+  client_id?: string | null;
+  cliente_nome_avulso?: string | null;
+  cliente_telefone_avulso?: string | null;
+  cliente_whatsapp_avulso?: string | null;
   data_prevista?: string;
   data_inicio?: string;
   data_conclusao?: string;

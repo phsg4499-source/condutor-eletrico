@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import type { Budget, Client, Organization } from '../types';
+import type { Budget, Organization } from '../types';
 import { calculateBudget } from './calculations';
 import { formatMoney, formatDate, addDays } from './format';
 
@@ -19,7 +19,7 @@ const WHITE: [number, number, number] = [255, 255, 255];
 
 const SLOGAN = 'Você chama, a Condutor resolve.';
 
-export function generateBudgetPdf(budget: Budget, client: Client, org: Organization): jsPDF {
+export function generateBudgetPdf(budget: Budget, client: { nome: string }, org: Organization): jsPDF {
   const doc = new jsPDF();
   const totals = calculateBudget(budget);
   const pageWidth = doc.internal.pageSize.getWidth();

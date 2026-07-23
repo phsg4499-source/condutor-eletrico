@@ -5,7 +5,7 @@ import { useStore } from '../lib/store';
 import { useToast } from '../lib/toast';
 import { calculateBudget, budgetAlerts } from '../lib/calculations';
 import { formatMoney, todayISO } from '../lib/format';
-import type { BudgetLineItem, ExtraCost, FormaPagamento } from '../types';
+import type { Budget, BudgetLineItem, ExtraCost, FormaPagamento } from '../types';
 
 function uid(p: string) { return `${p}-${Date.now()}-${Math.floor(Math.random() * 9999)}`; }
 
@@ -16,7 +16,7 @@ const formasPagamento: { value: FormaPagamento; label: string }[] = [
 ];
 
 export default function BudgetWizard() {
-  const { db, addBudget, updateBudget, addClient, nextBudgetNumber } = useStore();
+  const { db, addBudget, updateBudget, nextBudgetNumber } = useStore();
   const toast = useToast();
   const navigate = useNavigate();
   const { id } = useParams();
@@ -24,11 +24,14 @@ export default function BudgetWizard() {
   const existingBudget = id ? db.budgets.find(b => b.id === id) : undefined;
   const isEditing = Boolean(id);
 
-  const [clientMode, setClientMode] = useState<'existing' | 'new'>(isEditing || db.clients.length ? 'existing' : 'new');
+  const defaultClientMode: 'existing' | 'avulso' = existingBudget
+    ? (existingBudget.client_id ? 'existing' : 'avulso')
+    : (db.clients.length ? 'existing' : 'avulso');
+  const [clientMode, setClientMode] = useState<'existing' | 'avulso'>(defaultClientMode);
   const [clientId, setClientId] = useState(existingBudget?.client_id ?? '');
-  const [novoClienteNome, setNovoClienteNome] = useState('');
-  const [novoClienteTelefone, setNovoClienteTelefone] = useState('');
-  const [novoClienteWhatsapp, setNovoClienteWhatsapp] = useState('');
+  const [novoClienteNome, setNovoClienteNome] = useState(existingBudget?.cliente_nome_avulso ?? '');
+  const [novoClienteTelefone, setNovoClienteTelefone] = useState(existingBudget?.cliente_telefone_avulso ?? '');
+  const [novoClienteWhatsapp, setNovoClienteWhatsapp] = useState(existingBudget?.cliente_whatsapp_avulso ?? '');
   const [titulo, setTitulo] = useState(existingBudget?.titulo ?? '');
   const [tipoServico, setTipoServico] = useState(existingBudget?.tipo_servico ?? 'Instalação');
   const [localServico, setLocalServico] = useState(existingBudget?.local_servico ?? '');
@@ -86,23 +89,27 @@ export default function BudgetWizard() {
   function saveBudget(status: 'rascunho' | 'pronto_para_envio') {
     if (!titulo) return;
 
-    let finalClientId = clientId;
-    if (clientMode === 'new') {
-      if (!novoClienteNome.trim() || !novoClienteTelefone.trim()) return;
-      const novoCliente = addClient({
-        tipo_pessoa: 'fisica', nome: novoClienteNome, telefone: novoClienteTelefone,
-        whatsapp: novoClienteWhatsapp || novoClienteTelefone, origem: 'outro', status: 'ativo', tags: [], enderecos: [],
-      });
-      finalClientId = novoCliente.id;
-      toast.show(`Cliente "${novoClienteNome}" cadastrado automaticamente.`, 'info');
+    // O orçamento nunca depende de o cliente estar cadastrado: se "Cliente sem cadastro" estiver
+    // selecionado, os dados de contato ficam gravados direto no orçamento (client_id fica vazio).
+    let clientFields: Partial<Budget>;
+    if (clientMode === 'existing') {
+      if (!clientId) return;
+      clientFields = { client_id: clientId, cliente_nome_avulso: null, cliente_telefone_avulso: null, cliente_whatsapp_avulso: null };
+    } else {
+      if (!novoClienteNome.trim()) return;
+      clientFields = {
+        client_id: null,
+        cliente_nome_avulso: novoClienteNome.trim(),
+        cliente_telefone_avulso: novoClienteTelefone.trim(),
+        cliente_whatsapp_avulso: (novoClienteWhatsapp || novoClienteTelefone).trim(),
+      };
     }
-    if (!finalClientId) return;
 
     const responsavelSelecionado = orcamentistasAtivos.find(o => o.id === orcamentistaId);
 
     if (isEditing && existingBudget) {
       updateBudget(existingBudget.id, {
-        client_id: finalClientId, titulo, tipo_servico: tipoServico,
+        ...clientFields, titulo, tipo_servico: tipoServico,
         local_servico: localServico, prazo_estimado: prazo,
         responsavel: responsavelSelecionado?.nome ?? existingBudget.responsavel, orcamentista_id: orcamentistaId || undefined,
         itens, custos_extras: custosExtras,
@@ -115,7 +122,7 @@ export default function BudgetWizard() {
     }
 
     const budget = addBudget({
-      numero: nextBudgetNumber(), client_id: finalClientId, titulo, tipo_servico: tipoServico,
+      numero: nextBudgetNumber(), ...clientFields, titulo, tipo_servico: tipoServico,
       local_servico: localServico, data_emissao: todayISO(), validade_dias: 10, prazo_estimado: prazo,
       responsavel: responsavelSelecionado?.nome ?? db.organization.responsavel, orcamentista_id: orcamentistaId || undefined,
       status, itens, custos_extras: custosExtras,
@@ -156,16 +163,22 @@ export default function BudgetWizard() {
 
       <Section title="1. Cliente e dados do orçamento">
         {!isEditing && (
-          <div className="flex gap-2 mb-4">
+          <div className="flex gap-2 mb-2">
             <button type="button" onClick={() => setClientMode('existing')}
               className={`flex-1 py-2 rounded-lg text-sm border ${clientMode === 'existing' ? 'bg-[#f5c518] text-[#16181d] border-[#f5c518]' : 'border-white/10 text-gray-300'}`}>
               Cliente já cadastrado
             </button>
-            <button type="button" onClick={() => setClientMode('new')}
-              className={`flex-1 py-2 rounded-lg text-sm border ${clientMode === 'new' ? 'bg-[#f5c518] text-[#16181d] border-[#f5c518]' : 'border-white/10 text-gray-300'}`}>
-              Cliente novo (cadastrar agora)
+            <button type="button" onClick={() => setClientMode('avulso')}
+              className={`flex-1 py-2 rounded-lg text-sm border ${clientMode === 'avulso' ? 'bg-[#f5c518] text-[#16181d] border-[#f5c518]' : 'border-white/10 text-gray-300'}`}>
+              Cliente sem cadastro
             </button>
           </div>
+        )}
+        {!isEditing && (
+          <p className="text-[11px] text-gray-500 mb-4">
+            Você não precisa cadastrar o cliente para fazer o orçamento. Escolha "Cliente sem cadastro" e digite só o nome e
+            telefone — se quiser, você cadastra esse cliente depois, na tela de Clientes, sem nenhuma pressa.
+          </p>
         )}
 
         <div className="grid sm:grid-cols-2 gap-4">
@@ -178,14 +191,14 @@ export default function BudgetWizard() {
                 {db.clients.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
               </select>
               {db.clients.length === 0 && (
-                <p className="text-xs text-amber-400 mt-1">Nenhum cliente cadastrado ainda — use "Cliente novo" ao lado.</p>
+                <p className="text-xs text-amber-400 mt-1">Nenhum cliente cadastrado ainda — use "Cliente sem cadastro" ao lado.</p>
               )}
             </div>
           ) : (
             <>
               <Field label="Nome do cliente *" value={novoClienteNome} onChange={setNovoClienteNome} placeholder="Ex: Marcos Andrade" />
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Telefone *" value={novoClienteTelefone} onChange={setNovoClienteTelefone} placeholder="(11) 90000-0000" />
+                <Field label="Telefone" value={novoClienteTelefone} onChange={setNovoClienteTelefone} placeholder="(11) 90000-0000" />
                 <Field label="WhatsApp" value={novoClienteWhatsapp} onChange={setNovoClienteWhatsapp} placeholder="5511900000000" />
               </div>
             </>
@@ -226,38 +239,42 @@ export default function BudgetWizard() {
           <button type="button" onClick={() => addCustomItem('material')} className="text-xs px-3 py-2 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5">+ Material personalizado</button>
         </div>
 
-        {itens.length > 0 && (
-          <div className="grid grid-cols-12 gap-2 px-2 mb-1 text-[10px] uppercase text-gray-500">
-            <span className="col-span-1">Tipo</span>
-            <span className="col-span-4">Descrição</span>
-            <span className="col-span-1">Qtd</span>
-            <span className="col-span-2">Custo (interno)</span>
-            <span className="col-span-2">Valor (cliente)</span>
-            <span className="col-span-1 text-right">Total</span>
-          </div>
-        )}
         <p className="text-[11px] text-gray-500 mb-2">
           "Custo (interno)" é o quanto você gasta — nunca aparece pro cliente. "Valor (cliente)" é o preço que ele vê e paga.
-          A diferença entre os dois é o seu lucro.
+          A diferença entre os dois é o seu lucro. No celular, arraste para o lado para ver todas as colunas.
         </p>
-        <div className="space-y-2">
-          {itens.map(item => (
-            <div key={item.id} className="grid grid-cols-12 gap-2 items-center bg-[#0f1115] border border-white/5 rounded-lg p-2">
-              <span className={`col-span-1 text-[10px] uppercase text-center rounded px-1 py-1 ${item.tipo === 'servico' ? 'bg-blue-600/30 text-blue-300' : 'bg-purple-600/30 text-purple-300'}`}>{item.tipo === 'servico' ? 'Serv.' : 'Mat.'}</span>
-              <input value={item.nome} onChange={e => updateItem(item.id, { nome: e.target.value })} placeholder="Descrição"
-                className="col-span-4 bg-transparent border border-white/10 rounded px-2 py-1.5 text-xs text-white" />
-              <input type="number" value={item.quantidade} onChange={e => updateItem(item.id, { quantidade: Number(e.target.value) })}
-                className="col-span-1 bg-transparent border border-white/10 rounded px-2 py-1.5 text-xs text-white" title="Quantidade" />
-              <input type="number" value={item.custo_unitario} onChange={e => updateItem(item.id, { custo_unitario: Number(e.target.value) })}
-                className="col-span-2 bg-transparent border border-white/10 rounded px-2 py-1.5 text-xs text-white" title="Custo interno unitário" />
-              <input type="number" value={item.valor_unitario} onChange={e => updateItem(item.id, { valor_unitario: Number(e.target.value) })}
-                className="col-span-2 bg-transparent border border-white/10 rounded px-2 py-1.5 text-xs text-white" title="Valor de venda unitário" />
-              <span className="col-span-1 text-xs text-white text-right">{formatMoney(item.quantidade * item.valor_unitario - item.desconto)}</span>
-              <button type="button" onClick={() => removeItem(item.id)} className="col-span-1 text-gray-500 hover:text-red-400 flex justify-end"><Trash2 size={14} /></button>
+        <div className="overflow-x-auto -mx-2 px-2">
+          <div className="min-w-[600px]">
+            {itens.length > 0 && (
+              <div className="grid grid-cols-12 gap-2 px-2 mb-1 text-[10px] uppercase text-gray-500">
+                <span className="col-span-1">Tipo</span>
+                <span className="col-span-4">Descrição</span>
+                <span className="col-span-1">Qtd</span>
+                <span className="col-span-2">Custo (interno)</span>
+                <span className="col-span-2">Valor (cliente)</span>
+                <span className="col-span-1 text-right">Total</span>
+              </div>
+            )}
+            <div className="space-y-2">
+              {itens.map(item => (
+                <div key={item.id} className="grid grid-cols-12 gap-2 items-center bg-[#0f1115] border border-white/5 rounded-lg p-2">
+                  <span className={`col-span-1 text-[10px] uppercase text-center rounded px-1 py-1 ${item.tipo === 'servico' ? 'bg-blue-600/30 text-blue-300' : 'bg-purple-600/30 text-purple-300'}`}>{item.tipo === 'servico' ? 'Serv.' : 'Mat.'}</span>
+                  <input value={item.nome} onChange={e => updateItem(item.id, { nome: e.target.value })} placeholder="Descrição"
+                    className="col-span-4 bg-transparent border border-white/10 rounded px-2 py-1.5 text-xs text-white" />
+                  <input type="number" value={item.quantidade} onChange={e => updateItem(item.id, { quantidade: Number(e.target.value) })}
+                    className="col-span-1 bg-transparent border border-white/10 rounded px-2 py-1.5 text-xs text-white" title="Quantidade" />
+                  <input type="number" value={item.custo_unitario} onChange={e => updateItem(item.id, { custo_unitario: Number(e.target.value) })}
+                    className="col-span-2 bg-transparent border border-white/10 rounded px-2 py-1.5 text-xs text-white" title="Custo interno unitário" />
+                  <input type="number" value={item.valor_unitario} onChange={e => updateItem(item.id, { valor_unitario: Number(e.target.value) })}
+                    className="col-span-2 bg-transparent border border-white/10 rounded px-2 py-1.5 text-xs text-white" title="Valor de venda unitário" />
+                  <span className="col-span-1 text-xs text-white text-right">{formatMoney(item.quantidade * item.valor_unitario - item.desconto)}</span>
+                  <button type="button" onClick={() => removeItem(item.id)} className="col-span-1 text-gray-500 hover:text-red-400 flex justify-end"><Trash2 size={14} /></button>
+                </div>
+              ))}
             </div>
-          ))}
-          {itens.length === 0 && <p className="text-xs text-gray-500">Nenhum item adicionado ainda.</p>}
+          </div>
         </div>
+        {itens.length === 0 && <p className="text-xs text-gray-500 mt-2">Nenhum item adicionado ainda.</p>}
       </Section>
 
       <Section title="3. Custos adicionais">
@@ -268,9 +285,9 @@ export default function BudgetWizard() {
           {custosExtras.map(cost => (
             <div key={cost.id} className="grid grid-cols-12 gap-2 items-center">
               <input value={cost.descricao} onChange={e => setCustosExtras(prev => prev.map(c => c.id === cost.id ? { ...c, descricao: e.target.value } : c))}
-                placeholder="Descrição" className="col-span-8 bg-[#0f1115] border border-white/10 rounded px-2 py-1.5 text-xs text-white" />
+                placeholder="Descrição" className="col-span-7 sm:col-span-8 bg-[#0f1115] border border-white/10 rounded px-2 py-1.5 text-xs text-white" />
               <input type="number" value={cost.valor} onChange={e => setCustosExtras(prev => prev.map(c => c.id === cost.id ? { ...c, valor: Number(e.target.value) } : c))}
-                placeholder="Valor" className="col-span-3 bg-[#0f1115] border border-white/10 rounded px-2 py-1.5 text-xs text-white" />
+                placeholder="Valor" className="col-span-4 sm:col-span-3 bg-[#0f1115] border border-white/10 rounded px-2 py-1.5 text-xs text-white" />
               <button type="button" onClick={() => setCustosExtras(prev => prev.filter(c => c.id !== cost.id))} className="col-span-1 text-gray-500 hover:text-red-400 flex justify-end"><Trash2 size={14} /></button>
             </div>
           ))}
