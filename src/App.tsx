@@ -22,7 +22,8 @@ export default function App() {
       <ToastProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Landing />} />
+          <Route path="/" element={<Login />} />
+          <Route path="/site" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/app" element={<Layout />}>
             <Route index element={<Dashboard />} />

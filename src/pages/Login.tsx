@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate, useNavigate, Link } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { Zap, ShieldCheck, Gauge } from 'lucide-react';
 import { useStore, DEMO_CREDENTIALS } from '../lib/store';
 import Logo, { LogoSymbol } from '../components/Logo';
@@ -50,11 +50,11 @@ export default function Login() {
             <Logo variant="horizontal" theme="dark" animated />
           </div>
           <h1 className="ce-fade-up ce-fade-up-1 mt-10 text-4xl xl:text-5xl font-extrabold text-white leading-[1.1] max-w-xl">
-            O Condutor Elétrico agora <span className="ce-gradient-text">trabalha por você.</span>
+            Sansão, <span className="ce-gradient-text">seu trabalho move</span> a vida de muita gente.
           </h1>
           <p className="ce-fade-up ce-fade-up-2 mt-6 text-gray-400 text-lg max-w-md">
-            Orçamentos rápidos, decisões seguras e uma operação mais leve — tudo em um sistema feito
-            para vender mais e complicar menos.
+            Cada orçamento fechado é resultado do seu esforço. Continue — o sistema cuida da parte
+            chata, você cuida do que faz de melhor.
           </p>
           <div className="ce-fade-up ce-fade-up-3 mt-10 space-y-4">
             {highlights.map(h => (
@@ -103,9 +103,6 @@ export default function Login() {
                 </p>
               )}
             </form>
-            <p className="text-center mt-6">
-              <Link to="/" className="text-xs text-gray-500 hover:text-gray-300">← Voltar ao site</Link>
-            </p>
           </div>
         </div>
       </div>
