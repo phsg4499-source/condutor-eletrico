@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, Navigate } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, FileText, ClipboardList, Boxes, Wrench, BarChart3, Settings, Menu, X, LogOut, HelpCircle,
+  LayoutDashboard, Users, FileText, ClipboardList, Boxes, Wrench, BarChart3, Settings, Menu, X, LogOut, HelpCircle, UserCog,
 } from 'lucide-react';
-import OnboardingTour, { shouldShowOnboarding } from './OnboardingTour';
+import OnboardingTour from './OnboardingTour';
 import Logo from './Logo';
 import { useStore } from '../lib/store';
 
@@ -14,6 +14,7 @@ const navItems = [
   { to: '/app/ordens-servico', label: 'Ordens de Serviço', icon: ClipboardList },
   { to: '/app/materiais', label: 'Materiais', icon: Boxes },
   { to: '/app/servicos', label: 'Serviços', icon: Wrench },
+  { to: '/app/orcamentistas', label: 'Orçamentistas', icon: UserCog },
   { to: '/app/relatorios', label: 'Relatórios', icon: BarChart3 },
   { to: '/app/configuracoes', label: 'Configurações', icon: Settings },
 ];
@@ -22,15 +23,19 @@ export default function Layout() {
   const { user, logout, isDemoMode, authLoading } = useStore();
   const [open, setOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const wasLoggedIn = useRef(false);
 
+  // O tour aparece automaticamente em toda nova entrada no sistema (login ou sessão restaurada).
   useEffect(() => {
-    if (user && shouldShowOnboarding()) setShowOnboarding(true);
+    if (user && !wasLoggedIn.current) setShowOnboarding(true);
+    wasLoggedIn.current = Boolean(user);
   }, [user]);
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#0f1115] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-white/10 border-t-[#f5c518] rounded-full animate-spin" />
+      <div className="min-h-screen bg-[#0f1115] flex flex-col items-center justify-center gap-4">
+        <Logo variant="symbol" theme="dark" animated className="w-12 h-12" />
+        <p className="text-xs text-gray-500">Carregando seus dados...</p>
       </div>
     );
   }

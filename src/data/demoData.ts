@@ -1,6 +1,6 @@
 // Dados de demonstração — CLARAMENTE FICTÍCIOS.
 // Não representam preços oficiais de mercado nem documentos reais de pessoas.
-import type { Organization, Client, Material, ServiceItem, Budget, ServiceOrder, Payment } from '../types';
+import type { Organization, Client, Material, ServiceItem, Budget, ServiceOrder, Payment, Orcamentista } from '../types';
 import { todayISO, addDays } from '../lib/format';
 
 export const ORG_ID = 'org-condutor-eletrico';
@@ -33,6 +33,20 @@ export const demoOrganization: Organization = {
   created_at: todayISO(),
   updated_at: todayISO(),
 };
+
+export const demoOrcamentistas: Orcamentista[] = [
+  {
+    id: 'orcm-1', organization_id: ORG_ID, nome: 'Felipe Ribeiro', telefone: '(11) 90000-0000',
+    email: 'felipe@condutoreletrico.com.br', cargo: 'Responsável técnico e comercial', status: 'ativo',
+    aparece_no_pdf: true, observacoes: 'Fundador — mais de 10 anos de experiência.',
+    created_at: todayISO(), updated_at: todayISO(),
+  },
+  {
+    id: 'orcm-2', organization_id: ORG_ID, nome: 'Renata Duarte (fictício)', telefone: '(11) 90000-7777',
+    email: 'renata@condutoreletrico.com.br', cargo: 'Orçamentista', status: 'ativo',
+    aparece_no_pdf: true, created_at: todayISO(), updated_at: todayISO(),
+  },
+];
 
 export const demoClients: Client[] = [
   {
@@ -159,7 +173,7 @@ export const demoServices: ServiceItem[] = [
 function emptyTotalsBudget(over: Partial<Budget>): Budget {
   return {
     id: '', organization_id: ORG_ID, numero: '', client_id: '', titulo: '', tipo_servico: 'Instalação',
-    local_servico: '', data_emissao: todayISO(), validade_dias: 10, responsavel: 'Felipe Ribeiro',
+    local_servico: '', data_emissao: todayISO(), validade_dias: 10, responsavel: 'Felipe Ribeiro', orcamentista_id: 'orcm-1',
     status: 'rascunho', itens: [], custos_extras: [], desconto_percentual: 0, desconto_valor: 0,
     forma_pagamento: 'pix', entrada: 0, parcelas: 1, garantia: '90 dias', historico_status: [],
     created_at: todayISO(), updated_at: todayISO(), ...over,

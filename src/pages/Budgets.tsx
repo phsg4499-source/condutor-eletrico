@@ -21,12 +21,12 @@ export default function Budgets() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 ce-fade-up">
         <div>
           <h1 className="text-2xl font-semibold text-white">Orçamentos</h1>
           <p className="text-sm text-gray-400 mt-1">{db.budgets.length} orçamentos cadastrados</p>
         </div>
-        <Link to="/app/orcamentos/novo" className="flex items-center gap-2 bg-[#f5c518] text-[#16181d] font-semibold px-4 py-2 rounded-lg text-sm hover:bg-[#e0b60f]">
+        <Link to="/app/orcamentos/novo" className="ce-btn-glow flex items-center gap-2 bg-[#f5c518] text-[#16181d] font-semibold px-4 py-2 rounded-lg text-sm hover:bg-[#e0b60f]">
           <Plus size={16} /> Novo orçamento
         </Link>
       </div>
@@ -44,7 +44,7 @@ export default function Budgets() {
         </select>
       </div>
 
-      <div className="bg-[#16181d] border border-white/5 rounded-xl overflow-x-auto">
+      <div className="ce-card-hover bg-[#16181d] border border-white/5 rounded-xl overflow-x-auto ce-fade-up ce-fade-up-1">
         <table className="w-full text-sm min-w-[720px]">
           <thead>
             <tr className="text-left text-gray-400 border-b border-white/5">

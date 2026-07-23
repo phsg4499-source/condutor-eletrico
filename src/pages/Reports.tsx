@@ -40,7 +40,7 @@ export default function Reports() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="ce-fade-up">
         <h1 className="text-2xl font-semibold text-white">Relatórios</h1>
         <p className="text-sm text-gray-400 mt-1">Visão consolidada de orçamentos, serviços e financeiro.</p>
       </div>

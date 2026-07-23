@@ -16,15 +16,21 @@ const formasPagamento: { value: FormaPagamento; label: string }[] = [
 ];
 
 export default function BudgetWizard() {
-  const { db, addBudget, nextBudgetNumber } = useStore();
+  const { db, addBudget, addClient, nextBudgetNumber } = useStore();
   const toast = useToast();
   const navigate = useNavigate();
 
+  const [clientMode, setClientMode] = useState<'existing' | 'new'>(db.clients.length ? 'existing' : 'new');
   const [clientId, setClientId] = useState('');
+  const [novoClienteNome, setNovoClienteNome] = useState('');
+  const [novoClienteTelefone, setNovoClienteTelefone] = useState('');
+  const [novoClienteWhatsapp, setNovoClienteWhatsapp] = useState('');
   const [titulo, setTitulo] = useState('');
   const [tipoServico, setTipoServico] = useState('Instalação');
   const [localServico, setLocalServico] = useState('');
   const [prazo, setPrazo] = useState('');
+  const orcamentistasAtivos = db.orcamentistas.filter(o => o.status === 'ativo');
+  const [orcamentistaId, setOrcamentistaId] = useState(orcamentistasAtivos[0]?.id ?? '');
   const [itens, setItens] = useState<BudgetLineItem[]>([]);
   const [custosExtras, setCustosExtras] = useState<ExtraCost[]>([]);
   const [descontoValor, setDescontoValor] = useState(0);
@@ -74,11 +80,26 @@ export default function BudgetWizard() {
   }
 
   function saveBudget(status: 'rascunho' | 'pronto_para_envio') {
-    if (!clientId || !titulo) return;
+    if (!titulo) return;
+
+    let finalClientId = clientId;
+    if (clientMode === 'new') {
+      if (!novoClienteNome.trim() || !novoClienteTelefone.trim()) return;
+      const novoCliente = addClient({
+        tipo_pessoa: 'fisica', nome: novoClienteNome, telefone: novoClienteTelefone,
+        whatsapp: novoClienteWhatsapp || novoClienteTelefone, origem: 'outro', status: 'ativo', tags: [], enderecos: [],
+      });
+      finalClientId = novoCliente.id;
+      toast.show(`Cliente "${novoClienteNome}" cadastrado automaticamente.`, 'info');
+    }
+    if (!finalClientId) return;
+
+    const responsavelSelecionado = orcamentistasAtivos.find(o => o.id === orcamentistaId);
     const budget = addBudget({
-      numero: nextBudgetNumber(), client_id: clientId, titulo, tipo_servico: tipoServico,
+      numero: nextBudgetNumber(), client_id: finalClientId, titulo, tipo_servico: tipoServico,
       local_servico: localServico, data_emissao: todayISO(), validade_dias: 10, prazo_estimado: prazo,
-      responsavel: 'Felipe Ribeiro', status, itens, custos_extras: custosExtras,
+      responsavel: responsavelSelecionado?.nome ?? db.organization.responsavel, orcamentista_id: orcamentistaId || undefined,
+      status, itens, custos_extras: custosExtras,
       desconto_percentual: descontoPercentual, desconto_valor: descontoValor, forma_pagamento: formaPagamento,
       entrada, parcelas, garantia, observacoes_internas: obsInternas, observacoes_cliente: obsCliente,
       historico_status: [{ status, data: todayISO() }],
@@ -89,7 +110,7 @@ export default function BudgetWizard() {
 
   return (
     <div className="space-y-8 max-w-4xl">
-      <div>
+      <div className="ce-fade-up">
         <h1 className="text-2xl font-semibold text-white">Novo orçamento</h1>
         <p className="text-sm text-gray-400 mt-1">Preencha as etapas abaixo. O número será gerado automaticamente.</p>
       </div>
@@ -101,16 +122,48 @@ export default function BudgetWizard() {
       </div>
 
       <Section title="1. Cliente e dados do orçamento">
+        <div className="flex gap-2 mb-4">
+          <button type="button" onClick={() => setClientMode('existing')}
+            className={`flex-1 py-2 rounded-lg text-sm border ${clientMode === 'existing' ? 'bg-[#f5c518] text-[#16181d] border-[#f5c518]' : 'border-white/10 text-gray-300'}`}>
+            Cliente já cadastrado
+          </button>
+          <button type="button" onClick={() => setClientMode('new')}
+            className={`flex-1 py-2 rounded-lg text-sm border ${clientMode === 'new' ? 'bg-[#f5c518] text-[#16181d] border-[#f5c518]' : 'border-white/10 text-gray-300'}`}>
+            Cliente novo (cadastrar agora)
+          </button>
+        </div>
+
         <div className="grid sm:grid-cols-2 gap-4">
+          {clientMode === 'existing' ? (
+            <div>
+              <label className="text-xs text-gray-400">Cliente *</label>
+              <select value={clientId} onChange={e => setClientId(e.target.value)}
+                className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white">
+                <option value="">Selecione...</option>
+                {db.clients.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+              </select>
+              {db.clients.length === 0 && (
+                <p className="text-xs text-amber-400 mt-1">Nenhum cliente cadastrado ainda — use "Cliente novo" ao lado.</p>
+              )}
+            </div>
+          ) : (
+            <>
+              <Field label="Nome do cliente *" value={novoClienteNome} onChange={setNovoClienteNome} placeholder="Ex: Marcos Andrade" />
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Telefone *" value={novoClienteTelefone} onChange={setNovoClienteTelefone} placeholder="(11) 90000-0000" />
+                <Field label="WhatsApp" value={novoClienteWhatsapp} onChange={setNovoClienteWhatsapp} placeholder="5511900000000" />
+              </div>
+            </>
+          )}
+          <Field label="Título do orçamento *" value={titulo} onChange={setTitulo} />
           <div>
-            <label className="text-xs text-gray-400">Cliente *</label>
-            <select value={clientId} onChange={e => setClientId(e.target.value)}
+            <label className="text-xs text-gray-400">Responsável pelo orçamento</label>
+            <select value={orcamentistaId} onChange={e => setOrcamentistaId(e.target.value)}
               className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white">
-              <option value="">Selecione...</option>
-              {db.clients.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+              <option value="">{db.organization.responsavel} (padrão)</option>
+              {orcamentistasAtivos.map(o => <option key={o.id} value={o.id}>{o.nome} — {o.cargo}</option>)}
             </select>
           </div>
-          <Field label="Título do orçamento *" value={titulo} onChange={setTitulo} />
           <Field label="Tipo de serviço" value={tipoServico} onChange={setTipoServico} />
           <Field label="Prazo estimado" value={prazo} onChange={setPrazo} placeholder="Ex: 2 dias" />
           <div className="sm:col-span-2">

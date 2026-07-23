@@ -50,12 +50,12 @@ export default function Clients() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 ce-fade-up">
         <div>
           <h1 className="text-2xl font-semibold text-white">Clientes</h1>
           <p className="text-sm text-gray-400 mt-1">{db.clients.length} clientes cadastrados</p>
         </div>
-        <button onClick={() => setOpen(true)} className="flex items-center gap-2 bg-[#f5c518] text-[#16181d] font-semibold px-4 py-2 rounded-lg text-sm hover:bg-[#e0b60f]">
+        <button onClick={() => setOpen(true)} className="ce-btn-glow flex items-center gap-2 bg-[#f5c518] text-[#16181d] font-semibold px-4 py-2 rounded-lg text-sm hover:bg-[#e0b60f]">
           <Plus size={16} /> Novo cliente
         </button>
       </div>
@@ -66,7 +66,7 @@ export default function Clients() {
           className="w-full bg-[#16181d] border border-white/10 rounded-lg pl-9 pr-3 py-2 text-sm text-white focus:outline-none focus:border-[#f5c518]" />
       </div>
 
-      <div className="bg-[#16181d] border border-white/5 rounded-xl overflow-x-auto">
+      <div className="ce-card-hover bg-[#16181d] border border-white/5 rounded-xl overflow-x-auto ce-fade-up ce-fade-up-1">
         <table className="w-full text-sm min-w-[640px]">
           <thead>
             <tr className="text-left text-gray-400 border-b border-white/5">

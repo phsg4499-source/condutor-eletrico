@@ -61,6 +61,21 @@ export interface ClienteEndereco {
   estado: string;
 }
 
+export interface Orcamentista {
+  id: string;
+  organization_id: string;
+  nome: string;
+  telefone?: string;
+  email?: string;
+  cargo: string;
+  status: 'ativo' | 'inativo';
+  foto_url?: string;
+  observacoes?: string;
+  aparece_no_pdf: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Client {
   id: string;
   organization_id: string;
@@ -161,6 +176,7 @@ export interface Budget {
   validade_dias: number;
   prazo_estimado?: string;
   responsavel: string;
+  orcamentista_id?: string;
   status: BudgetStatus;
   itens: BudgetLineItem[];
   custos_extras: ExtraCost[];

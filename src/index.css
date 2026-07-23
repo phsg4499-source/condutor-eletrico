@@ -106,3 +106,68 @@ body { background-color: #0f1115; }
   color: transparent;
   animation: ce-shimmer 3.5s linear infinite;
 }
+
+/* ===== Login premium — correntes elétricas ===== */
+
+@keyframes ce-current-flow {
+  0% { stroke-dashoffset: 1200; opacity: 0; }
+  8% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
+}
+.ce-current-line {
+  fill: none;
+  stroke-dasharray: 12 18;
+  animation: ce-current-flow linear infinite;
+}
+
+@keyframes ce-pulse-dot {
+  0% { offset-distance: 0%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+.ce-pulse-dot { animation: ce-pulse-dot linear infinite; }
+
+@keyframes ce-grid-drift {
+  from { background-position: 0 0; }
+  to { background-position: 80px 80px; }
+}
+.ce-grid-bg {
+  background-image:
+    linear-gradient(rgba(245,197,24,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(245,197,24,0.06) 1px, transparent 1px);
+  background-size: 40px 40px;
+  animation: ce-grid-drift 14s linear infinite;
+}
+
+@keyframes ce-scan-glow {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.9; }
+}
+.ce-scan-glow { animation: ce-scan-glow 3.2s ease-in-out infinite; }
+
+.ce-glass-card {
+  background: linear-gradient(180deg, rgba(22,24,29,0.92), rgba(15,17,21,0.96));
+  backdrop-filter: blur(16px);
+  box-shadow: 0 0 0 1px rgba(245,197,24,0.12), 0 30px 80px -20px rgba(0,0,0,0.7), 0 0 60px -25px rgba(245,197,24,0.35);
+}
+
+@keyframes ce-border-glow {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(245,197,24,0.12), 0 30px 80px -20px rgba(0,0,0,0.7), 0 0 40px -20px rgba(245,197,24,0.25); }
+  50% { box-shadow: 0 0 0 1px rgba(245,197,24,0.28), 0 30px 80px -20px rgba(0,0,0,0.7), 0 0 70px -15px rgba(245,197,24,0.5); }
+}
+.ce-glass-card-glow { animation: ce-border-glow 4s ease-in-out infinite; }
+
+.ce-input-glow {
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.ce-input-glow:focus {
+  box-shadow: 0 0 0 3px rgba(245,197,24,0.15);
+}
+
+@keyframes ce-spotlight-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.ce-spotlight-in { animation: ce-spotlight-in 0.3s ease-out both; }

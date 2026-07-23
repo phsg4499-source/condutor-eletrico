@@ -5,7 +5,7 @@
 import { supabase } from './supabaseClient';
 import type {
   Organization, Client, Material, ServiceItem, Budget, ServiceOrder, Payment, QuoteRequest,
-  BudgetLineItem, ExtraCost, ClienteEndereco,
+  BudgetLineItem, ExtraCost, ClienteEndereco, Orcamentista,
 } from '../types';
 
 // Organização "Condutor Elétrico" semeada pelo supabase_condutor_eletrico.sql.
@@ -67,12 +67,13 @@ export interface RemoteDB {
   serviceOrders: ServiceOrder[];
   payments: Payment[];
   quoteRequests: QuoteRequest[];
+  orcamentistas: Orcamentista[];
 }
 
 export async function fetchOrganizationData(organizationId: string): Promise<RemoteDB> {
   const db = must();
 
-  const [orgRes, clientsRes, materialsRes, servicesRes, budgetsRes, ordersRes, paymentsRes, quotesRes] = await Promise.all([
+  const [orgRes, clientsRes, materialsRes, servicesRes, budgetsRes, ordersRes, paymentsRes, quotesRes, orcamentistasRes] = await Promise.all([
     db.from('organizations').select('*').eq('id', organizationId).single(),
     db.from('clients').select('*, client_addresses(*)').eq('organization_id', organizationId).order('created_at', { ascending: false }),
     db.from('materials').select('*').eq('organization_id', organizationId).order('nome'),
@@ -81,6 +82,7 @@ export async function fetchOrganizationData(organizationId: string): Promise<Rem
     db.from('service_orders').select('*, service_order_checklist(*)').eq('organization_id', organizationId).order('created_at', { ascending: false }),
     db.from('payments').select('*').eq('organization_id', organizationId).order('vencimento', { ascending: true }),
     db.from('quote_requests').select('*').eq('organization_id', organizationId).order('created_at', { ascending: false }),
+    db.from('orcamentistas').select('*').eq('organization_id', organizationId).order('nome'),
   ]);
 
   if (orgRes.error) throw orgRes.error;
@@ -94,6 +96,7 @@ export async function fetchOrganizationData(organizationId: string): Promise<Rem
     serviceOrders: (ordersRes.data ?? []).map(mapServiceOrder),
     payments: (paymentsRes.data ?? []) as Payment[],
     quoteRequests: (quotesRes.data ?? []) as QuoteRequest[],
+    orcamentistas: (orcamentistasRes.data ?? []) as Orcamentista[],
   };
 }
 
@@ -211,5 +214,15 @@ export async function remoteToggleChecklistItem(orderId: string, index: number, 
 
 export async function remoteInsertQuoteRequest(request: QuoteRequest & { organization_id: string }) {
   const { error } = await must().from('quote_requests').insert(request);
+  if (error) throw error;
+}
+
+export async function remoteInsertOrcamentista(orcamentista: Orcamentista) {
+  const { error } = await must().from('orcamentistas').insert(orcamentista);
+  if (error) throw error;
+}
+
+export async function remoteUpdateOrcamentista(id: string, data: Partial<Orcamentista>) {
+  const { error } = await must().from('orcamentistas').update(data).eq('id', id);
   if (error) throw error;
 }

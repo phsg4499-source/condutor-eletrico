@@ -1,16 +1,16 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import type {
-  Organization, Client, Material, ServiceItem, Budget, ServiceOrder, Payment, QuoteRequest, BudgetStatus, ServiceOrderStatus,
+  Organization, Client, Material, ServiceItem, Budget, ServiceOrder, Payment, QuoteRequest, BudgetStatus, ServiceOrderStatus, Orcamentista,
 } from '../types';
 import {
-  demoOrganization, demoClients, demoMaterials, demoServices, demoBudgets, demoServiceOrders, demoPayments,
+  demoOrganization, demoClients, demoMaterials, demoServices, demoBudgets, demoServiceOrders, demoPayments, demoOrcamentistas,
 } from '../data/demoData';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import {
   DEFAULT_ORG_ID, fetchOrganizationData, remoteUpdateOrganization, remoteInsertClient, remoteUpdateClient,
   remoteInsertMaterial, remoteUpdateMaterial, remoteInsertService, remoteUpdateService, remoteInsertBudget,
   remoteUpdateBudgetStatus, remoteInsertServiceOrder, remoteSetServiceOrderStatus, remoteToggleChecklistItem,
-  remoteInsertQuoteRequest,
+  remoteInsertQuoteRequest, remoteInsertOrcamentista, remoteUpdateOrcamentista,
 } from './supabaseApi';
 import { todayISO } from './format';
 
@@ -36,6 +36,7 @@ interface DB {
   serviceOrders: ServiceOrder[];
   payments: Payment[];
   quoteRequests: QuoteRequest[];
+  orcamentistas: Orcamentista[];
 }
 
 function seedDB(): DB {
@@ -48,13 +49,14 @@ function seedDB(): DB {
     serviceOrders: demoServiceOrders,
     payments: demoPayments,
     quoteRequests: [],
+    orcamentistas: demoOrcamentistas,
   };
 }
 
 function emptyDB(): DB {
   return {
     organization: demoOrganization,
-    clients: [], materials: [], services: [], budgets: [], serviceOrders: [], payments: [], quoteRequests: [],
+    clients: [], materials: [], services: [], budgets: [], serviceOrders: [], payments: [], quoteRequests: [], orcamentistas: [],
   };
 }
 
@@ -106,6 +108,8 @@ interface StoreContextValue {
   setServiceOrderStatus: (id: string, status: ServiceOrderStatus) => void;
   toggleChecklistItem: (orderId: string, index: number) => void;
   addQuoteRequest: (data: Omit<QuoteRequest, 'id' | 'created_at'>) => QuoteRequest;
+  addOrcamentista: (data: Omit<Orcamentista, 'id' | 'organization_id' | 'created_at' | 'updated_at'>) => Orcamentista;
+  updateOrcamentista: (id: string, data: Partial<Orcamentista>) => void;
   nextBudgetNumber: () => string;
 }
 
@@ -338,15 +342,27 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return request;
   }, []);
 
+  const addOrcamentista: StoreContextValue['addOrcamentista'] = useCallback((data) => {
+    const orcamentista: Orcamentista = { ...data, id: newId(), organization_id: orgId, created_at: todayISO(), updated_at: todayISO() };
+    setDb(prev => ({ ...prev, orcamentistas: [orcamentista, ...prev.orcamentistas] }));
+    if (isSupabaseConfigured) remoteInsertOrcamentista(orcamentista).catch(err => console.error('Erro ao salvar orçamentista', err));
+    return orcamentista;
+  }, [orgId]);
+
+  const updateOrcamentista = useCallback((id: string, data: Partial<Orcamentista>) => {
+    setDb(prev => ({ ...prev, orcamentistas: prev.orcamentistas.map(o => o.id === id ? { ...o, ...data, updated_at: todayISO() } : o) }));
+    if (isSupabaseConfigured) remoteUpdateOrcamentista(id, data).catch(err => console.error('Erro ao atualizar orçamentista', err));
+  }, []);
+
   const value = useMemo<StoreContextValue>(() => ({
     isDemoMode: !isSupabaseConfigured,
     authLoading,
     db, user, login, logout, updateOrganization,
     addClient, updateClient, addMaterial, updateMaterial, addService, updateService,
-    addBudget, updateBudget, setBudgetStatus, convertBudgetToServiceOrder, setServiceOrderStatus, toggleChecklistItem, addQuoteRequest, nextBudgetNumber,
+    addBudget, updateBudget, setBudgetStatus, convertBudgetToServiceOrder, setServiceOrderStatus, toggleChecklistItem, addQuoteRequest, addOrcamentista, updateOrcamentista, nextBudgetNumber,
   }), [authLoading, db, user, login, logout, updateOrganization, addClient, updateClient, addMaterial, updateMaterial,
       addService, updateService, addBudget, updateBudget, setBudgetStatus, convertBudgetToServiceOrder,
-      setServiceOrderStatus, toggleChecklistItem, addQuoteRequest, nextBudgetNumber]);
+      setServiceOrderStatus, toggleChecklistItem, addQuoteRequest, addOrcamentista, updateOrcamentista, nextBudgetNumber]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }

@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import Clients from './pages/Clients';
 import Materials from './pages/Materials';
 import Services from './pages/Services';
+import Orcamentistas from './pages/Orcamentistas';
 import Budgets from './pages/Budgets';
 import BudgetWizard from './pages/BudgetWizard';
 import BudgetView from './pages/BudgetView';
@@ -28,6 +29,7 @@ export default function App() {
             <Route path="clientes" element={<Clients />} />
             <Route path="materiais" element={<Materials />} />
             <Route path="servicos" element={<Services />} />
+            <Route path="orcamentistas" element={<Orcamentistas />} />
             <Route path="orcamentos" element={<Budgets />} />
             <Route path="orcamentos/novo" element={<BudgetWizard />} />
             <Route path="orcamentos/:id" element={<BudgetView />} />

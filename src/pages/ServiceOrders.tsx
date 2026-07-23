@@ -8,11 +8,11 @@ export function ServiceOrdersList() {
   const { db } = useStore();
   return (
     <div className="space-y-6">
-      <div>
+      <div className="ce-fade-up">
         <h1 className="text-2xl font-semibold text-white">Ordens de Serviço</h1>
         <p className="text-sm text-gray-400 mt-1">{db.serviceOrders.length} ordens de serviço</p>
       </div>
-      <div className="bg-[#16181d] border border-white/5 rounded-xl overflow-x-auto">
+      <div className="ce-card-hover bg-[#16181d] border border-white/5 rounded-xl overflow-x-auto ce-fade-up ce-fade-up-1">
         <table className="w-full text-sm min-w-[640px]">
           <thead>
             <tr className="text-left text-gray-400 border-b border-white/5">

@@ -88,6 +88,30 @@ horizontal e vertical, fundo claro e escuro. Favicon em `/public/favicon.svg` e 
 O símbolo combina um "C" formado por um traço de circuito com um pulso de energia — grafite/preto,
 branco e amarelo elétrico como destaque, sem uso de raios ou tomadas clichês.
 
+## Evolução visual e comercial (v2)
+
+- Login completamente redesenhado: fundo animado com trilhas de "corrente elétrica" e grade em
+  movimento, layout em duas colunas com headline comercial, card de acesso com vidro/brilho
+- Tour de introdução agora aparece em toda nova entrada no sistema (login ou sessão restaurada),
+  não apenas na primeira vez — inclui o novo cadastro de orçamentistas
+- Cadastro de orçamentistas (Orçamentistas no menu): quem monta os orçamentos na empresa. Ao criar
+  um orçamento, você escolhe o responsável, e o nome dele é o que aparece no PDF entregue ao cliente
+- PDF do orçamento redesenhado do zero: capa com selo da marca, card de informações, tabelas com
+  cabeçalho grafite/amarelo, caixa de valor total em destaque, faixa com o slogan "Você chama, a
+  Condutor resolve.", bloco de aceite eletrônico e rodapé de contato — pensado para impressionar o
+  cliente, não para "parecer PDF de sistema"
+- Motion e contraste reforçados em todas as telas internas (entradas suaves, cards que elevam ao
+  passar o mouse, botões com brilho)
+
+### Migration necessária
+
+Se você já rodou o `supabase_condutor_eletrico.sql` anteriormente, rode agora também os arquivos
+novos em `supabase/migrations/` (na ordem numérica) para criar a tabela de orçamentistas e o
+vínculo com os orçamentos:
+
+- `0002_fix_profiles_self_select.sql`
+- `0003_orcamentistas.sql`
+
 ## Experiência e interatividade
 
 - Animações e "brilho" elétrico: logo com pulso de energia animado, blobs de fundo com

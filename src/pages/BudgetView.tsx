@@ -30,9 +30,14 @@ export default function BudgetView() {
   const publicLink = `${window.location.origin}/proposta/${budget.id}`;
 
   function handleDownloadPdf() {
-    const doc = generateBudgetPdf(budget!, client!, db.organization);
-    doc.save(`orcamento-${budget!.numero}.pdf`);
-    toast.show('PDF gerado e baixado.');
+    try {
+      const doc = generateBudgetPdf(budget!, client!, db.organization);
+      doc.save(`orcamento-${budget!.numero}.pdf`);
+      toast.show('PDF gerado e baixado.');
+    } catch (err) {
+      console.error('Erro ao gerar PDF:', err);
+      toast.show(`Não foi possível gerar o PDF: ${err instanceof Error ? err.message : 'erro desconhecido'}`, 'warning');
+    }
   }
 
   function handleWhatsapp() {
@@ -53,7 +58,7 @@ export default function BudgetView() {
     <div className="space-y-6 max-w-4xl">
       <Link to="/app/orcamentos" className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-white"><ArrowLeft size={16} /> Voltar</Link>
 
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4 ce-fade-up">
         <div>
           <h1 className="text-2xl font-semibold text-white">{budget.titulo}</h1>
           <p className="text-sm text-gray-400 mt-1">Orçamento nº {budget.numero} · Cliente: {client.nome}</p>
@@ -62,7 +67,7 @@ export default function BudgetView() {
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <button onClick={handleDownloadPdf} className="flex items-center gap-2 bg-[#f5c518] text-[#16181d] font-semibold px-4 py-2 rounded-lg text-sm hover:bg-[#e0b60f]">
+        <button onClick={handleDownloadPdf} className="ce-btn-glow flex items-center gap-2 bg-[#f5c518] text-[#16181d] font-semibold px-4 py-2 rounded-lg text-sm hover:bg-[#e0b60f]">
           <Download size={16} /> Gerar PDF
         </button>
         <button onClick={handleWhatsapp} className="flex items-center gap-2 bg-emerald-600 text-white font-semibold px-4 py-2 rounded-lg text-sm hover:bg-emerald-500">
