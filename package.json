@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "author": "Simplifica Seguros",
+  "license": "UNLICENSED",
+  "description": "Sistema proprietário de orçamentos e gestão de serviços elétricos. Desenvolvido por Simplifica Seguros. Todos os direitos reservados — uso, cópia e redistribuição não autorizados são proibidos.",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

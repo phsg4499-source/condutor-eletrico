@@ -6,6 +6,7 @@ import {
 import OnboardingTour from './OnboardingTour';
 import Logo from './Logo';
 import ElectricBackground from './ElectricBackground';
+import { TrialBadge, TrialModal } from './TrialNotice';
 import { useStore } from '../lib/store';
 
 const navItems = [
@@ -22,14 +23,19 @@ const navItems = [
 ];
 
 export default function Layout() {
-  const { user, logout, isDemoMode, authLoading } = useStore();
+  const { db, user, logout, isDemoMode, authLoading } = useStore();
   const [open, setOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showTrialModal, setShowTrialModal] = useState(false);
   const wasLoggedIn = useRef(false);
 
-  // O tour aparece automaticamente em toda nova entrada no sistema (login ou sessão restaurada).
+  // O tour e o aviso de período de teste aparecem automaticamente em toda nova entrada
+  // no sistema (login ou sessão restaurada).
   useEffect(() => {
-    if (user && !wasLoggedIn.current) setShowOnboarding(true);
+    if (user && !wasLoggedIn.current) {
+      setShowOnboarding(true);
+      setShowTrialModal(true);
+    }
     wasLoggedIn.current = Boolean(user);
   }, [user]);
 
@@ -71,10 +77,11 @@ export default function Layout() {
             </NavLink>
           ))}
         </nav>
-        <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-white/5">
+        <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-white/5 space-y-2">
           <button onClick={logout} className="flex items-center gap-2 text-sm text-gray-400 hover:text-white px-3 py-2 w-full rounded-lg hover:bg-white/5">
             <LogOut size={16} /> Sair
           </button>
+          <p className="text-[10px] text-gray-600 px-3">Desenvolvido por Simplifica Seguros</p>
         </div>
       </aside>
 
@@ -84,6 +91,7 @@ export default function Layout() {
             {open ? <X size={22} /> : <Menu size={22} />}
           </button>
           <div className="flex-1" />
+          <TrialBadge organizationCreatedAt={db.organization.created_at} />
           {isDemoMode && (
             <span className="hidden sm:inline text-xs px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 mr-3">
               Modo demonstração — dados locais
@@ -99,6 +107,7 @@ export default function Layout() {
         </main>
       </div>
       {showOnboarding && <OnboardingTour onClose={() => setShowOnboarding(false)} />}
+      {showTrialModal && <TrialModal organizationCreatedAt={db.organization.created_at} onClose={() => setShowTrialModal(false)} />}
     </div>
   );
 }

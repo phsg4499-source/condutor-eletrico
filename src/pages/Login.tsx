@@ -45,7 +45,7 @@ export default function Login() {
 
       <div className="relative z-10 flex flex-col lg:flex-row w-full min-h-screen">
         {/* Lado institucional — presença e impacto */}
-        <div className="hidden lg:flex flex-1 flex-col justify-center px-16 xl:px-24">
+        <div className="hidden lg:flex flex-1 flex-col justify-center px-16 xl:px-24 relative">
           <div className="ce-fade-up">
             <Logo variant="horizontal" theme="dark" animated />
           </div>
@@ -66,6 +66,10 @@ export default function Login() {
               </div>
             ))}
           </div>
+
+          <p className="absolute bottom-8 left-16 xl:left-24 text-[11px] text-gray-600">
+            Desenvolvido por <span className="text-gray-500 font-medium">Simplifica Seguros</span> · © {new Date().getFullYear()} Todos os direitos reservados.
+          </p>
         </div>
 
         {/* Card de acesso */}
@@ -103,6 +107,12 @@ export default function Login() {
                 </p>
               )}
             </form>
+
+            <p className="text-center text-[11px] text-gray-600 mt-6">
+              Desenvolvido por <span className="text-gray-400 font-medium">Simplifica Seguros</span>
+              <br />
+              © {new Date().getFullYear()} Simplifica Seguros. Todos os direitos reservados.
+            </p>
           </div>
         </div>
       </div>

@@ -155,14 +155,17 @@ vínculo com os orçamentos:
 - Página pública de aprovação do orçamento por link com aceite eletrônico (fluxo de negociação,
   recusa e assinatura simples do cliente)
 - Upload de fotos/vídeos/documentos (vistoria, ordem de serviço, solicitação pública)
-- Agenda/calendário de atendimentos
 - Fornecedores vinculados a materiais com histórico de compras (tabela já existe no SQL)
 - Contas a pagar detalhadas e fluxo de caixa por mês com gráficos
 - Permissões por tipo de acesso (administrador, orçamentista, eletricista, financeiro, visualização)
   — hoje todo usuário logado tem acesso total
 - Múltiplas opções de orçamento (econômica/recomendada/premium) e orçamentos com etapas
-- PWA instalável (manifest incluso; falta service worker de cache offline)
 - Exportação de relatórios para CSV/Excel/PDF
+
+## Licença
+
+Software proprietário desenvolvido por **Simplifica Seguros**. Todos os direitos reservados —
+uso, cópia, modificação ou redistribuição não autorizados são proibidos. Veja [LICENSE.md](./LICENSE.md).
 
 ## Resultado do build
 
