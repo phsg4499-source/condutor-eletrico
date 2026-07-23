@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, Navigate } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, FileText, ClipboardList, Boxes, Wrench, BarChart3, Settings, Menu, X, LogOut, HelpCircle, UserCog, CalendarDays,
+  LayoutDashboard, Users, FileText, ClipboardList, Boxes, Wrench, BarChart3, Settings, Menu, X, LogOut, HelpCircle, UserCog, CalendarDays, Wallet,
 } from 'lucide-react';
 import OnboardingTour from './OnboardingTour';
 import Logo from './Logo';
@@ -15,6 +15,7 @@ const navItems = [
   { to: '/app/clientes', label: 'Clientes', icon: Users },
   { to: '/app/orcamentos', label: 'Orçamentos', icon: FileText },
   { to: '/app/ordens-servico', label: 'Ordens de Serviço', icon: ClipboardList },
+  { to: '/app/pagamentos', label: 'Pagamentos', icon: Wallet },
   { to: '/app/materiais', label: 'Materiais', icon: Boxes },
   { to: '/app/servicos', label: 'Serviços', icon: Wrench },
   { to: '/app/orcamentistas', label: 'Orçamentistas', icon: UserCog },

@@ -12,6 +12,7 @@ import Agenda from './pages/Agenda';
 import Budgets from './pages/Budgets';
 import BudgetWizard from './pages/BudgetWizard';
 import BudgetView from './pages/BudgetView';
+import Payments from './pages/Payments';
 import { ServiceOrdersList, ServiceOrderView } from './pages/ServiceOrders';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
@@ -41,6 +42,7 @@ export default function App() {
             <Route path="orcamentos/:id" element={<BudgetView />} />
             <Route path="ordens-servico" element={<ServiceOrdersList />} />
             <Route path="ordens-servico/:id" element={<ServiceOrderView />} />
+            <Route path="pagamentos" element={<Payments />} />
             <Route path="relatorios" element={<Reports />} />
             <Route path="configuracoes" element={<Settings />} />
           </Route>
