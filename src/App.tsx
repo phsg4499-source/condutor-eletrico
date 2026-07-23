@@ -20,8 +20,8 @@ import InstallPrompt from './components/InstallPrompt';
 
 export default function App() {
   return (
-    <StoreProvider>
-      <ToastProvider>
+    <ToastProvider>
+      <StoreProvider>
       <BrowserRouter>
         <InstallPrompt />
         <Routes>
@@ -46,7 +46,7 @@ export default function App() {
           </Route>
         </Routes>
       </BrowserRouter>
-      </ToastProvider>
-    </StoreProvider>
+      </StoreProvider>
+    </ToastProvider>
   );
 }

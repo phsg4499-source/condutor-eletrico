@@ -221,18 +221,23 @@ export interface ServiceOrder {
   updated_at: string;
 }
 
+export type PaymentStatus = 'pendente' | 'parcial' | 'pago' | 'atrasado' | 'cancelado' | 'renegociado';
+
 export interface Payment {
   id: string;
   organization_id: string;
-  client_id: string;
-  budget_id?: string;
-  service_order_id?: string;
+  client_id?: string | null;
+  budget_id?: string | null;
+  service_order_id?: string | null;
   descricao: string;
   valor: number;
-  vencimento: string;
+  vencimento?: string;
   data_recebimento?: string;
-  forma_pagamento: FormaPagamento;
-  status: 'pendente' | 'parcial' | 'pago' | 'atrasado' | 'cancelado';
+  forma_pagamento?: FormaPagamento;
+  status: PaymentStatus;
+  observacoes?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export type CompromissoTipo = 'visita_orcamento' | 'execucao_servico' | 'reuniao' | 'outro';

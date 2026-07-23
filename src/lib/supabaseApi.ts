@@ -8,6 +8,7 @@ import type {
   BudgetLineItem, ExtraCost, ClienteEndereco, Orcamentista, Compromisso,
 } from '../types';
 
+
 // Organização "Condutor Elétrico" semeada pelo supabase_condutor_eletrico.sql.
 // Usado como organização padrão para o formulário público (sem usuário autenticado).
 export const DEFAULT_ORG_ID = '00000000-0000-0000-0000-000000000001';
@@ -287,5 +288,20 @@ export async function remoteUpdateCompromisso(id: string, data: Partial<Compromi
 
 export async function remoteDeleteCompromisso(id: string) {
   const { error } = await must().from('compromissos').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function remoteInsertPayment(payment: Payment) {
+  const { error } = await must().from('payments').insert(payment);
+  if (error) throw error;
+}
+
+export async function remoteUpdatePayment(id: string, data: Partial<Payment>) {
+  const { error } = await must().from('payments').update(data).eq('id', id);
+  if (error) throw error;
+}
+
+export async function remoteDeletePayment(id: string) {
+  const { error } = await must().from('payments').delete().eq('id', id);
   if (error) throw error;
 }

@@ -12,8 +12,10 @@ import {
   remoteUpdateBudget, remoteDeleteBudget, remoteUpdateBudgetStatus, remoteInsertServiceOrder, remoteSetServiceOrderStatus, remoteToggleChecklistItem,
   remoteInsertQuoteRequest, remoteInsertOrcamentista, remoteUpdateOrcamentista,
   remoteInsertCompromisso, remoteUpdateCompromisso, remoteDeleteCompromisso,
+  remoteInsertPayment, remoteUpdatePayment, remoteDeletePayment,
 } from './supabaseApi';
 import { todayISO } from './format';
+import { useToast } from './toast';
 
 // Camada de dados do sistema.
 // MODO DEMONSTRAÇÃO (padrão, sem Supabase configurado): dados vivem em memória e são
@@ -117,6 +119,9 @@ interface StoreContextValue {
   addCompromisso: (data: Omit<Compromisso, 'id' | 'organization_id' | 'created_at' | 'updated_at'>) => Compromisso;
   updateCompromisso: (id: string, data: Partial<Compromisso>) => void;
   deleteCompromisso: (id: string) => void;
+  addPayment: (data: Omit<Payment, 'id' | 'organization_id' | 'created_at' | 'updated_at'>) => Payment;
+  updatePayment: (id: string, data: Partial<Payment>) => void;
+  deletePayment: (id: string) => void;
   nextBudgetNumber: () => string;
 }
 
@@ -133,6 +138,15 @@ function authErrorMessage(message: string): string {
 }
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
+  const toast = useToast();
+  // Mostra um aviso visível sempre que uma gravação no Supabase falhar (além de logar no console).
+  // Sem isso, erros de sincronização passavam despercebidos: a tela parecia salvar (atualização
+  // otimista local), mas o dado real não ia para o banco — e sumia/zerava ao recarregar a página.
+  const notifySyncError = useCallback((label: string, err: unknown) => {
+    console.error(label, err);
+    toast.show(`${label}: ${err instanceof Error ? err.message : 'erro desconhecido'}. A alteração pode não ter sido salva — verifique sua conexão e tente novamente.`, 'warning');
+  }, [toast]);
+
   const [db, setDb] = useState<DB>(() => (isSupabaseConfigured ? emptyDB() : loadDB()));
   const [user, setUser] = useState<AuthUser | null>(() => {
     if (isSupabaseConfigured) return null; // restaurado de forma assíncrona via getSession()
@@ -210,43 +224,43 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const updateOrganization = useCallback((data: Partial<Organization>) => {
     setDb(prev => ({ ...prev, organization: { ...prev.organization, ...data, updated_at: todayISO() } }));
-    if (isSupabaseConfigured) remoteUpdateOrganization(orgId, data).catch(err => console.error('Erro ao salvar configurações', err));
+    if (isSupabaseConfigured) remoteUpdateOrganization(orgId, data).catch(err => notifySyncError('Erro ao salvar configurações', err));
   }, [orgId]);
 
   const addClient: StoreContextValue['addClient'] = useCallback((data) => {
     const client: Client = { ...data, id: newId(), organization_id: orgId, created_at: todayISO(), updated_at: todayISO() };
     setDb(prev => ({ ...prev, clients: [client, ...prev.clients] }));
-    if (isSupabaseConfigured) remoteInsertClient(client).catch(err => console.error('Erro ao salvar cliente', err));
+    if (isSupabaseConfigured) remoteInsertClient(client).catch(err => notifySyncError('Erro ao salvar cliente', err));
     return client;
   }, [orgId]);
 
   const updateClient = useCallback((id: string, data: Partial<Client>) => {
     setDb(prev => ({ ...prev, clients: prev.clients.map(c => c.id === id ? { ...c, ...data, updated_at: todayISO() } : c) }));
-    if (isSupabaseConfigured) remoteUpdateClient(id, data).catch(err => console.error('Erro ao atualizar cliente', err));
+    if (isSupabaseConfigured) remoteUpdateClient(id, data).catch(err => notifySyncError('Erro ao atualizar cliente', err));
   }, []);
 
   const addMaterial: StoreContextValue['addMaterial'] = useCallback((data) => {
     const material: Material = { ...data, id: newId(), organization_id: orgId, created_at: todayISO(), updated_at: todayISO() };
     setDb(prev => ({ ...prev, materials: [material, ...prev.materials] }));
-    if (isSupabaseConfigured) remoteInsertMaterial(material).catch(err => console.error('Erro ao salvar material', err));
+    if (isSupabaseConfigured) remoteInsertMaterial(material).catch(err => notifySyncError('Erro ao salvar material', err));
     return material;
   }, [orgId]);
 
   const updateMaterial = useCallback((id: string, data: Partial<Material>) => {
     setDb(prev => ({ ...prev, materials: prev.materials.map(m => m.id === id ? { ...m, ...data, updated_at: todayISO() } : m) }));
-    if (isSupabaseConfigured) remoteUpdateMaterial(id, data).catch(err => console.error('Erro ao atualizar material', err));
+    if (isSupabaseConfigured) remoteUpdateMaterial(id, data).catch(err => notifySyncError('Erro ao atualizar material', err));
   }, []);
 
   const addService: StoreContextValue['addService'] = useCallback((data) => {
     const service: ServiceItem = { ...data, id: newId(), organization_id: orgId, created_at: todayISO(), updated_at: todayISO() };
     setDb(prev => ({ ...prev, services: [service, ...prev.services] }));
-    if (isSupabaseConfigured) remoteInsertService(service).catch(err => console.error('Erro ao salvar serviço', err));
+    if (isSupabaseConfigured) remoteInsertService(service).catch(err => notifySyncError('Erro ao salvar serviço', err));
     return service;
   }, [orgId]);
 
   const updateService = useCallback((id: string, data: Partial<ServiceItem>) => {
     setDb(prev => ({ ...prev, services: prev.services.map(s => s.id === id ? { ...s, ...data, updated_at: todayISO() } : s) }));
-    if (isSupabaseConfigured) remoteUpdateService(id, data).catch(err => console.error('Erro ao atualizar serviço', err));
+    if (isSupabaseConfigured) remoteUpdateService(id, data).catch(err => notifySyncError('Erro ao atualizar serviço', err));
   }, []);
 
   const nextBudgetNumber = useCallback(() => {
@@ -266,18 +280,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       created_at: todayISO(), updated_at: todayISO(), ...data,
     };
     setDb(prev => ({ ...prev, budgets: [budget, ...prev.budgets] }));
-    if (isSupabaseConfigured) remoteInsertBudget(budget).catch(err => console.error('Erro ao salvar orçamento', err));
+    if (isSupabaseConfigured) remoteInsertBudget(budget).catch(err => notifySyncError('Erro ao salvar orçamento', err));
     return budget;
   }, [nextBudgetNumber, orgId]);
 
   const updateBudget = useCallback((id: string, data: Partial<Budget>) => {
     setDb(prev => ({ ...prev, budgets: prev.budgets.map(b => b.id === id ? { ...b, ...data, updated_at: todayISO() } : b) }));
-    if (isSupabaseConfigured) remoteUpdateBudget(id, data).catch(err => console.error('Erro ao atualizar orçamento', err));
+    if (isSupabaseConfigured) remoteUpdateBudget(id, data).catch(err => notifySyncError('Erro ao atualizar orçamento', err));
   }, []);
 
   const deleteBudget = useCallback((id: string) => {
     setDb(prev => ({ ...prev, budgets: prev.budgets.filter(b => b.id !== id) }));
-    if (isSupabaseConfigured) remoteDeleteBudget(id).catch(err => console.error('Erro ao excluir orçamento', err));
+    if (isSupabaseConfigured) remoteDeleteBudget(id).catch(err => notifySyncError('Erro ao excluir orçamento', err));
   }, []);
 
   const setBudgetStatus = useCallback((id: string, status: BudgetStatus) => {
@@ -287,7 +301,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         ? { ...b, status, historico_status: [...b.historico_status, { status, data: todayISO() }], updated_at: todayISO() }
         : b),
     }));
-    if (isSupabaseConfigured) remoteUpdateBudgetStatus(id, status).catch(err => console.error('Erro ao atualizar status do orçamento', err));
+    if (isSupabaseConfigured) remoteUpdateBudgetStatus(id, status).catch(err => notifySyncError('Erro ao atualizar status do orçamento', err));
   }, []);
 
   const convertBudgetToServiceOrder = useCallback((budgetId: string): ServiceOrder | null => {
@@ -317,15 +331,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         : b),
     }));
     if (isSupabaseConfigured) {
-      remoteInsertServiceOrder(order).catch(err => console.error('Erro ao criar ordem de serviço', err));
-      remoteUpdateBudgetStatus(budgetId, 'convertido_em_os').catch(err => console.error('Erro ao atualizar status do orçamento', err));
+      remoteInsertServiceOrder(order).catch(err => notifySyncError('Erro ao criar ordem de serviço', err));
+      remoteUpdateBudgetStatus(budgetId, 'convertido_em_os').catch(err => notifySyncError('Erro ao atualizar status do orçamento', err));
     }
     return order;
   }, [db.budgets, orgId]);
 
   const setServiceOrderStatus = useCallback((id: string, status: ServiceOrderStatus) => {
     setDb(prev => ({ ...prev, serviceOrders: prev.serviceOrders.map(o => o.id === id ? { ...o, status, updated_at: todayISO() } : o) }));
-    if (isSupabaseConfigured) remoteSetServiceOrderStatus(id, status).catch(err => console.error('Erro ao atualizar status da OS', err));
+    if (isSupabaseConfigured) remoteSetServiceOrderStatus(id, status).catch(err => notifySyncError('Erro ao atualizar status da OS', err));
   }, []);
 
   const toggleChecklistItem = useCallback((orderId: string, index: number) => {
@@ -345,14 +359,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         };
       }),
     }));
-    if (isSupabaseConfigured) remoteToggleChecklistItem(orderId, index, newValue).catch(err => console.error('Erro ao atualizar checklist', err));
+    if (isSupabaseConfigured) remoteToggleChecklistItem(orderId, index, newValue).catch(err => notifySyncError('Erro ao atualizar checklist', err));
   }, []);
 
   const addQuoteRequest: StoreContextValue['addQuoteRequest'] = useCallback((data) => {
     const request: QuoteRequest = { ...data, id: newId(), created_at: todayISO() };
     setDb(prev => ({ ...prev, quoteRequests: [request, ...prev.quoteRequests] }));
     if (isSupabaseConfigured) {
-      remoteInsertQuoteRequest({ ...request, organization_id: DEFAULT_ORG_ID }).catch(err => console.error('Erro ao enviar solicitação', err));
+      remoteInsertQuoteRequest({ ...request, organization_id: DEFAULT_ORG_ID }).catch(err => notifySyncError('Erro ao enviar solicitação', err));
     }
     return request;
   }, []);
@@ -360,19 +374,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const addOrcamentista: StoreContextValue['addOrcamentista'] = useCallback((data) => {
     const orcamentista: Orcamentista = { ...data, id: newId(), organization_id: orgId, created_at: todayISO(), updated_at: todayISO() };
     setDb(prev => ({ ...prev, orcamentistas: [orcamentista, ...prev.orcamentistas] }));
-    if (isSupabaseConfigured) remoteInsertOrcamentista(orcamentista).catch(err => console.error('Erro ao salvar orçamentista', err));
+    if (isSupabaseConfigured) remoteInsertOrcamentista(orcamentista).catch(err => notifySyncError('Erro ao salvar orçamentista', err));
     return orcamentista;
   }, [orgId]);
 
   const updateOrcamentista = useCallback((id: string, data: Partial<Orcamentista>) => {
     setDb(prev => ({ ...prev, orcamentistas: prev.orcamentistas.map(o => o.id === id ? { ...o, ...data, updated_at: todayISO() } : o) }));
-    if (isSupabaseConfigured) remoteUpdateOrcamentista(id, data).catch(err => console.error('Erro ao atualizar orçamentista', err));
+    if (isSupabaseConfigured) remoteUpdateOrcamentista(id, data).catch(err => notifySyncError('Erro ao atualizar orçamentista', err));
   }, []);
 
   const addCompromisso: StoreContextValue['addCompromisso'] = useCallback((data) => {
     const compromisso: Compromisso = { ...data, id: newId(), organization_id: orgId, created_at: todayISO(), updated_at: todayISO() };
     setDb(prev => ({ ...prev, compromissos: [...prev.compromissos, compromisso].sort((a, b) => a.data.localeCompare(b.data)) }));
-    if (isSupabaseConfigured) remoteInsertCompromisso(compromisso).catch(err => console.error('Erro ao salvar compromisso', err));
+    if (isSupabaseConfigured) remoteInsertCompromisso(compromisso).catch(err => notifySyncError('Erro ao salvar compromisso', err));
     return compromisso;
   }, [orgId]);
 
@@ -382,12 +396,29 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       compromissos: prev.compromissos.map(c => c.id === id ? { ...c, ...data, updated_at: todayISO() } : c)
         .sort((a, b) => a.data.localeCompare(b.data)),
     }));
-    if (isSupabaseConfigured) remoteUpdateCompromisso(id, data).catch(err => console.error('Erro ao atualizar compromisso', err));
+    if (isSupabaseConfigured) remoteUpdateCompromisso(id, data).catch(err => notifySyncError('Erro ao atualizar compromisso', err));
   }, []);
 
   const deleteCompromisso = useCallback((id: string) => {
     setDb(prev => ({ ...prev, compromissos: prev.compromissos.filter(c => c.id !== id) }));
-    if (isSupabaseConfigured) remoteDeleteCompromisso(id).catch(err => console.error('Erro ao excluir compromisso', err));
+    if (isSupabaseConfigured) remoteDeleteCompromisso(id).catch(err => notifySyncError('Erro ao excluir compromisso', err));
+  }, []);
+
+  const addPayment: StoreContextValue['addPayment'] = useCallback((data) => {
+    const payment: Payment = { ...data, id: newId(), organization_id: orgId, created_at: todayISO(), updated_at: todayISO() };
+    setDb(prev => ({ ...prev, payments: [payment, ...prev.payments] }));
+    if (isSupabaseConfigured) remoteInsertPayment(payment).catch(err => notifySyncError('Erro ao salvar pagamento', err));
+    return payment;
+  }, [orgId]);
+
+  const updatePayment = useCallback((id: string, data: Partial<Payment>) => {
+    setDb(prev => ({ ...prev, payments: prev.payments.map(p => p.id === id ? { ...p, ...data, updated_at: todayISO() } : p) }));
+    if (isSupabaseConfigured) remoteUpdatePayment(id, data).catch(err => notifySyncError('Erro ao atualizar pagamento', err));
+  }, []);
+
+  const deletePayment = useCallback((id: string) => {
+    setDb(prev => ({ ...prev, payments: prev.payments.filter(p => p.id !== id) }));
+    if (isSupabaseConfigured) remoteDeletePayment(id).catch(err => notifySyncError('Erro ao excluir pagamento', err));
   }, []);
 
   const value = useMemo<StoreContextValue>(() => ({
@@ -396,11 +427,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     db, user, login, logout, updateOrganization,
     addClient, updateClient, addMaterial, updateMaterial, addService, updateService,
     addBudget, updateBudget, deleteBudget, setBudgetStatus, convertBudgetToServiceOrder, setServiceOrderStatus, toggleChecklistItem, addQuoteRequest, addOrcamentista, updateOrcamentista,
-    addCompromisso, updateCompromisso, deleteCompromisso, nextBudgetNumber,
+    addCompromisso, updateCompromisso, deleteCompromisso, addPayment, updatePayment, deletePayment, nextBudgetNumber,
   }), [authLoading, db, user, login, logout, updateOrganization, addClient, updateClient, addMaterial, updateMaterial,
       addService, updateService, addBudget, updateBudget, deleteBudget, setBudgetStatus, convertBudgetToServiceOrder,
       setServiceOrderStatus, toggleChecklistItem, addQuoteRequest, addOrcamentista, updateOrcamentista,
-      addCompromisso, updateCompromisso, deleteCompromisso, nextBudgetNumber]);
+      addCompromisso, updateCompromisso, deleteCompromisso, addPayment, updatePayment, deletePayment, nextBudgetNumber]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
