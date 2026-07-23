@@ -35,6 +35,12 @@ export default function Settings() {
           <Field label="Prazo de validade padrão (dias)" value={String(form.prazo_validade_padrao_dias)} onChange={v => setForm(f => ({ ...f, prazo_validade_padrao_dias: Number(v) || 0 }))} />
           <Field label="Garantia padrão" value={form.garantia_padrao} onChange={v => setForm(f => ({ ...f, garantia_padrao: v }))} />
         </div>
+        <div>
+          <label className="text-xs text-gray-400">Frase de experiência (aparece no cabeçalho do PDF)</label>
+          <input value={form.experiencia ?? ''} onChange={e => setForm(f => ({ ...f, experiencia: e.target.value }))}
+            placeholder="Ex: Mais de 10 anos de atuação em instalações elétricas."
+            className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-[#f5c518]" />
+        </div>
         <button type="submit" className="ce-btn-glow bg-[#f5c518] text-[#16181d] font-semibold rounded-lg px-5 py-2.5 text-sm hover:bg-[#e0b60f]">Salvar configurações</button>
         {saved && <span className="ml-3 text-xs text-emerald-400">Salvo com sucesso.</span>}
       </form>

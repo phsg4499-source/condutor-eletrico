@@ -61,7 +61,7 @@ export function generateBudgetPdf(budget: Budget, client: Client, org: Organizat
       startY: y,
       head: [['Descrição', 'Qtd', 'Unid.', 'Valor unit.', 'Total']],
       body: servicos.map(i => [
-        i.nome, String(i.quantidade), i.unidade,
+        i.nome || '—', String(i.quantidade ?? ''), i.unidade || '—',
         formatMoney(i.valor_unitario),
         formatMoney(i.quantidade * i.valor_unitario - i.desconto),
       ]),
@@ -82,7 +82,7 @@ export function generateBudgetPdf(budget: Budget, client: Client, org: Organizat
       startY: y,
       head: [['Descrição', 'Qtd', 'Unid.', 'Valor unit.', 'Total']],
       body: materiais.map(i => [
-        i.nome, String(i.quantidade), i.unidade,
+        i.nome || '—', String(i.quantidade ?? ''), i.unidade || '—',
         formatMoney(i.valor_unitario),
         formatMoney(i.quantidade * i.valor_unitario - i.desconto),
       ]),
@@ -167,7 +167,7 @@ export function generateBudgetPdf(budget: Budget, client: Client, org: Organizat
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(190, 194, 202);
-    doc.text(org.experiencia, nameX, 21, { maxWidth: 110 });
+    doc.text(org.experiencia || 'Soluções elétricas com segurança e qualidade técnica.', nameX, 21, { maxWidth: 110 });
 
     // Selo do orçamento (canto superior direito)
     const pillW = 62;
@@ -340,7 +340,7 @@ export function generateBudgetPdf(budget: Budget, client: Client, org: Organizat
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
     doc.setTextColor(...WHITE);
-    doc.text(org.responsavel, margin, footerY + 8);
+    doc.text(org.responsavel || 'Condutor Elétrico', margin, footerY + 8);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(190, 194, 202);
@@ -349,7 +349,7 @@ export function generateBudgetPdf(budget: Budget, client: Client, org: Organizat
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
     doc.setTextColor(...ACCENT);
-    doc.text(org.nome_fantasia.toUpperCase(), pageWidth - margin, footerY + 8, { align: 'right' });
+    doc.text((org.nome_fantasia || 'Condutor Elétrico').toUpperCase(), pageWidth - margin, footerY + 8, { align: 'right' });
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(160, 165, 175);
