@@ -1,0 +1,13 @@
+{
+  "name": "Condutor Elétrico",
+  "short_name": "Condutor",
+  "description": "Sistema de orçamentos e gestão de serviços elétricos",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f1115",
+  "theme_color": "#16181d",
+  "icons": [
+    { "src": "/favicon.png", "sizes": "64x64", "type": "image/png" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

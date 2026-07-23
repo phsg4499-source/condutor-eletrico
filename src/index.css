@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+:root {
+  --color-graphite: #16181d;
+  --color-graphite-soft: #21242b;
+  --color-energy: #f5c518;
+  --color-energy-deep: #d9a606;
+}
+
+html, body, #root { height: 100%; }
+body { background-color: #0f1115; }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #3a3f4b; border-radius: 4px; }
+
+/* ===== Animações e efeitos visuais — Condutor Elétrico ===== */
+
+@keyframes ce-pulse-glow {
+  0%, 100% { filter: drop-shadow(0 0 2px rgba(245, 197, 24, 0.35)); }
+  50% { filter: drop-shadow(0 0 12px rgba(245, 197, 24, 0.75)); }
+}
+.ce-glow-pulse { animation: ce-pulse-glow 2.6s ease-in-out infinite; }
+
+@keyframes ce-dash {
+  to { stroke-dashoffset: 0; }
+}
+.ce-energy-path {
+  stroke-dasharray: 140;
+  stroke-dashoffset: 140;
+  animation: ce-dash 1.8s ease-out forwards, ce-pulse-glow 2.6s ease-in-out 1.8s infinite;
+}
+
+@keyframes ce-float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(20px, -25px) scale(1.05); }
+}
+.ce-blob { animation: ce-float 12s ease-in-out infinite; }
+.ce-blob-delay { animation-delay: -6s; }
+
+@keyframes ce-fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.ce-fade-up { animation: ce-fade-up 0.5s ease-out both; }
+.ce-fade-up-1 { animation-delay: .05s; }
+.ce-fade-up-2 { animation-delay: .1s; }
+.ce-fade-up-3 { animation-delay: .15s; }
+.ce-fade-up-4 { animation-delay: .2s; }
+
+@keyframes ce-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.ce-shimmer {
+  background: linear-gradient(110deg, transparent 40%, rgba(245,197,24,0.18) 50%, transparent 60%);
+  background-size: 200% 100%;
+  animation: ce-shimmer 2.4s ease-in-out infinite;
+}
+
+@keyframes ce-pop-in {
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1); }
+}
+.ce-pop-in { animation: ce-pop-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+@keyframes ce-toast-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.ce-toast-in { animation: ce-toast-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+@keyframes ce-count-tick {
+  from { opacity: 0.4; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.ce-count-tick { animation: ce-count-tick 0.3s ease-out; }
+
+.ce-btn-glow {
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.25s ease, background-color 0.15s ease;
+}
+.ce-btn-glow:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px -6px rgba(245, 197, 24, 0.45);
+}
+.ce-btn-glow:active { transform: translateY(0); }
+
+.ce-card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.ce-card-hover:hover {
+  transform: translateY(-2px);
+  border-color: rgba(245, 197, 24, 0.35);
+  box-shadow: 0 12px 32px -12px rgba(0,0,0,0.5);
+}
+
+.ce-nav-active {
+  box-shadow: 0 0 0 1px rgba(245,197,24,0.4), 0 6px 20px -6px rgba(245,197,24,0.55);
+}
+
+.ce-gradient-text {
+  background: linear-gradient(90deg, #f5c518, #ffdf7a, #f5c518);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: ce-shimmer 3.5s linear infinite;
+}
