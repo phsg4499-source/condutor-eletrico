@@ -1,16 +1,17 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import type {
-  Organization, Client, Material, ServiceItem, Budget, ServiceOrder, Payment, QuoteRequest, BudgetStatus, ServiceOrderStatus, Orcamentista,
+  Organization, Client, Material, ServiceItem, Budget, ServiceOrder, Payment, QuoteRequest, BudgetStatus, ServiceOrderStatus, Orcamentista, Compromisso,
 } from '../types';
 import {
-  demoOrganization, demoClients, demoMaterials, demoServices, demoBudgets, demoServiceOrders, demoPayments, demoOrcamentistas,
+  demoOrganization, demoClients, demoMaterials, demoServices, demoBudgets, demoServiceOrders, demoPayments, demoOrcamentistas, demoCompromissos,
 } from '../data/demoData';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import {
   DEFAULT_ORG_ID, fetchOrganizationData, remoteUpdateOrganization, remoteInsertClient, remoteUpdateClient,
   remoteInsertMaterial, remoteUpdateMaterial, remoteInsertService, remoteUpdateService, remoteInsertBudget,
-  remoteUpdateBudget, remoteUpdateBudgetStatus, remoteInsertServiceOrder, remoteSetServiceOrderStatus, remoteToggleChecklistItem,
+  remoteUpdateBudget, remoteDeleteBudget, remoteUpdateBudgetStatus, remoteInsertServiceOrder, remoteSetServiceOrderStatus, remoteToggleChecklistItem,
   remoteInsertQuoteRequest, remoteInsertOrcamentista, remoteUpdateOrcamentista,
+  remoteInsertCompromisso, remoteUpdateCompromisso, remoteDeleteCompromisso,
 } from './supabaseApi';
 import { todayISO } from './format';
 
@@ -37,6 +38,7 @@ interface DB {
   payments: Payment[];
   quoteRequests: QuoteRequest[];
   orcamentistas: Orcamentista[];
+  compromissos: Compromisso[];
 }
 
 function seedDB(): DB {
@@ -50,13 +52,14 @@ function seedDB(): DB {
     payments: demoPayments,
     quoteRequests: [],
     orcamentistas: demoOrcamentistas,
+    compromissos: demoCompromissos,
   };
 }
 
 function emptyDB(): DB {
   return {
     organization: demoOrganization,
-    clients: [], materials: [], services: [], budgets: [], serviceOrders: [], payments: [], quoteRequests: [], orcamentistas: [],
+    clients: [], materials: [], services: [], budgets: [], serviceOrders: [], payments: [], quoteRequests: [], orcamentistas: [], compromissos: [],
   };
 }
 
@@ -103,6 +106,7 @@ interface StoreContextValue {
   updateService: (id: string, data: Partial<ServiceItem>) => void;
   addBudget: (data: Partial<Budget>) => Budget;
   updateBudget: (id: string, data: Partial<Budget>) => void;
+  deleteBudget: (id: string) => void;
   setBudgetStatus: (id: string, status: BudgetStatus) => void;
   convertBudgetToServiceOrder: (budgetId: string) => ServiceOrder | null;
   setServiceOrderStatus: (id: string, status: ServiceOrderStatus) => void;
@@ -110,6 +114,9 @@ interface StoreContextValue {
   addQuoteRequest: (data: Omit<QuoteRequest, 'id' | 'created_at'>) => QuoteRequest;
   addOrcamentista: (data: Omit<Orcamentista, 'id' | 'organization_id' | 'created_at' | 'updated_at'>) => Orcamentista;
   updateOrcamentista: (id: string, data: Partial<Orcamentista>) => void;
+  addCompromisso: (data: Omit<Compromisso, 'id' | 'organization_id' | 'created_at' | 'updated_at'>) => Compromisso;
+  updateCompromisso: (id: string, data: Partial<Compromisso>) => void;
+  deleteCompromisso: (id: string) => void;
   nextBudgetNumber: () => string;
 }
 
@@ -268,6 +275,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (isSupabaseConfigured) remoteUpdateBudget(id, data).catch(err => console.error('Erro ao atualizar orçamento', err));
   }, []);
 
+  const deleteBudget = useCallback((id: string) => {
+    setDb(prev => ({ ...prev, budgets: prev.budgets.filter(b => b.id !== id) }));
+    if (isSupabaseConfigured) remoteDeleteBudget(id).catch(err => console.error('Erro ao excluir orçamento', err));
+  }, []);
+
   const setBudgetStatus = useCallback((id: string, status: BudgetStatus) => {
     setDb(prev => ({
       ...prev,
@@ -357,15 +369,38 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (isSupabaseConfigured) remoteUpdateOrcamentista(id, data).catch(err => console.error('Erro ao atualizar orçamentista', err));
   }, []);
 
+  const addCompromisso: StoreContextValue['addCompromisso'] = useCallback((data) => {
+    const compromisso: Compromisso = { ...data, id: newId(), organization_id: orgId, created_at: todayISO(), updated_at: todayISO() };
+    setDb(prev => ({ ...prev, compromissos: [...prev.compromissos, compromisso].sort((a, b) => a.data.localeCompare(b.data)) }));
+    if (isSupabaseConfigured) remoteInsertCompromisso(compromisso).catch(err => console.error('Erro ao salvar compromisso', err));
+    return compromisso;
+  }, [orgId]);
+
+  const updateCompromisso = useCallback((id: string, data: Partial<Compromisso>) => {
+    setDb(prev => ({
+      ...prev,
+      compromissos: prev.compromissos.map(c => c.id === id ? { ...c, ...data, updated_at: todayISO() } : c)
+        .sort((a, b) => a.data.localeCompare(b.data)),
+    }));
+    if (isSupabaseConfigured) remoteUpdateCompromisso(id, data).catch(err => console.error('Erro ao atualizar compromisso', err));
+  }, []);
+
+  const deleteCompromisso = useCallback((id: string) => {
+    setDb(prev => ({ ...prev, compromissos: prev.compromissos.filter(c => c.id !== id) }));
+    if (isSupabaseConfigured) remoteDeleteCompromisso(id).catch(err => console.error('Erro ao excluir compromisso', err));
+  }, []);
+
   const value = useMemo<StoreContextValue>(() => ({
     isDemoMode: !isSupabaseConfigured,
     authLoading,
     db, user, login, logout, updateOrganization,
     addClient, updateClient, addMaterial, updateMaterial, addService, updateService,
-    addBudget, updateBudget, setBudgetStatus, convertBudgetToServiceOrder, setServiceOrderStatus, toggleChecklistItem, addQuoteRequest, addOrcamentista, updateOrcamentista, nextBudgetNumber,
+    addBudget, updateBudget, deleteBudget, setBudgetStatus, convertBudgetToServiceOrder, setServiceOrderStatus, toggleChecklistItem, addQuoteRequest, addOrcamentista, updateOrcamentista,
+    addCompromisso, updateCompromisso, deleteCompromisso, nextBudgetNumber,
   }), [authLoading, db, user, login, logout, updateOrganization, addClient, updateClient, addMaterial, updateMaterial,
-      addService, updateService, addBudget, updateBudget, setBudgetStatus, convertBudgetToServiceOrder,
-      setServiceOrderStatus, toggleChecklistItem, addQuoteRequest, addOrcamentista, updateOrcamentista, nextBudgetNumber]);
+      addService, updateService, addBudget, updateBudget, deleteBudget, setBudgetStatus, convertBudgetToServiceOrder,
+      setServiceOrderStatus, toggleChecklistItem, addQuoteRequest, addOrcamentista, updateOrcamentista,
+      addCompromisso, updateCompromisso, deleteCompromisso, nextBudgetNumber]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }

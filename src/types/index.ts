@@ -235,6 +235,29 @@ export interface Payment {
   status: 'pendente' | 'parcial' | 'pago' | 'atrasado' | 'cancelado';
 }
 
+export type CompromissoTipo = 'visita_orcamento' | 'execucao_servico' | 'reuniao' | 'outro';
+export type CompromissoStatus = 'agendado' | 'concluido' | 'cancelado';
+
+export interface Compromisso {
+  id: string;
+  organization_id: string;
+  titulo: string;
+  tipo: CompromissoTipo;
+  data: string;
+  hora?: string;
+  client_id?: string | null;
+  cliente_nome_avulso?: string | null;
+  cliente_telefone_avulso?: string | null;
+  budget_id?: string | null;
+  service_order_id?: string | null;
+  orcamentista_id?: string | null;
+  local?: string;
+  observacoes?: string;
+  status: CompromissoStatus;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface QuoteRequest {
   id: string;
   nome: string;

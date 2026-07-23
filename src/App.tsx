@@ -8,6 +8,7 @@ import Clients from './pages/Clients';
 import Materials from './pages/Materials';
 import Services from './pages/Services';
 import Orcamentistas from './pages/Orcamentistas';
+import Agenda from './pages/Agenda';
 import Budgets from './pages/Budgets';
 import BudgetWizard from './pages/BudgetWizard';
 import BudgetView from './pages/BudgetView';
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/app" element={<Layout />}>
             <Route index element={<Dashboard />} />
+            <Route path="agenda" element={<Agenda />} />
             <Route path="clientes" element={<Clients />} />
             <Route path="materiais" element={<Materials />} />
             <Route path="servicos" element={<Services />} />

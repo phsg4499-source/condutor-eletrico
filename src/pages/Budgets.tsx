@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Trash2 } from 'lucide-react';
 import { useStore } from '../lib/store';
+import { useToast } from '../lib/toast';
 import { calculateBudget } from '../lib/calculations';
 import { formatMoney, formatDate } from '../lib/format';
 import { BudgetStatusBadge, budgetStatusOptions } from '../components/StatusBadge';
@@ -9,7 +10,14 @@ import { resolveClienteInfo } from '../lib/clientInfo';
 import type { BudgetStatus } from '../types';
 
 export default function Budgets() {
-  const { db } = useStore();
+  const { db, deleteBudget } = useStore();
+  const toast = useToast();
+
+  function handleDelete(id: string, numero: string) {
+    if (!window.confirm(`Tem certeza que quer excluir o orçamento nº ${numero}? Essa ação não pode ser desfeita.`)) return;
+    deleteBudget(id);
+    toast.show('Orçamento excluído.', 'info');
+  }
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<BudgetStatus | 'todos'>('todos');
 
@@ -73,7 +81,12 @@ export default function Budgets() {
                   <td className="px-5 py-3 text-gray-300">{formatDate(b.data_emissao)}</td>
                   <td className="px-5 py-3 text-white font-medium">{formatMoney(totals.totalVenda)}</td>
                   <td className="px-5 py-3"><BudgetStatusBadge status={b.status} /></td>
-                  <td className="px-5 py-3 text-right"><Link to={`/app/orcamentos/${b.id}`} className="text-xs text-[#f5c518] hover:underline">Abrir</Link></td>
+                  <td className="px-5 py-3 text-right whitespace-nowrap">
+                    <Link to={`/app/orcamentos/${b.id}`} className="text-xs text-[#f5c518] hover:underline">Abrir</Link>
+                    <button onClick={() => handleDelete(b.id, b.numero)} title="Excluir orçamento" className="ml-3 text-gray-500 hover:text-red-400 align-middle">
+                      <Trash2 size={14} className="inline" />
+                    </button>
+                  </td>
                 </tr>
               );
             })}

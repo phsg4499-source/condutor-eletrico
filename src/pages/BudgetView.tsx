@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Download, MessageCircle, ArrowLeft, Repeat, Pencil } from 'lucide-react';
+import { Download, MessageCircle, ArrowLeft, Repeat, Pencil, Trash2 } from 'lucide-react';
 import { useStore } from '../lib/store';
 import { useToast } from '../lib/toast';
 import { calculateBudget, budgetAlerts } from '../lib/calculations';
@@ -13,7 +13,7 @@ import type { BudgetStatus } from '../types';
 export default function BudgetView() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { db, setBudgetStatus, convertBudgetToServiceOrder } = useStore();
+  const { db, setBudgetStatus, convertBudgetToServiceOrder, deleteBudget } = useStore();
   const toast = useToast();
   const budget = db.budgets.find(b => b.id === id);
 
@@ -59,6 +59,16 @@ export default function BudgetView() {
     }
   }
 
+  function handleDelete() {
+    const confirmado = window.confirm(
+      `Tem certeza que quer excluir o orçamento nº ${budget!.numero}? Essa ação não pode ser desfeita.`,
+    );
+    if (!confirmado) return;
+    deleteBudget(budget!.id);
+    toast.show('Orçamento excluído.', 'info');
+    navigate('/app/orcamentos');
+  }
+
   return (
     <div className="space-y-6 max-w-4xl">
       <Link to="/app/orcamentos" className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-white"><ArrowLeft size={16} /> Voltar</Link>
@@ -90,9 +100,12 @@ export default function BudgetView() {
           </button>
         )}
         <select value={budget.status} onChange={e => { setBudgetStatus(budget.id, e.target.value as BudgetStatus); toast.show('Status atualizado.', 'info'); }}
-          className="bg-[#16181d] border border-white/10 rounded-lg px-3 py-2 text-sm text-white ml-auto">
+          className="bg-[#16181d] border border-white/10 rounded-lg px-3 py-2 text-sm text-white sm:ml-auto">
           {budgetStatusOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select>
+        <button onClick={handleDelete} className="flex items-center gap-2 border border-red-500/20 text-red-400 px-4 py-2 rounded-lg text-sm hover:bg-red-500/10">
+          <Trash2 size={16} /> Excluir
+        </button>
       </div>
 
       <div className="bg-[#16181d] border border-white/5 rounded-xl p-5 space-y-4">

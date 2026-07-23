@@ -1,4 +1,4 @@
-import type { BudgetStatus, ServiceOrderStatus } from '../types';
+import type { BudgetStatus, ServiceOrderStatus, CompromissoStatus } from '../types';
 
 const budgetLabels: Record<BudgetStatus, string> = {
   rascunho: 'Rascunho', em_elaboracao: 'Em elaboração', aguardando_vistoria: 'Aguardando vistoria',
@@ -38,5 +38,17 @@ export function ServiceOrderStatusBadge({ status }: { status: ServiceOrderStatus
   return <span className={`text-xs px-2 py-1 rounded-full text-white ${osColors[status]}`}>{osLabels[status]}</span>;
 }
 
+const compromissoLabels: Record<CompromissoStatus, string> = {
+  agendado: 'Agendado', concluido: 'Concluído', cancelado: 'Cancelado',
+};
+const compromissoColors: Record<CompromissoStatus, string> = {
+  agendado: 'bg-blue-600', concluido: 'bg-emerald-600', cancelado: 'bg-gray-700',
+};
+
+export function CompromissoStatusBadge({ status }: { status: CompromissoStatus }) {
+  return <span className={`text-xs px-2 py-1 rounded-full text-white ${compromissoColors[status]}`}>{compromissoLabels[status]}</span>;
+}
+
 export const budgetStatusOptions = Object.entries(budgetLabels) as [BudgetStatus, string][];
 export const serviceOrderStatusOptions = Object.entries(osLabels) as [ServiceOrderStatus, string][];
+export const compromissoStatusOptions = Object.entries(compromissoLabels) as [CompromissoStatus, string][];

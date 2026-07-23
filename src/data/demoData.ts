@@ -1,6 +1,6 @@
 // Dados de demonstração — CLARAMENTE FICTÍCIOS.
 // Não representam preços oficiais de mercado nem documentos reais de pessoas.
-import type { Organization, Client, Material, ServiceItem, Budget, ServiceOrder, Payment, Orcamentista } from '../types';
+import type { Organization, Client, Material, ServiceItem, Budget, ServiceOrder, Payment, Orcamentista, Compromisso } from '../types';
 import { todayISO, addDays } from '../lib/format';
 
 export const ORG_ID = 'org-condutor-eletrico';
@@ -10,8 +10,8 @@ export const demoOrganization: Organization = {
   razao_social: 'Condutor Elétrico Serviços Elétricos Ltda (dado demonstrativo)',
   nome_fantasia: 'Condutor Elétrico',
   documento: '00.000.000/0001-00 (demonstrativo)',
-  telefone: '(11) 90000-0000',
-  whatsapp: '5511900000000',
+  telefone: '(31) 99115-4659',
+  whatsapp: '5531991154659',
   email: 'contato@condutoreletrico.com.br',
   endereco: 'Rua das Instalações, 123',
   cidade: 'São Paulo',
@@ -36,7 +36,7 @@ export const demoOrganization: Organization = {
 
 export const demoOrcamentistas: Orcamentista[] = [
   {
-    id: 'orcm-1', organization_id: ORG_ID, nome: 'Felipe Ribeiro', telefone: '(11) 90000-0000',
+    id: 'orcm-1', organization_id: ORG_ID, nome: 'Felipe Ribeiro', telefone: '(31) 99115-4659',
     email: 'felipe@condutoreletrico.com.br', cargo: 'Responsável técnico e comercial', status: 'ativo',
     aparece_no_pdf: true, observacoes: 'Fundador — mais de 10 anos de experiência.',
     created_at: todayISO(), updated_at: todayISO(),
@@ -263,4 +263,24 @@ export const demoServiceOrders: ServiceOrder[] = [
 export const demoPayments: Payment[] = [
   { id: 'pag-1', organization_id: ORG_ID, client_id: 'cli-1', budget_id: 'orc-1', descricao: 'Orçamento 2026-0001', valor: 495.7, vencimento: addDays(todayISO(), 1), forma_pagamento: 'pix', status: 'pendente' },
   { id: 'pag-2', organization_id: ORG_ID, client_id: 'cli-5', budget_id: 'orc-5', descricao: 'Atendimento emergencial', valor: 470, vencimento: addDays(todayISO(), -7), data_recebimento: addDays(todayISO(), -6), forma_pagamento: 'pix', status: 'pago' },
+];
+
+export const demoCompromissos: Compromisso[] = [
+  {
+    id: 'cp-1', organization_id: ORG_ID, titulo: 'Instalação de circuito para ar-condicionado', tipo: 'execucao_servico',
+    data: addDays(todayISO(), 2), hora: '09:00', client_id: 'cli-1', budget_id: 'orc-1', service_order_id: 'os-1',
+    orcamentista_id: 'orcm-1', local: 'Residência do cliente', status: 'agendado',
+    created_at: todayISO(), updated_at: todayISO(),
+  },
+  {
+    id: 'cp-2', organization_id: ORG_ID, titulo: 'Visita técnica para orçamento presencial', tipo: 'visita_orcamento',
+    data: addDays(todayISO(), 1), hora: '14:30', cliente_nome_avulso: 'Marcos Andrade (fictício)',
+    cliente_telefone_avulso: '(11) 90000-9999', orcamentista_id: 'orcm-1', status: 'agendado',
+    created_at: todayISO(), updated_at: todayISO(),
+  },
+  {
+    id: 'cp-3', organization_id: ORG_ID, titulo: 'Reunião com construtora sobre etapa 2 da obra', tipo: 'reuniao',
+    data: addDays(todayISO(), 4), hora: '10:00', client_id: 'cli-4', orcamentista_id: 'orcm-1', status: 'agendado',
+    created_at: todayISO(), updated_at: todayISO(),
+  },
 ];
