@@ -30,11 +30,11 @@ export default function Layout() {
   const [showTrialModal, setShowTrialModal] = useState(false);
   const wasLoggedIn = useRef(false);
 
-  // O tour e o aviso de período de teste aparecem automaticamente em toda nova entrada
-  // no sistema (login ou sessão restaurada).
+  // O guia de introdução (tour) não abre mais sozinho — fica disponível a qualquer momento pelo
+  // ícone de ajuda (?) no cabeçalho. O aviso de período de teste continua aparecendo em toda nova
+  // entrada no sistema (login ou sessão restaurada).
   useEffect(() => {
     if (user && !wasLoggedIn.current) {
-      setShowOnboarding(true);
       setShowTrialModal(true);
     }
     wasLoggedIn.current = Boolean(user);

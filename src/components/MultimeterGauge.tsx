@@ -56,7 +56,6 @@ export default function MultimeterGauge({ recebido, meta, percentual, aReceber =
   const start = pointAt(0);
   const progressEnd = pointAt(percentual);
   const trackEnd = pointAt(100);
-  const overcarga = percentual > 100;
   const falta = Math.max(0, meta - recebido);
   const dica = useMemo(() => comoChegarAoTopo(falta, aReceber), [falta, aReceber]);
 
@@ -70,7 +69,7 @@ export default function MultimeterGauge({ recebido, meta, percentual, aReceber =
   const needleAngle = pointAt(Math.min(percentual, 100));
 
   return (
-    <div className="ce-glass-card-glow relative overflow-hidden rounded-2xl bg-gradient-to-b from-[#1a1d24] to-[#121419] border-2 border-[#f5c518]/25 p-6 sm:p-8">
+    <div className="ce-neon-pulse relative overflow-hidden rounded-2xl bg-gradient-to-b from-[#1a1d24] to-[#121419] border-2 border-[#f5c518]/40 p-6 sm:p-8">
       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#3a5570] via-[#c98f1e] to-[#ffd93d]" />
       <div className="absolute inset-0 ce-grid-bg opacity-[0.08] pointer-events-none" />
       <div className="relative flex flex-col lg:flex-row items-center lg:items-stretch gap-6">
@@ -96,14 +95,18 @@ export default function MultimeterGauge({ recebido, meta, percentual, aReceber =
             <path
               d={`M ${start.x} ${start.y} A ${R} ${R} 0 0 1 ${progressEnd.x} ${progressEnd.y}`}
               fill="none" stroke="url(#ce-gauge-gradient)" strokeWidth={STROKE} strokeLinecap="round"
-              style={{ filter: overcarga ? 'drop-shadow(0 0 10px rgba(255,217,61,0.65))' : undefined }}
+              style={{ filter: `drop-shadow(0 0 ${8 + (Math.min(percentual, 100) / 100) * 14}px ${band.color}aa)` }}
             />
 
             <g className="ce-needle-wobble" style={{ transformOrigin: `${CX}px ${CY}px` }}>
               <line x1={CX} y1={CY} x2={needleAngle.x + (needleAngle.x - CX) * -0.12} y2={needleAngle.y + (needleAngle.y - CY) * -0.12} stroke="#e5e7eb" strokeWidth={1.5} opacity={0.5} />
-              <line x1={CX} y1={CY} x2={needleAngle.x} y2={needleAngle.y} stroke="#f5f5f4" strokeWidth={3.5} strokeLinecap="round" style={{ filter: 'drop-shadow(0 0 4px rgba(245,245,244,0.6))' }} />
+              <line
+                x1={CX} y1={CY} x2={needleAngle.x} y2={needleAngle.y}
+                stroke="#fff8e1" strokeWidth={4} strokeLinecap="round"
+                style={{ filter: 'drop-shadow(0 0 6px rgba(255,217,61,0.95)) drop-shadow(0 0 14px rgba(245,197,24,0.7))' }}
+              />
             </g>
-            <circle cx={CX} cy={CY} r={10} fill="#16181d" stroke={band.color} strokeWidth={2.5} />
+            <circle cx={CX} cy={CY} r={11} fill="#16181d" stroke={band.color} strokeWidth={3} style={{ filter: `drop-shadow(0 0 6px ${band.color}aa)` }} />
           </svg>
           <div className="absolute inset-x-0 bottom-3 flex flex-col items-center gap-1">
             <Zap size={18} className="text-[#f5c518] ce-glow-pulse" />

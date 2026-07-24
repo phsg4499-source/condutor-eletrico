@@ -233,7 +233,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       return loadFromSession(data.user.id, data.user.email ?? email);
     }
     if (email.trim().toLowerCase() === DEMO_ADMIN_EMAIL && password === DEMO_ADMIN_PASSWORD) {
-      const authUser: AuthUser = { email, nome: 'Felipe Ribeiro', cargo: 'administrador', organizationId: 'org-condutor-eletrico' };
+      const authUser: AuthUser = { email, nome: 'Sansão', cargo: 'administrador', organizationId: 'org-condutor-eletrico' };
       setUser(authUser);
       localStorage.setItem(SESSION_KEY, JSON.stringify(authUser));
       return { ok: true };
