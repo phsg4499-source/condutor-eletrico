@@ -130,7 +130,7 @@ export default function Dashboard() {
       </div>
 
       <div className="ce-fade-up">
-        <MultimeterGauge recebido={stats.recebidoNoMes} meta={stats.meta} percentual={stats.percentualMeta} />
+        <MultimeterGauge recebido={stats.recebidoNoMes} meta={stats.meta} percentual={stats.percentualMeta} aReceber={stats.aReceber} />
         <p className="text-xs text-gray-500 mt-2 text-right">
           <Link to="/app/configuracoes" className="text-[#f5c518] hover:underline">Ajustar meta mensal</Link>
         </p>
