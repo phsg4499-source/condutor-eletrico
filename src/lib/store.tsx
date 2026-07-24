@@ -101,6 +101,9 @@ function describeSupabaseError(err: unknown, contexto: string, acao: 'salvar' | 
   if (code === '42501' || /row-level security|permission denied|policy/i.test(message)) {
     return `Você não possui permissão para ${acao} este registro.`;
   }
+  if (code === '23505' || /duplicate key value violates unique constraint/i.test(message)) {
+    return 'Esse número já está em uso. Tente salvar novamente — o sistema vai gerar um novo número automaticamente.';
+  }
   if (/failed to fetch|networkerror|network request failed|load failed/i.test(message)) {
     return 'Ocorreu uma falha de conexão. Nenhuma alteração foi confirmada.';
   }
@@ -292,15 +295,33 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const nextBudgetNumber = useCallback(() => {
+    // Baseado no MAIOR número já usado no ano (não na quantidade de orçamentos existentes).
+    // Antes contava quantos orçamentos existiam e somava 1 — se um orçamento fosse excluído no
+    // meio do caminho, o próximo número gerado colidia com um número já usado por outro orçamento
+    // (erro "duplicate key value violates unique constraint budgets_organization_id_numero_key").
     const year = new Date().getFullYear();
-    const count = db.budgets.filter(b => b.numero.startsWith(String(year))).length + 1;
-    return `${year}-${String(count).padStart(4, '0')}`;
+    const prefix = `${year}-`;
+    const numerosExistentes = new Set(db.budgets.map(b => b.numero));
+    const maiorSequencia = db.budgets.reduce((max, b) => {
+      if (!b.numero.startsWith(prefix)) return max;
+      const seq = parseInt(b.numero.slice(prefix.length), 10);
+      return Number.isFinite(seq) && seq > max ? seq : max;
+    }, 0);
+    let seq = maiorSequencia + 1;
+    let numero = `${prefix}${String(seq).padStart(4, '0')}`;
+    // Garantia extra contra colisão (ex.: numeração antiga fora do padrão, ou estado local
+    // momentaneamente desatualizado): se ainda assim colidir, avança até achar um número livre.
+    while (numerosExistentes.has(numero)) {
+      seq += 1;
+      numero = `${prefix}${String(seq).padStart(4, '0')}`;
+    }
+    return numero;
   }, [db.budgets]);
 
   const addBudget: StoreContextValue['addBudget'] = useCallback(async (data) => {
-    const numero = data.numero || nextBudgetNumber();
+    const numeroDesejado = data.numero || nextBudgetNumber();
     const budget: Budget = {
-      id: newId(), organization_id: orgId, numero, titulo: '', tipo_servico: 'Instalação',
+      id: newId(), organization_id: orgId, numero: numeroDesejado, titulo: '', tipo_servico: 'Instalação',
       local_servico: '', data_emissao: todayISO(), validade_dias: 10, responsavel: 'Felipe Ribeiro',
       status: 'rascunho', itens: [], custos_extras: [], desconto_percentual: 0, desconto_valor: 0,
       forma_pagamento: 'pix', entrada: 0, parcelas: 1, garantia: '90 dias',
@@ -318,6 +339,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       await remoteInsertBudget(budget);
       return { budget, ok: true as const };
     } catch (err) {
+      // Colisão de número (ex.: número já usado por outro orçamento, estado local momentaneamente
+      // desatualizado ou duas abas criando ao mesmo tempo): tenta uma única vez com o próximo
+      // número livre antes de desistir e mostrar erro — sem incomodar o usuário por algo que o
+      // próprio sistema consegue resolver sozinho.
+      const codigo = (err as { code?: string } | null)?.code;
+      const mensagemNumeroDuplicado = /numero/i.test((err as { message?: string } | null)?.message ?? '') || codigo === '23505';
+      if (mensagemNumeroDuplicado && !data.numero) {
+        const numeroAlternativo = nextBudgetNumber();
+        if (numeroAlternativo !== numeroDesejado) {
+          const budgetRetry: Budget = { ...budget, numero: numeroAlternativo };
+          try {
+            await remoteInsertBudget(budgetRetry);
+            setDb(prev => ({ ...prev, budgets: prev.budgets.map(b => b.id === budget.id ? budgetRetry : b) }));
+            return { budget: budgetRetry, ok: true as const };
+          } catch (retryErr) {
+            setDb(prev => ({ ...prev, budgets: prev.budgets.filter(b => b.id !== budget.id) }));
+            return { budget, ok: false as const, error: describeSupabaseError(retryErr, 'o orçamento', 'salvar') };
+          }
+        }
+      }
       setDb(prev => ({ ...prev, budgets: prev.budgets.filter(b => b.id !== budget.id) }));
       return { budget, ok: false as const, error: describeSupabaseError(err, 'o orçamento', 'salvar') };
     }
