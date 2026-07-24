@@ -30,6 +30,7 @@ export const demoOrganization: Organization = {
   impostos_estimados_percentual: 6,
   responsavel: 'Felipe Ribeiro',
   experiencia: 'Mais de 10 anos de atuação em instalações elétricas residenciais, comerciais, prediais e industriais.',
+  meta_faturamento_mensal: 25000,
   created_at: todayISO(),
   updated_at: todayISO(),
 };
@@ -176,6 +177,7 @@ function emptyTotalsBudget(over: Partial<Budget>): Budget {
     local_servico: '', data_emissao: todayISO(), validade_dias: 10, responsavel: 'Felipe Ribeiro', orcamentista_id: 'orcm-1',
     status: 'rascunho', itens: [], custos_extras: [], desconto_percentual: 0, desconto_valor: 0,
     forma_pagamento: 'pix', entrada: 0, parcelas: 1, garantia: '90 dias', historico_status: [],
+    link_publico_token: `demo-token-${over.id ?? ''}`,
     created_at: todayISO(), updated_at: todayISO(), ...over,
   };
 }

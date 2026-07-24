@@ -1,32 +1,29 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Download, MessageCircle, ArrowLeft, Repeat, Pencil, Trash2, Plus, Wallet } from 'lucide-react';
+import { Download, MessageCircle, ArrowLeft, Repeat, Pencil, Trash2, Plus, Wallet, CheckCircle2, FileSignature } from 'lucide-react';
 import { useStore } from '../lib/store';
 import { useToast } from '../lib/toast';
 import { calculateBudget, budgetAlerts } from '../lib/calculations';
-import { formatMoney, formatDate, addDays, todayISO } from '../lib/format';
+import { formatMoney, formatDate, addDays } from '../lib/format';
 import { BudgetStatusBadge, budgetStatusOptions } from '../components/StatusBadge';
 import { generateBudgetPdf } from '../lib/pdf';
+import { generateServiceContractPdf } from '../lib/contract';
 import { budgetWhatsappMessage, whatsappLink } from '../lib/whatsapp';
 import { resolveClienteInfo } from '../lib/clientInfo';
-import type { BudgetStatus, FormaPagamento, Payment, PaymentStatus } from '../types';
-
-const formasPagamento: { value: FormaPagamento; label: string }[] = [
-  { value: 'pix', label: 'Pix' }, { value: 'dinheiro', label: 'Dinheiro' }, { value: 'transferencia', label: 'Transferência' },
-  { value: 'boleto', label: 'Boleto' }, { value: 'debito', label: 'Cartão de débito' }, { value: 'credito', label: 'Cartão de crédito' },
-  { value: 'entrada_parcelas', label: 'Entrada + parcelas' }, { value: 'a_combinar', label: 'A combinar' },
-];
-
-const paymentStatusLabels: Record<PaymentStatus, string> = {
-  pendente: 'Pendente', parcial: 'Parcial', pago: 'Pago', atrasado: 'Atrasado', cancelado: 'Cancelado', renegociado: 'Renegociado',
-};
+import {
+  PaymentForm, MarcarRecebidoModal, formasPagamento, paymentStatusLabels,
+  grupoFiltroOptions, paymentMatchesGrupo, applySaldoReconciliation, getEffectivePaymentStatus, type GrupoFiltroPagamento,
+} from '../components/PaymentForm';
+import type { BudgetStatus, Payment } from '../types';
 
 export default function BudgetView() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { db, setBudgetStatus, convertBudgetToServiceOrder, deleteBudget, addPayment, deletePayment } = useStore();
+  const { db, setBudgetStatus, convertBudgetToServiceOrder, deleteBudget, addPayment, updatePayment, deletePayment } = useStore();
   const toast = useToast();
   const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [marcarRecebido, setMarcarRecebido] = useState<Payment | null>(null);
+  const [grupoFiltro, setGrupoFiltro] = useState<GrupoFiltroPagamento>('todos');
   const budget = db.budgets.find(b => b.id === id);
 
   if (!budget) {
@@ -40,11 +37,12 @@ export default function BudgetView() {
   const cliente = resolveClienteInfo(budget, db.clients);
   const totals = calculateBudget(budget);
   const alerts = budgetAlerts(budget, totals, db.organization.margem_minima_percentual);
-  const publicLink = `${window.location.origin}/proposta/${budget.id}`;
+  const publicLink = `${window.location.origin}/proposta/${budget.link_publico_token}`;
 
   const budgetPayments = db.payments.filter(p => p.budget_id === budget.id).sort((a, b) => (b.data_recebimento ?? b.vencimento ?? '').localeCompare(a.data_recebimento ?? a.vencimento ?? ''));
   const totalPago = budgetPayments.filter(p => p.status === 'pago').reduce((acc, p) => acc + p.valor, 0);
   const saldoReceber = Math.max(0, totals.totalVenda - totalPago);
+  const budgetPaymentsFiltrados = budgetPayments.filter(p => paymentMatchesGrupo(getEffectivePaymentStatus(p), grupoFiltro));
 
   function handleDownloadPdf() {
     try {
@@ -54,6 +52,18 @@ export default function BudgetView() {
     } catch (err) {
       console.error('Erro ao gerar PDF:', err);
       toast.show(`Não foi possível gerar o PDF: ${err instanceof Error ? err.message : 'erro desconhecido'}`, 'warning');
+    }
+  }
+
+  function handleDownloadContract() {
+    try {
+      const client = budget!.client_id ? db.clients.find(c => c.id === budget!.client_id) : undefined;
+      const doc = generateServiceContractPdf(budget!, cliente, client, db.organization);
+      doc.save(`contrato-orcamento-${budget!.numero}.pdf`);
+      toast.show('Contrato gerado e baixado.');
+    } catch (err) {
+      console.error('Erro ao gerar contrato:', err);
+      toast.show(`Não foi possível gerar o contrato: ${err instanceof Error ? err.message : 'erro desconhecido'}`, 'warning');
     }
   }
 
@@ -72,6 +82,27 @@ export default function BudgetView() {
     if (order) {
       toast.show('Orçamento convertido em ordem de serviço!');
       navigate(`/app/ordens-servico/${order.id}`);
+    }
+  }
+
+  function handleStatusChange(newStatus: BudgetStatus) {
+    setBudgetStatus(budget!.id, newStatus);
+    toast.show('Status atualizado.', 'info');
+
+    if (newStatus === 'aprovado' || newStatus === 'aprovado_parcialmente') {
+      navigate('/app/agenda', {
+        state: {
+          prefillCompromisso: {
+            titulo: `Execução — Orçamento ${budget!.numero}`,
+            tipo: 'execucao_servico',
+            local: budget!.local_servico || undefined,
+            budget_id: budget!.id,
+            client_id: budget!.client_id ?? undefined,
+            cliente_nome_avulso: budget!.cliente_nome_avulso ?? undefined,
+            cliente_telefone_avulso: budget!.cliente_telefone_avulso ?? undefined,
+          },
+        },
+      });
     }
   }
 
@@ -107,15 +138,18 @@ export default function BudgetView() {
         <button onClick={handleDownloadPdf} className="ce-btn-glow flex items-center gap-2 bg-[#f5c518] text-[#16181d] font-semibold px-4 py-2 rounded-lg text-sm hover:bg-[#e0b60f]">
           <Download size={16} /> Gerar PDF
         </button>
+        <button onClick={handleDownloadContract} className="flex items-center gap-2 border border-white/10 text-gray-200 px-4 py-2 rounded-lg text-sm hover:bg-white/5">
+          <FileSignature size={16} /> Gerar contrato
+        </button>
         <button onClick={handleWhatsapp} className="flex items-center gap-2 bg-emerald-600 text-white font-semibold px-4 py-2 rounded-lg text-sm hover:bg-emerald-500">
           <MessageCircle size={16} /> Enviar por WhatsApp
         </button>
-        {budget.status === 'aprovado' && (
+        {(budget.status === 'aprovado' || budget.status === 'aprovado_parcialmente') && (
           <button onClick={handleConvert} className="flex items-center gap-2 border border-white/10 text-gray-200 px-4 py-2 rounded-lg text-sm hover:bg-white/5">
             <Repeat size={16} /> Converter em ordem de serviço
           </button>
         )}
-        <select value={budget.status} onChange={e => { setBudgetStatus(budget.id, e.target.value as BudgetStatus); toast.show('Status atualizado.', 'info'); }}
+        <select value={budget.status} onChange={e => handleStatusChange(e.target.value as BudgetStatus)}
           className="bg-[#16181d] border border-white/10 rounded-lg px-3 py-2 text-sm text-white sm:ml-auto">
           {budgetStatusOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select>
@@ -196,9 +230,17 @@ export default function BudgetView() {
           </button>
         </div>
 
-        {budget.status === 'aprovado' && budgetPayments.length === 0 && (
-          <div className="bg-[#f5c518]/10 border border-[#f5c518]/20 rounded-lg px-4 py-3 text-xs text-amber-300">
-            Orçamento aprovado — registre o pagamento do sinal combinado na negociação para acompanhar o saldo restante.
+        {(budget.status === 'aprovado' || budget.status === 'aprovado_parcialmente') && budgetPayments.length === 0 && (
+          <div className="bg-[#f5c518]/10 border border-[#f5c518]/20 rounded-lg px-4 py-3 text-xs text-amber-300 space-y-2">
+            <p>Orçamento aprovado — registre o pagamento do sinal combinado na negociação para acompanhar o saldo restante.</p>
+            <button
+              onClick={() => {
+                applySaldoReconciliation(db.payments, { budget, novoSaldo: totals.totalVenda }, { addPayment, updatePayment, deletePayment });
+                toast.show('Valor total lançado como a receber.');
+              }}
+              className="text-xs underline text-amber-200 hover:text-white">
+              Ainda não recebi nada — lançar o valor total como a receber
+            </button>
           </div>
         )}
 
@@ -213,19 +255,41 @@ export default function BudgetView() {
           </div>
         </div>
 
+        {budgetPayments.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {grupoFiltroOptions.map(g => (
+              <button key={g.value} onClick={() => setGrupoFiltro(g.value)}
+                className={`px-3 py-1 rounded-full text-[11px] font-medium border transition ${
+                  grupoFiltro === g.value ? 'bg-[#f5c518] text-[#16181d] border-[#f5c518]' : 'border-white/10 text-gray-400 hover:text-white hover:border-white/30'
+                }`}>
+                {g.label}
+              </button>
+            ))}
+          </div>
+        )}
+
         {budgetPayments.length === 0 ? (
           <p className="text-xs text-gray-500">Nenhum pagamento registrado ainda.</p>
+        ) : budgetPaymentsFiltrados.length === 0 ? (
+          <p className="text-xs text-gray-500">Nenhum pagamento neste filtro.</p>
         ) : (
           <div className="space-y-2">
-            {budgetPayments.map(p => (
+            {budgetPaymentsFiltrados.map(p => (
               <div key={p.id} className="flex items-center justify-between bg-[#0f1115] border border-white/5 rounded-lg px-3 py-2.5">
                 <div>
                   <p className="text-sm text-white">{formatMoney(p.valor)} <span className="text-xs text-gray-500">— {p.forma_pagamento ? formasPagamento.find(f => f.value === p.forma_pagamento)?.label : '—'}</span></p>
-                  <p className="text-[11px] text-gray-500">{formatDate(p.data_recebimento ?? p.vencimento ?? '')} · {paymentStatusLabels[p.status]}</p>
+                  <p className="text-[11px] text-gray-500">{formatDate(p.data_recebimento ?? p.vencimento ?? '')} · {paymentStatusLabels[getEffectivePaymentStatus(p)]}</p>
                 </div>
-                <button onClick={() => { deletePayment(p.id); toast.show('Pagamento excluído.', 'info'); }} className="text-gray-500 hover:text-red-400">
-                  <Trash2 size={14} />
-                </button>
+                <div className="flex items-center gap-3">
+                  {p.status !== 'pago' && p.status !== 'cancelado' && (
+                    <button onClick={() => setMarcarRecebido(p)} title="Marcar como recebido" className="text-gray-500 hover:text-emerald-400">
+                      <CheckCircle2 size={15} />
+                    </button>
+                  )}
+                  <button onClick={() => { deletePayment(p.id); toast.show('Pagamento excluído.', 'info'); }} className="text-gray-500 hover:text-red-400">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -246,14 +310,28 @@ export default function BudgetView() {
 
       {showPaymentForm && (
         <PaymentForm
-          budgetId={budget.id}
-          clientId={budget.client_id}
-          numero={budget.numero}
+          budgets={db.budgets}
+          clients={db.clients}
+          payments={db.payments}
+          lockedBudget={budget}
           onClose={() => setShowPaymentForm(false)}
-          onSave={(data) => {
+          onSave={(data, saldo) => {
             addPayment(data);
+            if (saldo) applySaldoReconciliation(db.payments, saldo, { addPayment, updatePayment, deletePayment });
             toast.show('Pagamento registrado.');
             setShowPaymentForm(false);
+          }}
+        />
+      )}
+
+      {marcarRecebido && (
+        <MarcarRecebidoModal
+          payment={marcarRecebido}
+          onClose={() => setMarcarRecebido(null)}
+          onConfirm={(data) => {
+            updatePayment(marcarRecebido.id, { status: 'pago', data_recebimento: data, vencimento: undefined });
+            toast.show('Pagamento marcado como recebido.');
+            setMarcarRecebido(null);
           }}
         />
       )}
@@ -270,85 +348,3 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function PaymentForm({ budgetId, clientId, numero, onClose, onSave }: {
-  budgetId: string;
-  clientId?: string | null;
-  numero: string;
-  onClose: () => void;
-  onSave: (data: Omit<Payment, 'id' | 'organization_id' | 'created_at' | 'updated_at'>) => void;
-}) {
-  const [valor, setValor] = useState(0);
-  const [formaPagamento, setFormaPagamento] = useState<FormaPagamento>('pix');
-  const [data, setData] = useState(todayISO());
-  const [status, setStatus] = useState<PaymentStatus>('pago');
-  const [observacoes, setObservacoes] = useState('');
-
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!valor || valor <= 0) return;
-    onSave({
-      client_id: clientId ?? null,
-      budget_id: budgetId,
-      descricao: `Pagamento — orçamento ${numero}`,
-      valor,
-      forma_pagamento: formaPagamento,
-      status,
-      vencimento: status === 'pago' ? undefined : data,
-      data_recebimento: status === 'pago' ? data : undefined,
-      observacoes: observacoes || undefined,
-    });
-  }
-
-  return (
-    <div className="fixed inset-0 z-40 bg-black/60 flex items-center justify-center p-4" onClick={onClose}>
-      <form onSubmit={submit} onClick={e => e.stopPropagation()}
-        className="ce-pop-in bg-[#16181d] border border-white/10 rounded-xl p-5 w-full max-w-md space-y-4">
-        <h2 className="text-white font-medium">Registrar pagamento</h2>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs text-gray-400">Valor pago (R$) *</label>
-            <input type="number" step="0.01" value={valor || ''} onChange={e => setValor(Number(e.target.value))}
-              className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white" />
-          </div>
-          <div>
-            <label className="text-xs text-gray-400">Data</label>
-            <input type="date" value={data} onChange={e => setData(e.target.value)}
-              className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white" />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs text-gray-400">Método de pagamento</label>
-            <select value={formaPagamento} onChange={e => setFormaPagamento(e.target.value as FormaPagamento)}
-              className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white">
-              {formasPagamento.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs text-gray-400">Status</label>
-            <select value={status} onChange={e => setStatus(e.target.value as PaymentStatus)}
-              className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white">
-              <option value="pago">Pago</option>
-              <option value="pendente">Pendente (a receber)</option>
-              <option value="parcial">Parcial</option>
-              <option value="atrasado">Atrasado</option>
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label className="text-xs text-gray-400">Observações</label>
-          <input value={observacoes} onChange={e => setObservacoes(e.target.value)} placeholder="Ex: Sinal combinado na negociação"
-            className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white" />
-        </div>
-
-        <div className="flex gap-3 pt-2">
-          <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-lg border border-white/10 text-gray-300 text-sm hover:bg-white/5">Cancelar</button>
-          <button type="submit" className="ce-btn-glow flex-1 py-2.5 rounded-lg bg-[#f5c518] text-[#16181d] font-semibold text-sm hover:bg-[#e0b60f]">Salvar</button>
-        </div>
-      </form>
-    </div>
-  );
-}

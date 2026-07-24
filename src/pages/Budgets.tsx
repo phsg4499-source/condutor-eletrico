@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Plus, Search, Trash2 } from 'lucide-react';
 import { useStore } from '../lib/store';
 import { useToast } from '../lib/toast';
@@ -18,13 +18,16 @@ export default function Budgets() {
     deleteBudget(id);
     toast.show('Orçamento excluído.', 'info');
   }
+  const [searchParams] = useSearchParams();
   const [query, setQuery] = useState('');
-  const [status, setStatus] = useState<BudgetStatus | 'todos'>('todos');
+  const [status, setStatus] = useState<BudgetStatus | 'todos'>(() => (searchParams.get('status') as BudgetStatus | null) ?? 'todos');
+  // Suporta vir de um card do Dashboard com múltiplos status agrupados (ex: "aguardando resposta").
+  const statusGroup = useMemo(() => searchParams.get('statusGroup')?.split(',').filter(Boolean) as BudgetStatus[] | undefined, [searchParams]);
 
   const filtered = db.budgets.filter(b => {
     const cliente = resolveClienteInfo(b, db.clients);
     const matchesQuery = b.numero.includes(query) || b.titulo.toLowerCase().includes(query.toLowerCase()) || cliente.nome.toLowerCase().includes(query.toLowerCase());
-    const matchesStatus = status === 'todos' || b.status === status;
+    const matchesStatus = statusGroup ? statusGroup.includes(b.status) : (status === 'todos' || b.status === status);
     return matchesQuery && matchesStatus;
   });
 
@@ -39,6 +42,12 @@ export default function Budgets() {
           <Plus size={16} /> Novo orçamento
         </Link>
       </div>
+
+      {statusGroup && (
+        <div className="flex items-center gap-2 text-xs text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
+          Filtrado a partir do painel geral. <Link to="/app/orcamentos" className="underline">Limpar filtro</Link>
+        </div>
+      )}
 
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-md">

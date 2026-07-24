@@ -16,6 +16,7 @@ import {
 } from './supabaseApi';
 import { todayISO } from './format';
 import { useToast } from './toast';
+import { calculateBudget } from './calculations';
 
 // Camada de dados do sistema.
 // MODO DEMONSTRAÇÃO (padrão, sem Supabase configurado): dados vivem em memória e são
@@ -277,6 +278,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       status: 'rascunho', itens: [], custos_extras: [], desconto_percentual: 0, desconto_valor: 0,
       forma_pagamento: 'pix', entrada: 0, parcelas: 1, garantia: '90 dias',
       historico_status: [{ status: 'rascunho', data: todayISO() }],
+      link_publico_token: newId(),
       created_at: todayISO(), updated_at: todayISO(), ...data,
     };
     setDb(prev => ({ ...prev, budgets: [budget, ...prev.budgets] }));
@@ -294,22 +296,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (isSupabaseConfigured) remoteDeleteBudget(id).catch(err => notifySyncError('Erro ao excluir orçamento', err));
   }, []);
 
-  const setBudgetStatus = useCallback((id: string, status: BudgetStatus) => {
-    setDb(prev => ({
-      ...prev,
-      budgets: prev.budgets.map(b => b.id === id
-        ? { ...b, status, historico_status: [...b.historico_status, { status, data: todayISO() }], updated_at: todayISO() }
-        : b),
-    }));
-    if (isSupabaseConfigured) remoteUpdateBudgetStatus(id, status).catch(err => notifySyncError('Erro ao atualizar status do orçamento', err));
-  }, []);
 
-  const convertBudgetToServiceOrder = useCallback((budgetId: string): ServiceOrder | null => {
-    const budget = db.budgets.find(b => b.id === budgetId);
-    if (!budget) return null;
-    const numero = `OS-${budget.numero}`;
-    const order: ServiceOrder = {
-      id: newId(), organization_id: orgId, numero, budget_id: budget.id, client_id: budget.client_id,
+  function buildServiceOrderFromBudget(budget: Budget): ServiceOrder {
+    return {
+      id: newId(), organization_id: orgId, numero: `OS-${budget.numero}`, budget_id: budget.id, client_id: budget.client_id,
       cliente_nome_avulso: budget.cliente_nome_avulso, cliente_telefone_avulso: budget.cliente_telefone_avulso,
       cliente_whatsapp_avulso: budget.cliente_whatsapp_avulso,
       responsavel_tecnico: budget.responsavel, status: 'aguardando_agendamento',
@@ -323,19 +313,42 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       ],
       created_at: todayISO(), updated_at: todayISO(),
     };
+  }
+
+  // Fluxo manual (botão "Converter em ordem de serviço" em BudgetView): idempotente — se este
+  // orçamento já possui uma OS (ex.: criada automaticamente ao aprovar), reaproveita-a em vez de
+  // duplicar, e só então marca o orçamento como "convertido_em_os".
+  const convertBudgetToServiceOrder = useCallback((budgetId: string): ServiceOrder | null => {
+    const budget = db.budgets.find(b => b.id === budgetId);
+    if (!budget) return null;
+    const existente = db.serviceOrders.find(o => o.budget_id === budgetId);
+    const order = existente ?? buildServiceOrderFromBudget(budget);
     setDb(prev => ({
       ...prev,
-      serviceOrders: [order, ...prev.serviceOrders],
+      serviceOrders: existente ? prev.serviceOrders : [order, ...prev.serviceOrders],
       budgets: prev.budgets.map(b => b.id === budgetId
         ? { ...b, status: 'convertido_em_os', historico_status: [...b.historico_status, { status: 'convertido_em_os', data: todayISO() }] }
         : b),
     }));
     if (isSupabaseConfigured) {
-      remoteInsertServiceOrder(order).catch(err => notifySyncError('Erro ao criar ordem de serviço', err));
+      if (!existente) remoteInsertServiceOrder(order).catch(err => notifySyncError('Erro ao criar ordem de serviço', err));
       remoteUpdateBudgetStatus(budgetId, 'convertido_em_os').catch(err => notifySyncError('Erro ao atualizar status do orçamento', err));
     }
     return order;
-  }, [db.budgets, orgId]);
+  }, [db.budgets, db.serviceOrders, orgId]);
+
+  // Geração automática de OS ao aprovar (total ou parcialmente) um orçamento — chamada de dentro
+  // de setBudgetStatus. Diferente do fluxo manual acima, NÃO altera o status do orçamento (ele
+  // continua "aprovado"/"aprovado_parcialmente"); apenas garante que a OS exista, sem duplicar.
+  const ensureServiceOrderForBudget = useCallback((budget: Budget) => {
+    const jaExiste = db.serviceOrders.some(o => o.budget_id === budget.id);
+    if (jaExiste) return;
+    const order = buildServiceOrderFromBudget(budget);
+    setDb(prev => (prev.serviceOrders.some(o => o.budget_id === budget.id)
+      ? prev
+      : { ...prev, serviceOrders: [order, ...prev.serviceOrders] }));
+    if (isSupabaseConfigured) remoteInsertServiceOrder(order).catch(err => notifySyncError('Erro ao criar ordem de serviço automaticamente', err));
+  }, [db.serviceOrders, orgId]);
 
   const setServiceOrderStatus = useCallback((id: string, status: ServiceOrderStatus) => {
     setDb(prev => ({ ...prev, serviceOrders: prev.serviceOrders.map(o => o.id === id ? { ...o, status, updated_at: todayISO() } : o) }));
@@ -420,6 +433,39 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setDb(prev => ({ ...prev, payments: prev.payments.filter(p => p.id !== id) }));
     if (isSupabaseConfigured) remoteDeletePayment(id).catch(err => notifySyncError('Erro ao excluir pagamento', err));
   }, []);
+
+  const setBudgetStatus = useCallback((id: string, status: BudgetStatus) => {
+    setDb(prev => ({
+      ...prev,
+      budgets: prev.budgets.map(b => b.id === id
+        ? { ...b, status, historico_status: [...b.historico_status, { status, data: todayISO() }], updated_at: todayISO() }
+        : b),
+    }));
+    if (isSupabaseConfigured) remoteUpdateBudgetStatus(id, status).catch(err => notifySyncError('Erro ao atualizar status do orçamento', err));
+
+    // Ao aprovar (total ou parcialmente) um orçamento que ainda não tem nenhum pagamento
+    // registrado, já lançamos automaticamente o valor total como "a receber" — assim ele
+    // aparece de imediato no módulo Pagamentos, sem precisar de ação manual.
+    const isAprovando = status === 'aprovado' || status === 'aprovado_parcialmente';
+    if (isAprovando) {
+      const budget = db.budgets.find(b => b.id === id);
+      const jaTemPagamento = db.payments.some(p => p.budget_id === id);
+      if (budget && !jaTemPagamento) {
+        const totals = calculateBudget(budget);
+        if (totals.totalVenda > 0) {
+          addPayment({
+            client_id: budget.client_id ?? null,
+            budget_id: budget.id,
+            descricao: `Saldo a receber — orçamento ${budget.numero}`,
+            valor: totals.totalVenda,
+            status: 'pendente',
+          });
+        }
+      }
+      // Todo orçamento aprovado deve gerar uma ordem de serviço — automaticamente e sem duplicar.
+      if (budget) ensureServiceOrderForBudget(budget);
+    }
+  }, [db.budgets, db.payments, addPayment, ensureServiceOrderForBudget]);
 
   const value = useMemo<StoreContextValue>(() => ({
     isDemoMode: !isSupabaseConfigured,

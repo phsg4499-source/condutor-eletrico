@@ -31,6 +31,7 @@ export interface Organization {
   impostos_estimados_percentual: number;
   responsavel: string;
   experiencia: string;
+  meta_faturamento_mensal: number;
   created_at: string;
   updated_at: string;
 }
@@ -192,6 +193,7 @@ export interface Budget {
   observacoes_internas?: string;
   observacoes_cliente?: string;
   historico_status: { status: BudgetStatus; data: string }[];
+  link_publico_token: string; // usado na URL pública (/proposta/:token) — não previsível, não é o id sequencial
   created_at: string;
   updated_at: string;
 }

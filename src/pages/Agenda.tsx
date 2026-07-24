@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Plus, Trash2, MapPin, Clock, Wrench } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { ChevronLeft, ChevronRight, Plus, Trash2, MapPin, Clock, Wrench, CalendarRange } from 'lucide-react';
 import { useStore } from '../lib/store';
 import { useToast } from '../lib/toast';
 import { resolveClienteInfo } from '../lib/clientInfo';
@@ -25,6 +25,20 @@ function pad(n: number) { return String(n).padStart(2, '0'); }
 function toISO(year: number, month: number, day: number) { return `${year}-${pad(month + 1)}-${pad(day)}`; }
 function todayISODate() { const d = new Date(); return toISO(d.getFullYear(), d.getMonth(), d.getDate()); }
 
+function getWeekRange(baseDate: Date) {
+  const d = new Date(baseDate);
+  d.setHours(0, 0, 0, 0);
+  const dayOfWeek = d.getDay();
+  const start = new Date(d);
+  start.setDate(d.getDate() - dayOfWeek);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  return {
+    startISO: toISO(start.getFullYear(), start.getMonth(), start.getDate()),
+    endISO: toISO(end.getFullYear(), end.getMonth(), end.getDate()),
+  };
+}
+
 const weekDays = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 const monthNames = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -34,6 +48,8 @@ const monthNames = [
 export default function Agenda() {
   const { db, addCompromisso, updateCompromisso, deleteCompromisso } = useStore();
   const toast = useToast();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
@@ -41,8 +57,24 @@ export default function Agenda() {
   const [selectedDate, setSelectedDate] = useState(todayISODate());
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [verServicosSemana, setVerServicosSemana] = useState(false);
+  const [prefillDraft, setPrefillDraft] = useState<Partial<Compromisso> | null>(null);
+
+  // Ao vir de um orçamento recém-aprovado (BudgetView), abre direto o formulário de novo
+  // compromisso já com título, tipo, cliente e local preenchidos.
+  useEffect(() => {
+    const state = location.state as { prefillCompromisso?: Partial<Compromisso> } | null;
+    if (state?.prefillCompromisso) {
+      setPrefillDraft(state.prefillCompromisso);
+      setEditingId(null);
+      setShowForm(true);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const orcamentistasAtivos = db.orcamentistas.filter(o => o.status === 'ativo');
+  const { startISO: semanaInicio, endISO: semanaFim } = useMemo(() => getWeekRange(new Date()), []);
 
   const compromissosByDate = useMemo(() => {
     const map = new Map<string, Compromisso[]>();
@@ -83,8 +115,16 @@ export default function Agenda() {
   const selectedCompromissos = (compromissosByDate.get(selectedDate) ?? []).slice().sort((a, b) => (a.hora ?? '').localeCompare(b.hora ?? ''));
   const selectedOrdens = ordensServicoByDate.get(selectedDate) ?? [];
 
+  const servicosCompromissosSemana = db.compromissos
+    .filter(c => c.tipo === 'execucao_servico' && c.data >= semanaInicio && c.data <= semanaFim)
+    .sort((a, b) => a.data.localeCompare(b.data) || (a.hora ?? '').localeCompare(b.hora ?? ''));
+  const servicosOrdensSemana = db.serviceOrders
+    .filter(o => o.data_prevista && o.data_prevista >= semanaInicio && o.data_prevista <= semanaFim)
+    .sort((a, b) => (a.data_prevista ?? '').localeCompare(b.data_prevista ?? ''));
+
   function openNewForm() {
     setEditingId(null);
+    setPrefillDraft(null);
     setShowForm(true);
   }
 
@@ -110,10 +150,57 @@ export default function Agenda() {
           <h1 className="text-2xl font-semibold text-white">Agenda</h1>
           <p className="text-sm text-gray-400 mt-1">Visitas, orçamentos presenciais, execuções de serviço e reuniões.</p>
         </div>
-        <button onClick={openNewForm} className="ce-btn-glow ce-cta-glow flex items-center gap-2 bg-[#f5c518] text-[#16181d] font-semibold px-4 py-2 rounded-lg text-sm hover:bg-[#e0b60f]">
-          <Plus size={16} /> Novo compromisso
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => setVerServicosSemana(v => !v)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm border transition ${
+              verServicosSemana ? 'bg-[#f5c518] text-[#16181d] border-[#f5c518] font-semibold' : 'border-white/10 text-gray-300 hover:border-white/30'
+            }`}>
+            <CalendarRange size={16} /> Serviços da semana
+          </button>
+          <button onClick={openNewForm} className="ce-btn-glow ce-cta-glow flex items-center gap-2 bg-[#f5c518] text-[#16181d] font-semibold px-4 py-2 rounded-lg text-sm hover:bg-[#e0b60f]">
+            <Plus size={16} /> Novo compromisso
+          </button>
+        </div>
       </div>
+
+      {verServicosSemana && (
+        <div className="ce-card-hover bg-[#16181d] border border-white/5 rounded-xl p-4 ce-fade-up space-y-3">
+          <h2 className="text-white font-medium text-sm flex items-center gap-2">
+            <Wrench size={15} className="text-purple-300" /> Serviços desta semana
+          </h2>
+          {servicosCompromissosSemana.length === 0 && servicosOrdensSemana.length === 0 && (
+            <p className="text-xs text-gray-500">Nenhum serviço agendado para esta semana.</p>
+          )}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {servicosOrdensSemana.map(o => (
+              <Link key={o.id} to={`/app/ordens-servico/${o.id}`}
+                className="block bg-[#0f1115] border border-white/5 rounded-lg p-3 hover:border-[#f5c518]/30">
+                <div className="flex items-center gap-2 text-[10px] uppercase text-teal-300"><Wrench size={11} /> Ordem de serviço</div>
+                <p className="text-sm text-white mt-1">{o.numero}</p>
+                <p className="text-xs text-gray-400">{resolveClienteInfo(o, db.clients).nome}</p>
+                <p className="text-xs text-gray-500 mt-1">{new Date(o.data_prevista + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })}</p>
+              </Link>
+            ))}
+            {servicosCompromissosSemana.map(c => {
+              const cliente = resolveClienteInfo(c, db.clients);
+              return (
+                <div key={c.id} className="bg-[#0f1115] border border-white/5 rounded-lg p-3 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-purple-600/30 text-purple-300">{tipoLabels.execucao_servico}</span>
+                    <CompromissoStatusBadge status={c.status} />
+                  </div>
+                  <p className="text-sm text-white font-medium">{c.titulo}</p>
+                  {(c.client_id || c.cliente_nome_avulso) && <p className="text-xs text-gray-400">Cliente: {cliente.nome}</p>}
+                  <p className="text-xs text-gray-500">
+                    {new Date(c.data + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })}
+                    {c.hora ? ` às ${c.hora}` : ''}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-[1fr_360px] gap-5">
         <div className="ce-card-hover bg-[#16181d] border border-white/5 rounded-xl p-4 ce-fade-up ce-fade-up-1">
@@ -201,10 +288,12 @@ export default function Agenda() {
       {showForm && (
         <CompromissoForm
           compromisso={editingId ? db.compromissos.find(c => c.id === editingId) ?? null : null}
+          prefill={editingId ? undefined : prefillDraft ?? undefined}
           defaultDate={selectedDate}
           orcamentistasAtivos={orcamentistasAtivos}
           clients={db.clients}
-          onClose={() => setShowForm(false)}
+          compromissos={db.compromissos}
+          onClose={() => { setShowForm(false); setPrefillDraft(null); }}
           onSave={(data) => {
             if (editingId) {
               updateCompromisso(editingId, data);
@@ -214,6 +303,7 @@ export default function Agenda() {
               toast.show('Compromisso adicionado à agenda.');
             }
             setShowForm(false);
+            setPrefillDraft(null);
           }}
         />
       )}
@@ -221,32 +311,52 @@ export default function Agenda() {
   );
 }
 
-function CompromissoForm({ compromisso, defaultDate, orcamentistasAtivos, clients, onClose, onSave }: {
+function CompromissoForm({ compromisso, prefill, defaultDate, orcamentistasAtivos, clients, compromissos, onClose, onSave }: {
   compromisso: Compromisso | null;
+  prefill?: Partial<Compromisso>;
   defaultDate: string;
   orcamentistasAtivos: { id: string; nome: string; cargo: string }[];
   clients: { id: string; nome: string }[];
+  compromissos: Compromisso[];
   onClose: () => void;
   onSave: (data: Partial<Compromisso>) => void;
 }) {
+  const [conflito, setConflito] = useState('');
+  const base = compromisso ?? prefill;
   const [clienteMode, setClienteMode] = useState<'nenhum' | 'existing' | 'avulso'>(
-    compromisso?.client_id ? 'existing' : compromisso?.cliente_nome_avulso ? 'avulso' : 'nenhum',
+    base?.client_id ? 'existing' : base?.cliente_nome_avulso ? 'avulso' : 'nenhum',
   );
-  const [titulo, setTitulo] = useState(compromisso?.titulo ?? '');
-  const [tipo, setTipo] = useState<CompromissoTipo>(compromisso?.tipo ?? 'visita_orcamento');
-  const [data, setData] = useState(compromisso?.data ?? defaultDate);
-  const [hora, setHora] = useState(compromisso?.hora ?? '');
-  const [clientId, setClientId] = useState(compromisso?.client_id ?? '');
-  const [clienteNome, setClienteNome] = useState(compromisso?.cliente_nome_avulso ?? '');
-  const [clienteTelefone, setClienteTelefone] = useState(compromisso?.cliente_telefone_avulso ?? '');
-  const [orcamentistaId, setOrcamentistaId] = useState(compromisso?.orcamentista_id ?? orcamentistasAtivos[0]?.id ?? '');
-  const [local, setLocal] = useState(compromisso?.local ?? '');
-  const [observacoes, setObservacoes] = useState(compromisso?.observacoes ?? '');
-  const [status, setStatus] = useState(compromisso?.status ?? 'agendado');
+  const [titulo, setTitulo] = useState(base?.titulo ?? '');
+  const [tipo, setTipo] = useState<CompromissoTipo>(base?.tipo ?? 'visita_orcamento');
+  const [data, setData] = useState(base?.data ?? defaultDate);
+  const [hora, setHora] = useState(base?.hora ?? '');
+  const [clientId, setClientId] = useState(base?.client_id ?? '');
+  const [clienteNome, setClienteNome] = useState(base?.cliente_nome_avulso ?? '');
+  const [clienteTelefone, setClienteTelefone] = useState(base?.cliente_telefone_avulso ?? '');
+  const [orcamentistaId, setOrcamentistaId] = useState(base?.orcamentista_id ?? orcamentistasAtivos[0]?.id ?? '');
+  const [local, setLocal] = useState(base?.local ?? '');
+  const [observacoes, setObservacoes] = useState(base?.observacoes ?? '');
+  const [status, setStatus] = useState(base?.status ?? 'agendado');
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
+    setConflito('');
     if (!titulo.trim() || !data) return;
+
+    if (orcamentistaId && status !== 'cancelado') {
+      const conflitante = compromissos.find(c =>
+        c.id !== compromisso?.id
+        && c.orcamentista_id === orcamentistaId
+        && c.data === data
+        && c.status !== 'cancelado'
+        && (c.hora || '') === (hora || ''),
+      );
+      if (conflitante) {
+        const nomeOrcamentista = orcamentistasAtivos.find(o => o.id === orcamentistaId)?.nome ?? 'Este profissional';
+        setConflito(`${nomeOrcamentista} já possui um compromisso neste horário ("${conflitante.titulo}"). Escolha outro horário ou outro responsável.`);
+        return;
+      }
+    }
 
     const clientFields: Partial<Compromisso> = clienteMode === 'existing'
       ? { client_id: clientId || null, cliente_nome_avulso: null, cliente_telefone_avulso: null }
@@ -257,6 +367,7 @@ function CompromissoForm({ compromisso, defaultDate, orcamentistasAtivos, client
     onSave({
       titulo: titulo.trim(), tipo, data, hora: hora || undefined, local: local || undefined,
       observacoes: observacoes || undefined, orcamentista_id: orcamentistaId || undefined, status,
+      budget_id: base?.budget_id ?? undefined,
       ...clientFields,
     });
   }
@@ -355,6 +466,12 @@ function CompromissoForm({ compromisso, defaultDate, orcamentistasAtivos, client
           <textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} rows={2}
             className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white" />
         </div>
+
+        {conflito && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2.5 text-xs text-red-300">
+            ⚠ {conflito}
+          </div>
+        )}
 
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-lg border border-white/10 text-gray-300 text-sm hover:bg-white/5">Cancelar</button>

@@ -69,6 +69,17 @@ export default function Settings() {
         </p>
         <button type="submit" className="ce-btn-glow bg-[#f5c518] text-[#16181d] font-semibold rounded-lg px-5 py-2.5 text-sm hover:bg-[#e0b60f]">Salvar precificação</button>
       </form>
+
+      <form onSubmit={submit} className="bg-[#16181d] border border-white/5 rounded-xl p-5 space-y-4">
+        <div>
+          <h2 className="text-white font-medium">Meta do painel geral</h2>
+          <p className="text-xs text-gray-500 mt-1">Usada no indicador de faturamento mensal do Dashboard.</p>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field label="Meta de faturamento mensal (R$)" value={String(form.meta_faturamento_mensal ?? 25000)} onChange={v => setForm(f => ({ ...f, meta_faturamento_mensal: Number(v) || 0 }))} />
+        </div>
+        <button type="submit" className="ce-btn-glow bg-[#f5c518] text-[#16181d] font-semibold rounded-lg px-5 py-2.5 text-sm hover:bg-[#e0b60f]">Salvar meta</button>
+      </form>
     </div>
   );
 }
