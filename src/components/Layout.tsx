@@ -56,11 +56,11 @@ export default function Layout() {
       <div className="fixed inset-0 z-0">
         <ElectricBackground subtle />
       </div>
-      <aside className={`fixed z-30 inset-y-0 left-0 w-64 bg-[#16181d] border-r border-white/5 transform transition-transform lg:translate-x-0 lg:static ${open ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed z-30 inset-y-0 left-0 w-64 bg-gradient-to-b from-[#1a1d24] to-[#16181d] border-r border-white/5 transform transition-transform lg:translate-x-0 lg:static ${open ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="h-16 flex items-center px-5 border-b border-white/5">
           <Logo variant="horizontal" theme="dark" />
         </div>
-        <nav className="p-3 space-y-1">
+        <nav className="p-3 space-y-0.5">
           {navItems.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
@@ -68,18 +68,20 @@ export default function Layout() {
               end={end}
               onClick={() => setOpen(false)}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  isActive ? 'ce-nav-active bg-[#f5c518] text-[#16181d]' : 'text-gray-300 hover:bg-white/5'
+                `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
+                  isActive
+                    ? 'ce-nav-active bg-gradient-to-r from-[#f5c518] to-[#e0b60f] text-[#16181d]'
+                    : 'text-gray-400 hover:text-gray-100 hover:bg-white/[0.05]'
                 }`
               }
             >
-              <Icon size={18} />
-              {label}
+              <Icon size={18} strokeWidth={2} />
+              <span className="tracking-tight">{label}</span>
             </NavLink>
           ))}
         </nav>
-        <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-white/5 space-y-2">
-          <button onClick={logout} className="flex items-center gap-2 text-sm text-gray-400 hover:text-white px-3 py-2 w-full rounded-lg hover:bg-white/5">
+        <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-white/5 space-y-1 bg-black/10">
+          <button onClick={logout} className="flex items-center gap-2 text-sm text-gray-400 hover:text-white px-3 py-2 w-full rounded-lg hover:bg-white/5 transition-colors">
             <LogOut size={16} /> Sair
           </button>
           <p className="text-[10px] text-gray-600 px-3">Desenvolvido por Simplifica Seguros</p>
@@ -87,7 +89,7 @@ export default function Layout() {
       </aside>
 
       <div className="relative z-10 flex-1 flex flex-col min-w-0">
-        <header className="h-16 border-b border-white/5 flex items-center justify-between px-4 lg:px-8 bg-[#0f1115]/80 backdrop-blur sticky top-0 z-20">
+        <header className="h-16 border-b border-white/5 flex items-center justify-between px-4 lg:px-8 bg-[#0f1115]/85 backdrop-blur-md sticky top-0 z-20 shadow-[0_1px_0_rgba(245,197,24,0.06)]">
           <button className="lg:hidden text-gray-300" onClick={() => setOpen(o => !o)}>
             {open ? <X size={22} /> : <Menu size={22} />}
           </button>

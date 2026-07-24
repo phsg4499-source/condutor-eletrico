@@ -86,6 +86,30 @@ function newId(): string {
   return crypto.randomUUID();
 }
 
+// Traduz um erro técnico do Supabase (PostgrestError, erro de rede, etc.) em uma mensagem que o
+// usuário consegue entender, sem nunca dizer "erro desconhecido" quando há informação disponível.
+// O detalhe técnico completo (mensagem, código, details, hint) é sempre registrado no console.
+function describeSupabaseError(err: unknown, contexto: string, acao: 'salvar' | 'atualizar'): string {
+  const anyErr = err as { message?: string; code?: string; details?: string; hint?: string } | null;
+  const message = typeof anyErr?.message === 'string' ? anyErr.message : '';
+  const code = anyErr?.code;
+  console.error(`[${contexto}] Falha ao ${acao}`, { message, code, details: anyErr?.details, hint: anyErr?.hint, err });
+
+  if (/jwt|token|session/i.test(message) || code === 'PGRST301') {
+    return 'Sua sessão expirou. Entre novamente para salvar as alterações.';
+  }
+  if (code === '42501' || /row-level security|permission denied|policy/i.test(message)) {
+    return `Você não possui permissão para ${acao} este registro.`;
+  }
+  if (/failed to fetch|networkerror|network request failed|load failed/i.test(message)) {
+    return 'Ocorreu uma falha de conexão. Nenhuma alteração foi confirmada.';
+  }
+  if (message) {
+    return `Não foi possível ${acao} ${contexto}: ${message}`;
+  }
+  return `Não foi possível ${acao} ${contexto}. Nenhuma alteração foi confirmada.`;
+}
+
 interface AuthUser {
   email: string;
   nome: string;
@@ -107,8 +131,11 @@ interface StoreContextValue {
   updateMaterial: (id: string, data: Partial<Material>) => void;
   addService: (data: Omit<ServiceItem, 'id' | 'organization_id' | 'created_at' | 'updated_at'>) => ServiceItem;
   updateService: (id: string, data: Partial<ServiceItem>) => void;
-  addBudget: (data: Partial<Budget>) => Budget;
-  updateBudget: (id: string, data: Partial<Budget>) => void;
+  // addBudget/updateBudget retornam o resultado real da gravação (ok/erro) em vez de assumir
+  // sucesso apenas por terem sido chamadas — quem chama deve aguardar (await) e só mostrar a
+  // mensagem de sucesso quando ok === true (ver BudgetWizard.tsx).
+  addBudget: (data: Partial<Budget>) => Promise<{ budget: Budget; ok: boolean; error?: string }>;
+  updateBudget: (id: string, data: Partial<Budget>) => Promise<{ ok: boolean; error?: string }>;
   deleteBudget: (id: string) => void;
   setBudgetStatus: (id: string, status: BudgetStatus) => void;
   convertBudgetToServiceOrder: (budgetId: string) => ServiceOrder | null;
@@ -270,7 +297,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return `${year}-${String(count).padStart(4, '0')}`;
   }, [db.budgets]);
 
-  const addBudget: StoreContextValue['addBudget'] = useCallback((data) => {
+  const addBudget: StoreContextValue['addBudget'] = useCallback(async (data) => {
     const numero = data.numero || nextBudgetNumber();
     const budget: Budget = {
       id: newId(), organization_id: orgId, numero, titulo: '', tipo_servico: 'Instalação',
@@ -281,14 +308,37 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       link_publico_token: newId(),
       created_at: todayISO(), updated_at: todayISO(), ...data,
     };
+    // Atualização otimista: aparece na tela imediatamente. Em modo demo (sem Supabase) isso já é
+    // a gravação definitiva. Em modo real, só é considerado sucesso de fato depois que o Supabase
+    // confirmar — se falhar, a criação é desfeita da tela e o erro real é devolvido a quem chamou,
+    // que decide o que mostrar (nunca sucesso E erro ao mesmo tempo).
     setDb(prev => ({ ...prev, budgets: [budget, ...prev.budgets] }));
-    if (isSupabaseConfigured) remoteInsertBudget(budget).catch(err => notifySyncError('Erro ao salvar orçamento', err));
-    return budget;
+    if (!isSupabaseConfigured) return { budget, ok: true as const };
+    try {
+      await remoteInsertBudget(budget);
+      return { budget, ok: true as const };
+    } catch (err) {
+      setDb(prev => ({ ...prev, budgets: prev.budgets.filter(b => b.id !== budget.id) }));
+      return { budget, ok: false as const, error: describeSupabaseError(err, 'o orçamento', 'salvar') };
+    }
   }, [nextBudgetNumber, orgId]);
 
-  const updateBudget = useCallback((id: string, data: Partial<Budget>) => {
-    setDb(prev => ({ ...prev, budgets: prev.budgets.map(b => b.id === id ? { ...b, ...data, updated_at: todayISO() } : b) }));
-    if (isSupabaseConfigured) remoteUpdateBudget(id, data).catch(err => notifySyncError('Erro ao atualizar orçamento', err));
+  const updateBudget: StoreContextValue['updateBudget'] = useCallback(async (id, data) => {
+    let previous: Budget | undefined;
+    setDb(prev => {
+      previous = prev.budgets.find(b => b.id === id);
+      return { ...prev, budgets: prev.budgets.map(b => b.id === id ? { ...b, ...data, updated_at: todayISO() } : b) };
+    });
+    if (!isSupabaseConfigured) return { ok: true as const };
+    try {
+      await remoteUpdateBudget(id, data);
+      return { ok: true as const };
+    } catch (err) {
+      // Gravação real falhou: desfaz a atualização otimista para a tela não mentir que salvou,
+      // e devolve o erro real para quem chamou mostrar (uma única mensagem, nunca as duas).
+      setDb(prev => ({ ...prev, budgets: prev.budgets.map(b => (b.id === id && previous) ? previous! : b) }));
+      return { ok: false as const, error: describeSupabaseError(err, 'o orçamento', 'atualizar') };
+    }
   }, []);
 
   const deleteBudget = useCallback((id: string) => {

@@ -48,6 +48,7 @@ export default function BudgetWizard() {
   const [garantia, setGarantia] = useState(existingBudget?.garantia ?? '90 dias');
   const [obsInternas, setObsInternas] = useState(existingBudget?.observacoes_internas ?? '');
   const [obsCliente, setObsCliente] = useState(existingBudget?.observacoes_cliente ?? '');
+  const [salvando, setSalvando] = useState(false);
 
   const totals = calculateBudget({ itens, custos_extras: custosExtras, desconto_percentual: descontoPercentual, desconto_valor: descontoValor, entrada, parcelas });
   const alerts = budgetAlerts({ itens, prazo_estimado: prazo, forma_pagamento: formaPagamento }, totals, db.organization.margem_minima_percentual);
@@ -86,8 +87,9 @@ export default function BudgetWizard() {
     setCustosExtras(prev => [...prev, { id: uid('ex'), descricao: '', valor: 0 }]);
   }
 
-  function saveBudget(status: 'rascunho' | 'pronto_para_envio') {
+  async function saveBudget(status: 'rascunho' | 'pronto_para_envio') {
     if (!titulo) return;
+    if (salvando) return; // impede duplo clique/duplo envio enquanto uma gravação está em andamento
 
     // O orçamento nunca depende de o cliente estar cadastrado: se "Cliente sem cadastro" estiver
     // selecionado, os dados de contato ficam gravados direto no orçamento (client_id fica vazio).
@@ -107,31 +109,46 @@ export default function BudgetWizard() {
 
     const responsavelSelecionado = orcamentistasAtivos.find(o => o.id === orcamentistaId);
 
-    if (isEditing && existingBudget) {
-      updateBudget(existingBudget.id, {
-        ...clientFields, titulo, tipo_servico: tipoServico,
-        local_servico: localServico, prazo_estimado: prazo,
-        responsavel: responsavelSelecionado?.nome ?? existingBudget.responsavel, orcamentista_id: orcamentistaId || undefined,
-        itens, custos_extras: custosExtras,
+    setSalvando(true);
+    try {
+      if (isEditing && existingBudget) {
+        const result = await updateBudget(existingBudget.id, {
+          ...clientFields, titulo, tipo_servico: tipoServico,
+          local_servico: localServico, prazo_estimado: prazo,
+          responsavel: responsavelSelecionado?.nome ?? existingBudget.responsavel, orcamentista_id: orcamentistaId || undefined,
+          itens, custos_extras: custosExtras,
+          desconto_percentual: descontoPercentual, desconto_valor: descontoValor, forma_pagamento: formaPagamento,
+          entrada, parcelas, garantia, observacoes_internas: obsInternas, observacoes_cliente: obsCliente,
+        });
+        // Nunca mostra sucesso e erro juntos: só um toast, refletindo exatamente o que o Supabase
+        // confirmou. Se falhou, permanece na tela (nada é perdido) para o usuário tentar de novo.
+        if (!result.ok) {
+          toast.show(result.error ?? 'Não foi possível atualizar o orçamento. Nenhuma alteração foi confirmada.', 'warning');
+          return;
+        }
+        toast.show('Orçamento atualizado com sucesso!');
+        navigate(`/app/orcamentos/${existingBudget.id}`);
+        return;
+      }
+
+      const result = await addBudget({
+        numero: nextBudgetNumber(), ...clientFields, titulo, tipo_servico: tipoServico,
+        local_servico: localServico, data_emissao: todayISO(), validade_dias: 10, prazo_estimado: prazo,
+        responsavel: responsavelSelecionado?.nome ?? db.organization.responsavel, orcamentista_id: orcamentistaId || undefined,
+        status, itens, custos_extras: custosExtras,
         desconto_percentual: descontoPercentual, desconto_valor: descontoValor, forma_pagamento: formaPagamento,
         entrada, parcelas, garantia, observacoes_internas: obsInternas, observacoes_cliente: obsCliente,
+        historico_status: [{ status, data: todayISO() }],
       });
-      toast.show('Orçamento atualizado com sucesso!');
-      navigate(`/app/orcamentos/${existingBudget.id}`);
-      return;
+      if (!result.ok) {
+        toast.show(result.error ?? 'Não foi possível salvar o orçamento. Nenhuma alteração foi confirmada.', 'warning');
+        return;
+      }
+      toast.show(status === 'rascunho' ? 'Rascunho salvo.' : 'Orçamento criado com sucesso!');
+      navigate(`/app/orcamentos/${result.budget.id}`);
+    } finally {
+      setSalvando(false);
     }
-
-    const budget = addBudget({
-      numero: nextBudgetNumber(), ...clientFields, titulo, tipo_servico: tipoServico,
-      local_servico: localServico, data_emissao: todayISO(), validade_dias: 10, prazo_estimado: prazo,
-      responsavel: responsavelSelecionado?.nome ?? db.organization.responsavel, orcamentista_id: orcamentistaId || undefined,
-      status, itens, custos_extras: custosExtras,
-      desconto_percentual: descontoPercentual, desconto_valor: descontoValor, forma_pagamento: formaPagamento,
-      entrada, parcelas, garantia, observacoes_internas: obsInternas, observacoes_cliente: obsCliente,
-      historico_status: [{ status, data: todayISO() }],
-    });
-    toast.show(status === 'rascunho' ? 'Rascunho salvo.' : 'Orçamento criado com sucesso!');
-    navigate(`/app/orcamentos/${budget.id}`);
   }
 
   if (isEditing && !existingBudget) {
@@ -345,13 +362,13 @@ export default function BudgetWizard() {
 
       <div className="flex gap-3 pb-8">
         {isEditing ? (
-          <button type="button" onClick={() => saveBudget('pronto_para_envio')} className="ce-btn-glow px-5 py-2.5 rounded-lg bg-[#f5c518] text-[#16181d] font-semibold text-sm hover:bg-[#e0b60f]">
-            Salvar alterações
+          <button type="button" disabled={salvando} onClick={() => saveBudget('pronto_para_envio')} className="ce-btn-glow px-5 py-2.5 rounded-lg bg-[#f5c518] text-[#16181d] font-semibold text-sm hover:bg-[#e0b60f] disabled:opacity-60 disabled:cursor-not-allowed">
+            {salvando ? 'Salvando...' : 'Salvar alterações'}
           </button>
         ) : (
           <>
-            <button type="button" onClick={() => saveBudget('rascunho')} className="px-5 py-2.5 rounded-lg border border-white/10 text-gray-200 text-sm hover:bg-white/5">Salvar rascunho</button>
-            <button type="button" onClick={() => saveBudget('pronto_para_envio')} className="ce-btn-glow px-5 py-2.5 rounded-lg bg-[#f5c518] text-[#16181d] font-semibold text-sm hover:bg-[#e0b60f]">Salvar orçamento</button>
+            <button type="button" disabled={salvando} onClick={() => saveBudget('rascunho')} className="px-5 py-2.5 rounded-lg border border-white/10 text-gray-200 text-sm hover:bg-white/5 disabled:opacity-60 disabled:cursor-not-allowed">{salvando ? 'Salvando...' : 'Salvar rascunho'}</button>
+            <button type="button" disabled={salvando} onClick={() => saveBudget('pronto_para_envio')} className="ce-btn-glow px-5 py-2.5 rounded-lg bg-[#f5c518] text-[#16181d] font-semibold text-sm hover:bg-[#e0b60f] disabled:opacity-60 disabled:cursor-not-allowed">{salvando ? 'Salvando...' : 'Salvar orçamento'}</button>
           </>
         )}
       </div>
