@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Download, MessageCircle, ArrowLeft, Repeat, Pencil, Trash2, Plus, Wallet, CheckCircle2, FileSignature } from 'lucide-react';
+import { Download, MessageCircle, ArrowLeft, Repeat, Pencil, Trash2, Plus, Wallet, CheckCircle2, FileSignature, CalendarClock } from 'lucide-react';
 import { useStore } from '../lib/store';
 import { useToast } from '../lib/toast';
 import { calculateBudget, budgetAlerts } from '../lib/calculations';
@@ -38,6 +38,10 @@ export default function BudgetView() {
   const totals = calculateBudget(budget);
   const alerts = budgetAlerts(budget, totals, db.organization.margem_minima_percentual);
   const publicLink = `${window.location.origin}/proposta/${budget.link_publico_token}`;
+  // Independente de como o orçamento foi aprovado (aqui dentro ou pelo cliente no link público),
+  // este indicador aparece sempre que houver aprovação sem nenhum compromisso agendado ainda.
+  const aprovado = budget.status === 'aprovado' || budget.status === 'aprovado_parcialmente';
+  const temAgendamento = db.compromissos.some(c => c.budget_id === budget.id);
 
   const budgetPayments = db.payments.filter(p => p.budget_id === budget.id).sort((a, b) => (b.data_recebimento ?? b.vencimento ?? '').localeCompare(a.data_recebimento ?? a.vencimento ?? ''));
   const totalPago = budgetPayments.filter(p => p.status === 'pago').reduce((acc, p) => acc + p.valor, 0);
@@ -88,22 +92,29 @@ export default function BudgetView() {
   function handleStatusChange(newStatus: BudgetStatus) {
     setBudgetStatus(budget!.id, newStatus);
     toast.show('Status atualizado.', 'info');
+    // O agendamento não é mais um redirecionamento automático amarrado a este clique: a aprovação
+    // do orçamento pode acontecer aqui dentro (mudando o status) ou pelo cliente direto no link
+    // público (WhatsApp) — nesse segundo caso não existe como "levar" o dono do sistema pra Agenda
+    // na hora, porque são sessões/dispositivos diferentes. Por isso o agendamento virou uma ação
+    // independente e sempre disponível: o banner/botão "Agendar execução" abaixo, que aparece
+    // sempre que o orçamento estiver aprovado e ainda não tiver nenhum compromisso vinculado —
+    // não importa quem aprovou nem quando.
+  }
 
-    if (newStatus === 'aprovado' || newStatus === 'aprovado_parcialmente') {
-      navigate('/app/agenda', {
-        state: {
-          prefillCompromisso: {
-            titulo: `Execução — Orçamento ${budget!.numero}`,
-            tipo: 'execucao_servico',
-            local: budget!.local_servico || undefined,
-            budget_id: budget!.id,
-            client_id: budget!.client_id ?? undefined,
-            cliente_nome_avulso: budget!.cliente_nome_avulso ?? undefined,
-            cliente_telefone_avulso: budget!.cliente_telefone_avulso ?? undefined,
-          },
+  function handleAgendarExecucao() {
+    navigate('/app/agenda', {
+      state: {
+        prefillCompromisso: {
+          titulo: `Execução — Orçamento ${budget!.numero}`,
+          tipo: 'execucao_servico',
+          local: budget!.local_servico || undefined,
+          budget_id: budget!.id,
+          client_id: budget!.client_id ?? undefined,
+          cliente_nome_avulso: budget!.cliente_nome_avulso ?? undefined,
+          cliente_telefone_avulso: budget!.cliente_telefone_avulso ?? undefined,
         },
-      });
-    }
+      },
+    });
   }
 
   async function handleDelete() {
@@ -161,6 +172,17 @@ export default function BudgetView() {
           <Trash2 size={16} /> Excluir
         </button>
       </div>
+
+      {aprovado && !temAgendamento && (
+        <div className="bg-sky-500/10 border border-sky-500/25 rounded-lg px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-sky-200">
+            Orçamento aprovado e ainda sem agendamento — marque o dia da execução quando quiser (inclusive se o cliente aprovou direto pelo link).
+          </p>
+          <button onClick={handleAgendarExecucao} className="ce-btn-glow flex items-center gap-2 bg-sky-500 text-[#0b1220] font-semibold px-4 py-2 rounded-lg text-sm hover:bg-sky-400 shrink-0">
+            <CalendarClock size={16} /> Agendar execução
+          </button>
+        </div>
+      )}
 
       <div className="bg-[#16181d] border border-white/5 rounded-xl p-5 space-y-4">
         <h2 className="text-white font-medium text-sm">Itens</h2>
