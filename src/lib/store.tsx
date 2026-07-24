@@ -89,7 +89,7 @@ function newId(): string {
 // Traduz um erro técnico do Supabase (PostgrestError, erro de rede, etc.) em uma mensagem que o
 // usuário consegue entender, sem nunca dizer "erro desconhecido" quando há informação disponível.
 // O detalhe técnico completo (mensagem, código, details, hint) é sempre registrado no console.
-function describeSupabaseError(err: unknown, contexto: string, acao: 'salvar' | 'atualizar'): string {
+function describeSupabaseError(err: unknown, contexto: string, acao: 'salvar' | 'atualizar' | 'excluir'): string {
   const anyErr = err as { message?: string; code?: string; details?: string; hint?: string } | null;
   const message = typeof anyErr?.message === 'string' ? anyErr.message : '';
   const code = anyErr?.code;
@@ -139,7 +139,7 @@ interface StoreContextValue {
   // mensagem de sucesso quando ok === true (ver BudgetWizard.tsx).
   addBudget: (data: Partial<Budget>) => Promise<{ budget: Budget; ok: boolean; error?: string }>;
   updateBudget: (id: string, data: Partial<Budget>) => Promise<{ ok: boolean; error?: string }>;
-  deleteBudget: (id: string) => void;
+  deleteBudget: (id: string) => Promise<{ ok: boolean; error?: string }>;
   setBudgetStatus: (id: string, status: BudgetStatus) => void;
   convertBudgetToServiceOrder: (budgetId: string) => ServiceOrder | null;
   setServiceOrderStatus: (id: string, status: ServiceOrderStatus) => void;
@@ -319,9 +319,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [db.budgets]);
 
   const addBudget: StoreContextValue['addBudget'] = useCallback(async (data) => {
-    const numeroDesejado = data.numero || nextBudgetNumber();
-    const budget: Budget = {
-      id: newId(), organization_id: orgId, numero: numeroDesejado, titulo: '', tipo_servico: 'Instalação',
+    const numeroEscolhidoPeloChamador = Boolean(data.numero);
+    let budget: Budget = {
+      id: newId(), organization_id: orgId, numero: data.numero || nextBudgetNumber(), titulo: '', tipo_servico: 'Instalação',
       local_servico: '', data_emissao: todayISO(), validade_dias: 10, responsavel: 'Felipe Ribeiro',
       status: 'rascunho', itens: [], custos_extras: [], desconto_percentual: 0, desconto_valor: 0,
       forma_pagamento: 'pix', entrada: 0, parcelas: 1, garantia: '90 dias',
@@ -335,33 +335,35 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     // que decide o que mostrar (nunca sucesso E erro ao mesmo tempo).
     setDb(prev => ({ ...prev, budgets: [budget, ...prev.budgets] }));
     if (!isSupabaseConfigured) return { budget, ok: true as const };
-    try {
-      await remoteInsertBudget(budget);
-      return { budget, ok: true as const };
-    } catch (err) {
-      // Colisão de número (ex.: número já usado por outro orçamento, estado local momentaneamente
-      // desatualizado ou duas abas criando ao mesmo tempo): tenta uma única vez com o próximo
-      // número livre antes de desistir e mostrar erro — sem incomodar o usuário por algo que o
-      // próprio sistema consegue resolver sozinho.
-      const codigo = (err as { code?: string } | null)?.code;
-      const mensagemNumeroDuplicado = /numero/i.test((err as { message?: string } | null)?.message ?? '') || codigo === '23505';
-      if (mensagemNumeroDuplicado && !data.numero) {
-        const numeroAlternativo = nextBudgetNumber();
-        if (numeroAlternativo !== numeroDesejado) {
-          const budgetRetry: Budget = { ...budget, numero: numeroAlternativo };
-          try {
-            await remoteInsertBudget(budgetRetry);
-            setDb(prev => ({ ...prev, budgets: prev.budgets.map(b => b.id === budget.id ? budgetRetry : b) }));
-            return { budget: budgetRetry, ok: true as const };
-          } catch (retryErr) {
-            setDb(prev => ({ ...prev, budgets: prev.budgets.filter(b => b.id !== budget.id) }));
-            return { budget, ok: false as const, error: describeSupabaseError(retryErr, 'o orçamento', 'salvar') };
-          }
+
+    const idOtimista = budget.id;
+    const MAX_TENTATIVAS = 6;
+    for (let tentativa = 1; tentativa <= MAX_TENTATIVAS; tentativa++) {
+      try {
+        await remoteInsertBudget(budget);
+        return { budget, ok: true as const };
+      } catch (err) {
+        const codigo = (err as { code?: string } | null)?.code;
+        const ehColisaoDeNumero = codigo === '23505';
+        // Colisão de número: o cache local pode estar desatualizado em relação ao banco de verdade
+        // (ex.: um orçamento cuja exclusão remota falhou silenciosamente antes, mas sumiu da tela).
+        // Em vez de confiar de novo no cache, avança o número em sequência e tenta de novo direto
+        // contra o Supabase — que é a fonte real da verdade — até achar um número livre.
+        if (ehColisaoDeNumero && !numeroEscolhidoPeloChamador && tentativa < MAX_TENTATIVAS) {
+          const ano = new Date().getFullYear();
+          const prefixo = `${ano}-`;
+          const seqAtual = budget.numero.startsWith(prefixo) ? parseInt(budget.numero.slice(prefixo.length), 10) : 0;
+          const proximoNumero = `${prefixo}${String((Number.isFinite(seqAtual) ? seqAtual : 0) + 1).padStart(4, '0')}`;
+          budget = { ...budget, numero: proximoNumero };
+          setDb(prev => ({ ...prev, budgets: prev.budgets.map(b => b.id === idOtimista ? budget : b) }));
+          continue;
         }
+        setDb(prev => ({ ...prev, budgets: prev.budgets.filter(b => b.id !== idOtimista) }));
+        return { budget, ok: false as const, error: describeSupabaseError(err, 'o orçamento', 'salvar') };
       }
-      setDb(prev => ({ ...prev, budgets: prev.budgets.filter(b => b.id !== budget.id) }));
-      return { budget, ok: false as const, error: describeSupabaseError(err, 'o orçamento', 'salvar') };
     }
+    setDb(prev => ({ ...prev, budgets: prev.budgets.filter(b => b.id !== idOtimista) }));
+    return { budget, ok: false as const, error: 'Não foi possível encontrar um número livre para o orçamento. Tente novamente em instantes.' };
   }, [nextBudgetNumber, orgId]);
 
   const updateBudget: StoreContextValue['updateBudget'] = useCallback(async (id, data) => {
@@ -382,9 +384,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const deleteBudget = useCallback((id: string) => {
-    setDb(prev => ({ ...prev, budgets: prev.budgets.filter(b => b.id !== id) }));
-    if (isSupabaseConfigured) remoteDeleteBudget(id).catch(err => notifySyncError('Erro ao excluir orçamento', err));
+  const deleteBudget: StoreContextValue['deleteBudget'] = useCallback(async (id) => {
+    let removido: Budget | undefined;
+    setDb(prev => {
+      removido = prev.budgets.find(b => b.id === id);
+      return { ...prev, budgets: prev.budgets.filter(b => b.id !== id) };
+    });
+    if (!isSupabaseConfigured) return { ok: true as const };
+    try {
+      await remoteDeleteBudget(id);
+      return { ok: true as const };
+    } catch (err) {
+      // Se a exclusão real falhar, o orçamento tem que voltar a aparecer na tela — do contrário
+      // ele some da lista local mas continua existindo (e ocupando o número) no banco de verdade,
+      // o que já causou orçamentos "fantasma" colidindo com números novos.
+      if (removido) {
+        const restaurado = removido;
+        setDb(prev => (prev.budgets.some(b => b.id === id) ? prev : { ...prev, budgets: [restaurado, ...prev.budgets] }));
+      }
+      return { ok: false as const, error: describeSupabaseError(err, 'o orçamento', 'excluir') };
+    }
   }, []);
 
 

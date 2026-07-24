@@ -13,9 +13,13 @@ export default function Budgets() {
   const { db, deleteBudget } = useStore();
   const toast = useToast();
 
-  function handleDelete(id: string, numero: string) {
+  async function handleDelete(id: string, numero: string) {
     if (!window.confirm(`Tem certeza que quer excluir o orçamento nº ${numero}? Essa ação não pode ser desfeita.`)) return;
-    deleteBudget(id);
+    const result = await deleteBudget(id);
+    if (!result.ok) {
+      toast.show(result.error ?? 'Não foi possível excluir o orçamento.', 'warning');
+      return;
+    }
     toast.show('Orçamento excluído.', 'info');
   }
   const [searchParams] = useSearchParams();

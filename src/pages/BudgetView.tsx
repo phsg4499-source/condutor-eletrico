@@ -106,12 +106,16 @@ export default function BudgetView() {
     }
   }
 
-  function handleDelete() {
+  async function handleDelete() {
     const confirmado = window.confirm(
       `Tem certeza que quer excluir o orçamento nº ${budget!.numero}? Essa ação não pode ser desfeita.`,
     );
     if (!confirmado) return;
-    deleteBudget(budget!.id);
+    const result = await deleteBudget(budget!.id);
+    if (!result.ok) {
+      toast.show(result.error ?? 'Não foi possível excluir o orçamento.', 'warning');
+      return;
+    }
     toast.show('Orçamento excluído.', 'info');
     navigate('/app/orcamentos');
   }
