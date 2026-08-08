@@ -23,6 +23,7 @@ export default function Clients() {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm());
+  const [salvando, setSalvando] = useState(false);
 
   const filtered = db.clients.filter(c =>
     c.nome.toLowerCase().includes(query.toLowerCase()) ||
@@ -30,9 +31,10 @@ export default function Clients() {
     (c.documento ?? '').includes(query),
   );
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.nome.trim() || !form.telefone.trim()) return;
+    if (salvando) return; // evita duplo clique/duplo envio
     const newClient: Omit<Client, 'id' | 'organization_id' | 'created_at' | 'updated_at'> = {
       tipo_pessoa: form.tipo_pessoa, nome: form.nome, documento: form.documento || undefined,
       telefone: form.telefone, whatsapp: form.whatsapp || form.telefone, email: form.email || undefined,
@@ -42,10 +44,22 @@ export default function Clients() {
         numero: form.numero, bairro: form.bairro, cidade: form.cidade, estado: form.estado,
       }] : [],
     };
-    addClient(newClient);
-    toast.show(`Cliente "${form.nome}" cadastrado com sucesso.`);
-    setForm(emptyForm());
-    setOpen(false);
+    setSalvando(true);
+    try {
+      // Só mostra sucesso depois de confirmar a gravação real no Supabase — antes disso, o
+      // cadastro parecia funcionar na hora, mas podia sumir ao recarregar a página se a gravação
+      // remota tivesse falhado silenciosamente.
+      const result = await addClient(newClient);
+      if (!result.ok) {
+        toast.show(result.error ?? 'Não foi possível cadastrar o cliente.', 'warning');
+        return;
+      }
+      toast.show(`Cliente "${form.nome}" cadastrado com sucesso.`);
+      setForm(emptyForm());
+      setOpen(false);
+    } finally {
+      setSalvando(false);
+    }
   }
 
   return (
@@ -144,8 +158,8 @@ export default function Clients() {
               <Field label="Cidade" value={form.cidade} onChange={v => setForm(f => ({ ...f, cidade: v }))} />
             </div>
 
-            <button type="submit" className="w-full bg-[#f5c518] text-[#16181d] font-semibold rounded-lg py-2.5 text-sm hover:bg-[#e0b60f]">
-              Salvar cliente
+            <button type="submit" disabled={salvando} className="w-full bg-[#f5c518] text-[#16181d] font-semibold rounded-lg py-2.5 text-sm hover:bg-[#e0b60f] disabled:opacity-60 disabled:cursor-not-allowed">
+              {salvando ? 'Salvando...' : 'Salvar cliente'}
             </button>
           </form>
         </div>

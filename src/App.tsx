@@ -17,6 +17,7 @@ import { ServiceOrdersList, ServiceOrderView } from './pages/ServiceOrders';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import Landing from './pages/public/Landing';
+import PublicProposal from './pages/public/PublicProposal';
 import InstallPrompt from './components/InstallPrompt';
 
 export default function App() {
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="/" element={<Login />} />
           <Route path="/site" element={<Landing />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/proposta/:token" element={<PublicProposal />} />
           <Route path="/app" element={<Layout />}>
             <Route index element={<Dashboard />} />
             <Route path="agenda" element={<Agenda />} />

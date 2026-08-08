@@ -16,6 +16,7 @@ import {
 } from './supabaseApi';
 import { todayISO } from './format';
 import { useToast } from './toast';
+import { calculateBudget } from './calculations';
 
 // Camada de dados do sistema.
 // MODO DEMONSTRAÇÃO (padrão, sem Supabase configurado): dados vivem em memória e são
@@ -85,6 +86,33 @@ function newId(): string {
   return crypto.randomUUID();
 }
 
+// Traduz um erro técnico do Supabase (PostgrestError, erro de rede, etc.) em uma mensagem que o
+// usuário consegue entender, sem nunca dizer "erro desconhecido" quando há informação disponível.
+// O detalhe técnico completo (mensagem, código, details, hint) é sempre registrado no console.
+function describeSupabaseError(err: unknown, contexto: string, acao: 'salvar' | 'atualizar' | 'excluir'): string {
+  const anyErr = err as { message?: string; code?: string; details?: string; hint?: string } | null;
+  const message = typeof anyErr?.message === 'string' ? anyErr.message : '';
+  const code = anyErr?.code;
+  console.error(`[${contexto}] Falha ao ${acao}`, { message, code, details: anyErr?.details, hint: anyErr?.hint, err });
+
+  if (/jwt|token|session/i.test(message) || code === 'PGRST301') {
+    return 'Sua sessão expirou. Entre novamente para salvar as alterações.';
+  }
+  if (code === '42501' || /row-level security|permission denied|policy/i.test(message)) {
+    return `Você não possui permissão para ${acao} este registro.`;
+  }
+  if (code === '23505' || /duplicate key value violates unique constraint/i.test(message)) {
+    return 'Esse número já está em uso. Tente salvar novamente — o sistema vai gerar um novo número automaticamente.';
+  }
+  if (/failed to fetch|networkerror|network request failed|load failed/i.test(message)) {
+    return 'Ocorreu uma falha de conexão. Nenhuma alteração foi confirmada.';
+  }
+  if (message) {
+    return `Não foi possível ${acao} ${contexto}: ${message}`;
+  }
+  return `Não foi possível ${acao} ${contexto}. Nenhuma alteração foi confirmada.`;
+}
+
 interface AuthUser {
   email: string;
   nome: string;
@@ -100,28 +128,36 @@ interface StoreContextValue {
   login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => void;
   updateOrganization: (data: Partial<Organization>) => void;
-  addClient: (data: Omit<Client, 'id' | 'organization_id' | 'created_at' | 'updated_at'>) => Client;
-  updateClient: (id: string, data: Partial<Client>) => void;
+  // As funções abaixo que mexem com dados críticos (cliente, orçamento, pagamento, compromisso,
+  // ordem de serviço) retornam o resultado REAL da gravação no Supabase (ok/erro) em vez de
+  // assumir sucesso apenas por terem sido chamadas. Quem chama deve aguardar (await) e só mostrar
+  // mensagem de sucesso quando ok === true — nunca sucesso e erro ao mesmo tempo, e nunca "some"
+  // depois de atualizar a página, porque a tela só é atualizada de verdade após a confirmação.
+  addClient: (data: Omit<Client, 'id' | 'organization_id' | 'created_at' | 'updated_at'>) => Promise<{ client: Client; ok: boolean; error?: string }>;
+  updateClient: (id: string, data: Partial<Client>) => Promise<{ ok: boolean; error?: string }>;
   addMaterial: (data: Omit<Material, 'id' | 'organization_id' | 'created_at' | 'updated_at'>) => Material;
   updateMaterial: (id: string, data: Partial<Material>) => void;
   addService: (data: Omit<ServiceItem, 'id' | 'organization_id' | 'created_at' | 'updated_at'>) => ServiceItem;
   updateService: (id: string, data: Partial<ServiceItem>) => void;
-  addBudget: (data: Partial<Budget>) => Budget;
-  updateBudget: (id: string, data: Partial<Budget>) => void;
-  deleteBudget: (id: string) => void;
-  setBudgetStatus: (id: string, status: BudgetStatus) => void;
-  convertBudgetToServiceOrder: (budgetId: string) => ServiceOrder | null;
+  addBudget: (data: Partial<Budget>) => Promise<{ budget: Budget; ok: boolean; error?: string }>;
+  updateBudget: (id: string, data: Partial<Budget>) => Promise<{ ok: boolean; error?: string }>;
+  deleteBudget: (id: string) => Promise<{ ok: boolean; error?: string }>;
+  // Retorna ok/erro da troca de status; se aprovando, também tenta lançar o pagamento pendente e
+  // gerar a Ordem de Serviço — "warning" traz um aviso não-bloqueante caso essas duas etapas
+  // automáticas falhem (o status em si já foi confirmado nesse caso).
+  setBudgetStatus: (id: string, status: BudgetStatus) => Promise<{ ok: boolean; error?: string; warning?: string; serviceOrder?: ServiceOrder | null }>;
+  convertBudgetToServiceOrder: (budgetId: string) => Promise<{ order: ServiceOrder | null; ok: boolean; error?: string }>;
   setServiceOrderStatus: (id: string, status: ServiceOrderStatus) => void;
   toggleChecklistItem: (orderId: string, index: number) => void;
   addQuoteRequest: (data: Omit<QuoteRequest, 'id' | 'created_at'>) => QuoteRequest;
   addOrcamentista: (data: Omit<Orcamentista, 'id' | 'organization_id' | 'created_at' | 'updated_at'>) => Orcamentista;
   updateOrcamentista: (id: string, data: Partial<Orcamentista>) => void;
-  addCompromisso: (data: Omit<Compromisso, 'id' | 'organization_id' | 'created_at' | 'updated_at'>) => Compromisso;
-  updateCompromisso: (id: string, data: Partial<Compromisso>) => void;
-  deleteCompromisso: (id: string) => void;
-  addPayment: (data: Omit<Payment, 'id' | 'organization_id' | 'created_at' | 'updated_at'>) => Payment;
-  updatePayment: (id: string, data: Partial<Payment>) => void;
-  deletePayment: (id: string) => void;
+  addCompromisso: (data: Omit<Compromisso, 'id' | 'organization_id' | 'created_at' | 'updated_at'>) => Promise<{ compromisso: Compromisso; ok: boolean; error?: string }>;
+  updateCompromisso: (id: string, data: Partial<Compromisso>) => Promise<{ ok: boolean; error?: string }>;
+  deleteCompromisso: (id: string) => Promise<{ ok: boolean; error?: string }>;
+  addPayment: (data: Omit<Payment, 'id' | 'organization_id' | 'created_at' | 'updated_at'>) => Promise<{ payment: Payment; ok: boolean; error?: string }>;
+  updatePayment: (id: string, data: Partial<Payment>) => Promise<{ ok: boolean; error?: string }>;
+  deletePayment: (id: string) => Promise<{ ok: boolean; error?: string }>;
   nextBudgetNumber: () => string;
 }
 
@@ -202,7 +238,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       return loadFromSession(data.user.id, data.user.email ?? email);
     }
     if (email.trim().toLowerCase() === DEMO_ADMIN_EMAIL && password === DEMO_ADMIN_PASSWORD) {
-      const authUser: AuthUser = { email, nome: 'Felipe Ribeiro', cargo: 'administrador', organizationId: 'org-condutor-eletrico' };
+      const authUser: AuthUser = { email, nome: 'Sansão', cargo: 'administrador', organizationId: 'org-condutor-eletrico' };
       setUser(authUser);
       localStorage.setItem(SESSION_KEY, JSON.stringify(authUser));
       return { ok: true };
@@ -227,16 +263,35 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (isSupabaseConfigured) remoteUpdateOrganization(orgId, data).catch(err => notifySyncError('Erro ao salvar configurações', err));
   }, [orgId]);
 
-  const addClient: StoreContextValue['addClient'] = useCallback((data) => {
+  const addClient: StoreContextValue['addClient'] = useCallback(async (data) => {
     const client: Client = { ...data, id: newId(), organization_id: orgId, created_at: todayISO(), updated_at: todayISO() };
     setDb(prev => ({ ...prev, clients: [client, ...prev.clients] }));
-    if (isSupabaseConfigured) remoteInsertClient(client).catch(err => notifySyncError('Erro ao salvar cliente', err));
-    return client;
+    if (!isSupabaseConfigured) return { client, ok: true as const };
+    try {
+      await remoteInsertClient(client);
+      return { client, ok: true as const };
+    } catch (err) {
+      // Gravação real falhou: tira o cliente "fantasma" da tela (ele só parecia salvo) e devolve
+      // o erro real para o formulário mostrar — sem isso, o cliente sumia ao recarregar a página.
+      setDb(prev => ({ ...prev, clients: prev.clients.filter(c => c.id !== client.id) }));
+      return { client, ok: false as const, error: describeSupabaseError(err, 'o cliente', 'salvar') };
+    }
   }, [orgId]);
 
-  const updateClient = useCallback((id: string, data: Partial<Client>) => {
-    setDb(prev => ({ ...prev, clients: prev.clients.map(c => c.id === id ? { ...c, ...data, updated_at: todayISO() } : c) }));
-    if (isSupabaseConfigured) remoteUpdateClient(id, data).catch(err => notifySyncError('Erro ao atualizar cliente', err));
+  const updateClient: StoreContextValue['updateClient'] = useCallback(async (id, data) => {
+    let previous: Client | undefined;
+    setDb(prev => {
+      previous = prev.clients.find(c => c.id === id);
+      return { ...prev, clients: prev.clients.map(c => c.id === id ? { ...c, ...data, updated_at: todayISO() } : c) };
+    });
+    if (!isSupabaseConfigured) return { ok: true as const };
+    try {
+      await remoteUpdateClient(id, data);
+      return { ok: true as const };
+    } catch (err) {
+      setDb(prev => ({ ...prev, clients: prev.clients.map(c => (c.id === id && previous) ? previous! : c) }));
+      return { ok: false as const, error: describeSupabaseError(err, 'o cliente', 'atualizar') };
+    }
   }, []);
 
   const addMaterial: StoreContextValue['addMaterial'] = useCallback((data) => {
@@ -264,52 +319,121 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const nextBudgetNumber = useCallback(() => {
+    // Baseado no MAIOR número já usado no ano (não na quantidade de orçamentos existentes).
+    // Antes contava quantos orçamentos existiam e somava 1 — se um orçamento fosse excluído no
+    // meio do caminho, o próximo número gerado colidia com um número já usado por outro orçamento
+    // (erro "duplicate key value violates unique constraint budgets_organization_id_numero_key").
     const year = new Date().getFullYear();
-    const count = db.budgets.filter(b => b.numero.startsWith(String(year))).length + 1;
-    return `${year}-${String(count).padStart(4, '0')}`;
+    const prefix = `${year}-`;
+    const numerosExistentes = new Set(db.budgets.map(b => b.numero));
+    const maiorSequencia = db.budgets.reduce((max, b) => {
+      if (!b.numero.startsWith(prefix)) return max;
+      const seq = parseInt(b.numero.slice(prefix.length), 10);
+      return Number.isFinite(seq) && seq > max ? seq : max;
+    }, 0);
+    let seq = maiorSequencia + 1;
+    let numero = `${prefix}${String(seq).padStart(4, '0')}`;
+    // Garantia extra contra colisão (ex.: numeração antiga fora do padrão, ou estado local
+    // momentaneamente desatualizado): se ainda assim colidir, avança até achar um número livre.
+    while (numerosExistentes.has(numero)) {
+      seq += 1;
+      numero = `${prefix}${String(seq).padStart(4, '0')}`;
+    }
+    return numero;
   }, [db.budgets]);
 
-  const addBudget: StoreContextValue['addBudget'] = useCallback((data) => {
-    const numero = data.numero || nextBudgetNumber();
-    const budget: Budget = {
-      id: newId(), organization_id: orgId, numero, titulo: '', tipo_servico: 'Instalação',
+  const addBudget: StoreContextValue['addBudget'] = useCallback(async (data) => {
+    const numeroEscolhidoPeloChamador = Boolean(data.numero);
+    let budget: Budget = {
+      id: newId(), organization_id: orgId, numero: data.numero || nextBudgetNumber(), titulo: '', tipo_servico: 'Instalação',
       local_servico: '', data_emissao: todayISO(), validade_dias: 10, responsavel: 'Felipe Ribeiro',
       status: 'rascunho', itens: [], custos_extras: [], desconto_percentual: 0, desconto_valor: 0,
       forma_pagamento: 'pix', entrada: 0, parcelas: 1, garantia: '90 dias',
       historico_status: [{ status: 'rascunho', data: todayISO() }],
+      link_publico_token: newId(),
       created_at: todayISO(), updated_at: todayISO(), ...data,
     };
+    // Atualização otimista: aparece na tela imediatamente. Em modo demo (sem Supabase) isso já é
+    // a gravação definitiva. Em modo real, só é considerado sucesso de fato depois que o Supabase
+    // confirmar — se falhar, a criação é desfeita da tela e o erro real é devolvido a quem chamou,
+    // que decide o que mostrar (nunca sucesso E erro ao mesmo tempo).
     setDb(prev => ({ ...prev, budgets: [budget, ...prev.budgets] }));
-    if (isSupabaseConfigured) remoteInsertBudget(budget).catch(err => notifySyncError('Erro ao salvar orçamento', err));
-    return budget;
+    if (!isSupabaseConfigured) return { budget, ok: true as const };
+
+    const idOtimista = budget.id;
+    const MAX_TENTATIVAS = 6;
+    for (let tentativa = 1; tentativa <= MAX_TENTATIVAS; tentativa++) {
+      try {
+        await remoteInsertBudget(budget);
+        return { budget, ok: true as const };
+      } catch (err) {
+        const codigo = (err as { code?: string } | null)?.code;
+        const ehColisaoDeNumero = codigo === '23505';
+        // Colisão de número: o cache local pode estar desatualizado em relação ao banco de verdade
+        // (ex.: um orçamento cuja exclusão remota falhou silenciosamente antes, mas sumiu da tela).
+        // Em vez de confiar de novo no cache, avança o número em sequência e tenta de novo direto
+        // contra o Supabase — que é a fonte real da verdade — até achar um número livre.
+        if (ehColisaoDeNumero && !numeroEscolhidoPeloChamador && tentativa < MAX_TENTATIVAS) {
+          const ano = new Date().getFullYear();
+          const prefixo = `${ano}-`;
+          const seqAtual = budget.numero.startsWith(prefixo) ? parseInt(budget.numero.slice(prefixo.length), 10) : 0;
+          const proximoNumero = `${prefixo}${String((Number.isFinite(seqAtual) ? seqAtual : 0) + 1).padStart(4, '0')}`;
+          budget = { ...budget, numero: proximoNumero };
+          setDb(prev => ({ ...prev, budgets: prev.budgets.map(b => b.id === idOtimista ? budget : b) }));
+          continue;
+        }
+        setDb(prev => ({ ...prev, budgets: prev.budgets.filter(b => b.id !== idOtimista) }));
+        return { budget, ok: false as const, error: describeSupabaseError(err, 'o orçamento', 'salvar') };
+      }
+    }
+    setDb(prev => ({ ...prev, budgets: prev.budgets.filter(b => b.id !== idOtimista) }));
+    return { budget, ok: false as const, error: 'Não foi possível encontrar um número livre para o orçamento. Tente novamente em instantes.' };
   }, [nextBudgetNumber, orgId]);
 
-  const updateBudget = useCallback((id: string, data: Partial<Budget>) => {
-    setDb(prev => ({ ...prev, budgets: prev.budgets.map(b => b.id === id ? { ...b, ...data, updated_at: todayISO() } : b) }));
-    if (isSupabaseConfigured) remoteUpdateBudget(id, data).catch(err => notifySyncError('Erro ao atualizar orçamento', err));
+  const updateBudget: StoreContextValue['updateBudget'] = useCallback(async (id, data) => {
+    let previous: Budget | undefined;
+    setDb(prev => {
+      previous = prev.budgets.find(b => b.id === id);
+      return { ...prev, budgets: prev.budgets.map(b => b.id === id ? { ...b, ...data, updated_at: todayISO() } : b) };
+    });
+    if (!isSupabaseConfigured) return { ok: true as const };
+    try {
+      await remoteUpdateBudget(id, data);
+      return { ok: true as const };
+    } catch (err) {
+      // Gravação real falhou: desfaz a atualização otimista para a tela não mentir que salvou,
+      // e devolve o erro real para quem chamou mostrar (uma única mensagem, nunca as duas).
+      setDb(prev => ({ ...prev, budgets: prev.budgets.map(b => (b.id === id && previous) ? previous! : b) }));
+      return { ok: false as const, error: describeSupabaseError(err, 'o orçamento', 'atualizar') };
+    }
   }, []);
 
-  const deleteBudget = useCallback((id: string) => {
-    setDb(prev => ({ ...prev, budgets: prev.budgets.filter(b => b.id !== id) }));
-    if (isSupabaseConfigured) remoteDeleteBudget(id).catch(err => notifySyncError('Erro ao excluir orçamento', err));
+  const deleteBudget: StoreContextValue['deleteBudget'] = useCallback(async (id) => {
+    let removido: Budget | undefined;
+    setDb(prev => {
+      removido = prev.budgets.find(b => b.id === id);
+      return { ...prev, budgets: prev.budgets.filter(b => b.id !== id) };
+    });
+    if (!isSupabaseConfigured) return { ok: true as const };
+    try {
+      await remoteDeleteBudget(id);
+      return { ok: true as const };
+    } catch (err) {
+      // Se a exclusão real falhar, o orçamento tem que voltar a aparecer na tela — do contrário
+      // ele some da lista local mas continua existindo (e ocupando o número) no banco de verdade,
+      // o que já causou orçamentos "fantasma" colidindo com números novos.
+      if (removido) {
+        const restaurado = removido;
+        setDb(prev => (prev.budgets.some(b => b.id === id) ? prev : { ...prev, budgets: [restaurado, ...prev.budgets] }));
+      }
+      return { ok: false as const, error: describeSupabaseError(err, 'o orçamento', 'excluir') };
+    }
   }, []);
 
-  const setBudgetStatus = useCallback((id: string, status: BudgetStatus) => {
-    setDb(prev => ({
-      ...prev,
-      budgets: prev.budgets.map(b => b.id === id
-        ? { ...b, status, historico_status: [...b.historico_status, { status, data: todayISO() }], updated_at: todayISO() }
-        : b),
-    }));
-    if (isSupabaseConfigured) remoteUpdateBudgetStatus(id, status).catch(err => notifySyncError('Erro ao atualizar status do orçamento', err));
-  }, []);
 
-  const convertBudgetToServiceOrder = useCallback((budgetId: string): ServiceOrder | null => {
-    const budget = db.budgets.find(b => b.id === budgetId);
-    if (!budget) return null;
-    const numero = `OS-${budget.numero}`;
-    const order: ServiceOrder = {
-      id: newId(), organization_id: orgId, numero, budget_id: budget.id, client_id: budget.client_id,
+  function buildServiceOrderFromBudget(budget: Budget): ServiceOrder {
+    return {
+      id: newId(), organization_id: orgId, numero: `OS-${budget.numero}`, budget_id: budget.id, client_id: budget.client_id,
       cliente_nome_avulso: budget.cliente_nome_avulso, cliente_telefone_avulso: budget.cliente_telefone_avulso,
       cliente_whatsapp_avulso: budget.cliente_whatsapp_avulso,
       responsavel_tecnico: budget.responsavel, status: 'aguardando_agendamento',
@@ -323,19 +447,64 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       ],
       created_at: todayISO(), updated_at: todayISO(),
     };
-    setDb(prev => ({
-      ...prev,
-      serviceOrders: [order, ...prev.serviceOrders],
-      budgets: prev.budgets.map(b => b.id === budgetId
-        ? { ...b, status: 'convertido_em_os', historico_status: [...b.historico_status, { status: 'convertido_em_os', data: todayISO() }] }
-        : b),
-    }));
-    if (isSupabaseConfigured) {
-      remoteInsertServiceOrder(order).catch(err => notifySyncError('Erro ao criar ordem de serviço', err));
-      remoteUpdateBudgetStatus(budgetId, 'convertido_em_os').catch(err => notifySyncError('Erro ao atualizar status do orçamento', err));
+  }
+
+  // Fluxo manual (botão "Converter em ordem de serviço" em BudgetView): idempotente — se este
+  // orçamento já possui uma OS (ex.: criada automaticamente ao aprovar), reaproveita-a em vez de
+  // duplicar, e só então marca o orçamento como "convertido_em_os". Aguarda a confirmação real do
+  // Supabase antes de devolver sucesso; se falhar, desfaz a mudança otimista.
+  const convertBudgetToServiceOrder: StoreContextValue['convertBudgetToServiceOrder'] = useCallback(async (budgetId) => {
+    const budget = db.budgets.find(b => b.id === budgetId);
+    if (!budget) return { order: null, ok: false as const, error: 'Orçamento não encontrado.' };
+    const existente = db.serviceOrders.find(o => o.budget_id === budgetId);
+    const order = existente ?? buildServiceOrderFromBudget(budget);
+    let previousBudget: Budget | undefined;
+    setDb(prev => {
+      previousBudget = prev.budgets.find(b => b.id === budgetId);
+      return {
+        ...prev,
+        serviceOrders: existente ? prev.serviceOrders : [order, ...prev.serviceOrders],
+        budgets: prev.budgets.map(b => b.id === budgetId
+          ? { ...b, status: 'convertido_em_os', historico_status: [...b.historico_status, { status: 'convertido_em_os', data: todayISO() }] }
+          : b),
+      };
+    });
+    if (!isSupabaseConfigured) return { order, ok: true as const };
+    try {
+      if (!existente) await remoteInsertServiceOrder(order);
+      await remoteUpdateBudgetStatus(budgetId, 'convertido_em_os');
+      return { order, ok: true as const };
+    } catch (err) {
+      setDb(prev => ({
+        ...prev,
+        serviceOrders: existente ? prev.serviceOrders : prev.serviceOrders.filter(o => o.id !== order.id),
+        budgets: prev.budgets.map(b => (b.id === budgetId && previousBudget) ? previousBudget! : b),
+      }));
+      return { order: null, ok: false as const, error: describeSupabaseError(err, 'a ordem de serviço', 'salvar') };
     }
-    return order;
-  }, [db.budgets, orgId]);
+  }, [db.budgets, db.serviceOrders, orgId]);
+
+  // Geração automática de OS ao aprovar (total ou parcialmente) um orçamento — chamada de dentro
+  // de setBudgetStatus. Diferente do fluxo manual acima, NÃO altera o status do orçamento (ele
+  // continua "aprovado"/"aprovado_parcialmente"); apenas garante que a OS exista, sem duplicar.
+  // Aguarda a confirmação real do Supabase — o chamador (setBudgetStatus) só considera a aprovação
+  // totalmente concluída depois que isso retornar ok.
+  const ensureServiceOrderForBudget = useCallback(async (budget: Budget): Promise<{ ok: boolean; error?: string; order: ServiceOrder | null }> => {
+    const existente = db.serviceOrders.find(o => o.budget_id === budget.id);
+    if (existente) return { ok: true, order: existente };
+    const order = buildServiceOrderFromBudget(budget);
+    setDb(prev => (prev.serviceOrders.some(o => o.budget_id === budget.id)
+      ? prev
+      : { ...prev, serviceOrders: [order, ...prev.serviceOrders] }));
+    if (!isSupabaseConfigured) return { ok: true, order };
+    try {
+      await remoteInsertServiceOrder(order);
+      return { ok: true, order };
+    } catch (err) {
+      setDb(prev => ({ ...prev, serviceOrders: prev.serviceOrders.filter(o => o.id !== order.id) }));
+      return { ok: false, order: null, error: describeSupabaseError(err, 'a ordem de serviço', 'salvar') };
+    }
+  }, [db.serviceOrders, orgId]);
 
   const setServiceOrderStatus = useCallback((id: string, status: ServiceOrderStatus) => {
     setDb(prev => ({ ...prev, serviceOrders: prev.serviceOrders.map(o => o.id === id ? { ...o, status, updated_at: todayISO() } : o) }));
@@ -383,43 +552,170 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (isSupabaseConfigured) remoteUpdateOrcamentista(id, data).catch(err => notifySyncError('Erro ao atualizar orçamentista', err));
   }, []);
 
-  const addCompromisso: StoreContextValue['addCompromisso'] = useCallback((data) => {
+  const addCompromisso: StoreContextValue['addCompromisso'] = useCallback(async (data) => {
     const compromisso: Compromisso = { ...data, id: newId(), organization_id: orgId, created_at: todayISO(), updated_at: todayISO() };
     setDb(prev => ({ ...prev, compromissos: [...prev.compromissos, compromisso].sort((a, b) => a.data.localeCompare(b.data)) }));
-    if (isSupabaseConfigured) remoteInsertCompromisso(compromisso).catch(err => notifySyncError('Erro ao salvar compromisso', err));
-    return compromisso;
+    if (!isSupabaseConfigured) return { compromisso, ok: true as const };
+    try {
+      await remoteInsertCompromisso(compromisso);
+      return { compromisso, ok: true as const };
+    } catch (err) {
+      setDb(prev => ({ ...prev, compromissos: prev.compromissos.filter(c => c.id !== compromisso.id) }));
+      return { compromisso, ok: false as const, error: describeSupabaseError(err, 'o compromisso', 'salvar') };
+    }
   }, [orgId]);
 
-  const updateCompromisso = useCallback((id: string, data: Partial<Compromisso>) => {
-    setDb(prev => ({
-      ...prev,
-      compromissos: prev.compromissos.map(c => c.id === id ? { ...c, ...data, updated_at: todayISO() } : c)
-        .sort((a, b) => a.data.localeCompare(b.data)),
-    }));
-    if (isSupabaseConfigured) remoteUpdateCompromisso(id, data).catch(err => notifySyncError('Erro ao atualizar compromisso', err));
+  const updateCompromisso: StoreContextValue['updateCompromisso'] = useCallback(async (id, data) => {
+    let previous: Compromisso | undefined;
+    setDb(prev => {
+      previous = prev.compromissos.find(c => c.id === id);
+      return {
+        ...prev,
+        compromissos: prev.compromissos.map(c => c.id === id ? { ...c, ...data, updated_at: todayISO() } : c)
+          .sort((a, b) => a.data.localeCompare(b.data)),
+      };
+    });
+    if (!isSupabaseConfigured) return { ok: true as const };
+    try {
+      await remoteUpdateCompromisso(id, data);
+      return { ok: true as const };
+    } catch (err) {
+      setDb(prev => ({ ...prev, compromissos: prev.compromissos.map(c => (c.id === id && previous) ? previous! : c) }));
+      return { ok: false as const, error: describeSupabaseError(err, 'o compromisso', 'atualizar') };
+    }
   }, []);
 
-  const deleteCompromisso = useCallback((id: string) => {
-    setDb(prev => ({ ...prev, compromissos: prev.compromissos.filter(c => c.id !== id) }));
-    if (isSupabaseConfigured) remoteDeleteCompromisso(id).catch(err => notifySyncError('Erro ao excluir compromisso', err));
+  const deleteCompromisso: StoreContextValue['deleteCompromisso'] = useCallback(async (id) => {
+    let removido: Compromisso | undefined;
+    setDb(prev => {
+      removido = prev.compromissos.find(c => c.id === id);
+      return { ...prev, compromissos: prev.compromissos.filter(c => c.id !== id) };
+    });
+    if (!isSupabaseConfigured) return { ok: true as const };
+    try {
+      await remoteDeleteCompromisso(id);
+      return { ok: true as const };
+    } catch (err) {
+      if (removido) {
+        const restaurado = removido;
+        setDb(prev => (prev.compromissos.some(c => c.id === id) ? prev : { ...prev, compromissos: [...prev.compromissos, restaurado].sort((a, b) => a.data.localeCompare(b.data)) }));
+      }
+      return { ok: false as const, error: describeSupabaseError(err, 'o compromisso', 'excluir') };
+    }
   }, []);
 
-  const addPayment: StoreContextValue['addPayment'] = useCallback((data) => {
+  const addPayment: StoreContextValue['addPayment'] = useCallback(async (data) => {
     const payment: Payment = { ...data, id: newId(), organization_id: orgId, created_at: todayISO(), updated_at: todayISO() };
     setDb(prev => ({ ...prev, payments: [payment, ...prev.payments] }));
-    if (isSupabaseConfigured) remoteInsertPayment(payment).catch(err => notifySyncError('Erro ao salvar pagamento', err));
-    return payment;
+    if (!isSupabaseConfigured) return { payment, ok: true as const };
+    try {
+      await remoteInsertPayment(payment);
+      return { payment, ok: true as const };
+    } catch (err) {
+      setDb(prev => ({ ...prev, payments: prev.payments.filter(p => p.id !== payment.id) }));
+      return { payment, ok: false as const, error: describeSupabaseError(err, 'o pagamento', 'salvar') };
+    }
   }, [orgId]);
 
-  const updatePayment = useCallback((id: string, data: Partial<Payment>) => {
-    setDb(prev => ({ ...prev, payments: prev.payments.map(p => p.id === id ? { ...p, ...data, updated_at: todayISO() } : p) }));
-    if (isSupabaseConfigured) remoteUpdatePayment(id, data).catch(err => notifySyncError('Erro ao atualizar pagamento', err));
+  const updatePayment: StoreContextValue['updatePayment'] = useCallback(async (id, data) => {
+    let previous: Payment | undefined;
+    setDb(prev => {
+      previous = prev.payments.find(p => p.id === id);
+      return { ...prev, payments: prev.payments.map(p => p.id === id ? { ...p, ...data, updated_at: todayISO() } : p) };
+    });
+    if (!isSupabaseConfigured) return { ok: true as const };
+    try {
+      await remoteUpdatePayment(id, data);
+      return { ok: true as const };
+    } catch (err) {
+      setDb(prev => ({ ...prev, payments: prev.payments.map(p => (p.id === id && previous) ? previous! : p) }));
+      return { ok: false as const, error: describeSupabaseError(err, 'o pagamento', 'atualizar') };
+    }
   }, []);
 
-  const deletePayment = useCallback((id: string) => {
-    setDb(prev => ({ ...prev, payments: prev.payments.filter(p => p.id !== id) }));
-    if (isSupabaseConfigured) remoteDeletePayment(id).catch(err => notifySyncError('Erro ao excluir pagamento', err));
+  const deletePayment: StoreContextValue['deletePayment'] = useCallback(async (id) => {
+    let removido: Payment | undefined;
+    setDb(prev => {
+      removido = prev.payments.find(p => p.id === id);
+      return { ...prev, payments: prev.payments.filter(p => p.id !== id) };
+    });
+    if (!isSupabaseConfigured) return { ok: true as const };
+    try {
+      await remoteDeletePayment(id);
+      return { ok: true as const };
+    } catch (err) {
+      if (removido) {
+        const restaurado = removido;
+        setDb(prev => (prev.payments.some(p => p.id === id) ? prev : { ...prev, payments: [restaurado, ...prev.payments] }));
+      }
+      return { ok: false as const, error: describeSupabaseError(err, 'o pagamento', 'excluir') };
+    }
   }, []);
+
+  // Fluxo de aprovação, na ordem que o usuário espera: 1) salva o status e SÓ SEGUE depois de
+  // confirmar a gravação real no Supabase; 2) lança o pagamento "a receber" automaticamente, se
+  // ainda não houver nenhum; 3) garante a Ordem de Serviço. As etapas 2 e 3 são automações que
+  // seguem a aprovação — se alguma delas falhar, o status (que é o que realmente importa) já está
+  // salvo, e o chamador recebe um "warning" claro em vez de um erro genérico ou um sucesso mudo.
+  const setBudgetStatus: StoreContextValue['setBudgetStatus'] = useCallback(async (id, status) => {
+    let previous: Budget | undefined;
+    setDb(prev => {
+      previous = prev.budgets.find(b => b.id === id);
+      return {
+        ...prev,
+        budgets: prev.budgets.map(b => b.id === id
+          ? { ...b, status, historico_status: [...b.historico_status, { status, data: todayISO() }], updated_at: todayISO() }
+          : b),
+      };
+    });
+
+    if (isSupabaseConfigured) {
+      try {
+        await remoteUpdateBudgetStatus(id, status);
+      } catch (err) {
+        setDb(prev => ({ ...prev, budgets: prev.budgets.map(b => (b.id === id && previous) ? previous! : b) }));
+        return { ok: false as const, error: describeSupabaseError(err, 'o status do orçamento', 'atualizar') };
+      }
+    }
+
+    const isAprovando = status === 'aprovado' || status === 'aprovado_parcialmente';
+    if (!isAprovando || !previous) return { ok: true as const, serviceOrder: null };
+
+    // Reconstrói o orçamento já com o status novo (em vez de reler de db.budgets, que pode ainda
+    // não ter sido re-renderizado neste exato instante) para gerar pagamento/OS com dados corretos.
+    const budgetAtualizado: Budget = {
+      ...previous, status, historico_status: [...previous.historico_status, { status, data: todayISO() }], updated_at: todayISO(),
+    };
+
+    const avisos: string[] = [];
+
+    const jaTemPagamento = db.payments.some(p => p.budget_id === id);
+    if (!jaTemPagamento) {
+      const totals = calculateBudget(budgetAtualizado);
+      if (totals.totalVenda > 0) {
+        const paymentResult = await addPayment({
+          client_id: budgetAtualizado.client_id ?? null,
+          budget_id: budgetAtualizado.id,
+          descricao: `Saldo a receber — orçamento ${budgetAtualizado.numero}`,
+          valor: totals.totalVenda,
+          status: 'pendente',
+        });
+        if (!paymentResult.ok) {
+          avisos.push(`não foi possível lançar o valor a receber automaticamente (${paymentResult.error})`);
+        }
+      }
+    }
+
+    const osResult = await ensureServiceOrderForBudget(budgetAtualizado);
+    if (!osResult.ok) {
+      avisos.push(`não foi possível gerar a ordem de serviço (${osResult.error})`);
+    }
+
+    if (avisos.length > 0) {
+      return { ok: true as const, warning: `Status atualizado, mas ${avisos.join('; ')}.`, serviceOrder: osResult.order };
+    }
+    return { ok: true as const, serviceOrder: osResult.order };
+  }, [db.payments, addPayment, ensureServiceOrderForBudget]);
 
   const value = useMemo<StoreContextValue>(() => ({
     isDemoMode: !isSupabaseConfigured,
