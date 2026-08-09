@@ -7,7 +7,13 @@ import { calculateBudget, budgetAlerts } from '../lib/calculations';
 import { formatMoney, todayISO } from '../lib/format';
 import type { Budget, BudgetLineItem, ExtraCost, FormaPagamento } from '../types';
 
-function uid(p: string) { return `${p}-${Date.now()}-${Math.floor(Math.random() * 9999)}`; }
+// Gera um UUID de verdade: os itens e custos extras do orçamento são gravados nas tabelas
+// budget_items/budget_extra_costs, cujas colunas "id" são do tipo uuid no Supabase. O formato
+// antigo ("it-1786295689919-1190") não é um UUID válido — o Postgres rejeitava a gravação com
+// "invalid input syntax for type uuid". Isso ficava escondido antes porque o salvamento do
+// orçamento era "fire-and-forget" (mostrava sucesso mesmo se essa gravação falhasse); agora que
+// o resultado real é aguardado e checado, o erro aparece — e esta é a correção definitiva dele.
+function uid(_prefixoIgnorado: string): string { return crypto.randomUUID(); }
 
 const formasPagamento: { value: FormaPagamento; label: string }[] = [
   { value: 'pix', label: 'Pix' }, { value: 'dinheiro', label: 'Dinheiro' }, { value: 'transferencia', label: 'Transferência' },
