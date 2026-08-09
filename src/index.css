@@ -1,23 +1,29 @@
 @import "tailwindcss";
 
+/* ===== Identidade Condutor Elétrico Brasil — azul/ciano, tema claro ===== */
 :root {
-  --color-graphite: #16181d;
-  --color-graphite-soft: #21242b;
-  --color-energy: #f5c518;
-  --color-energy-deep: #d9a606;
+  --color-brand-cyan: #00B4E5;
+  --color-brand-mid: #009AD1;
+  --color-brand-deep: #0069A8;
+  --color-brand-ink: #0b2338;
+  /* Nomes antigos mantidos como alias, para não quebrar nada que ainda os referencie. */
+  --color-graphite: #0069A8;
+  --color-graphite-soft: #009AD1;
+  --color-energy: #00B4E5;
+  --color-energy-deep: #0069A8;
 }
 
 html, body, #root { height: 100%; }
-body { background-color: #0f1115; }
+body { background-color: #f4f7fa; }
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb { background: #3a3f4b; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #b9c6d1; border-radius: 4px; }
 
 /* ===== Animações e efeitos visuais — Condutor Elétrico ===== */
 
 @keyframes ce-pulse-glow {
-  0%, 100% { filter: drop-shadow(0 0 2px rgba(245, 197, 24, 0.35)); }
-  50% { filter: drop-shadow(0 0 12px rgba(245, 197, 24, 0.75)); }
+  0%, 100% { filter: drop-shadow(0 0 2px rgba(0, 180, 229, 0.35)); }
+  50% { filter: drop-shadow(0 0 10px rgba(0, 180, 229, 0.6)); }
 }
 .ce-glow-pulse { animation: ce-pulse-glow 2.6s ease-in-out infinite; }
 
@@ -52,7 +58,7 @@ body { background-color: #0f1115; }
   100% { background-position: 200% 0; }
 }
 .ce-shimmer {
-  background: linear-gradient(110deg, transparent 40%, rgba(245,197,24,0.18) 50%, transparent 60%);
+  background: linear-gradient(110deg, transparent 40%, rgba(0,180,229,0.18) 50%, transparent 60%);
   background-size: 200% 100%;
   animation: ce-shimmer 2.4s ease-in-out infinite;
 }
@@ -81,13 +87,13 @@ body { background-color: #0f1115; }
 }
 .ce-btn-glow:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px -6px rgba(245, 197, 24, 0.45);
+  box-shadow: 0 8px 20px -6px rgba(0, 105, 168, 0.35);
 }
 .ce-btn-glow:active { transform: translateY(0); }
 
 @keyframes ce-cta-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(245,197,24,0.5), 0 4px 14px -4px rgba(245,197,24,0.4); }
-  50% { box-shadow: 0 0 0 7px rgba(245,197,24,0), 0 4px 26px -2px rgba(245,197,24,0.8); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0,180,229,0.4), 0 4px 14px -4px rgba(0,105,168,0.35); }
+  50% { box-shadow: 0 0 0 6px rgba(0,180,229,0), 0 4px 20px -2px rgba(0,180,229,0.55); }
 }
 .ce-cta-glow { animation: ce-cta-glow 2.4s ease-in-out infinite; }
 
@@ -96,16 +102,16 @@ body { background-color: #0f1115; }
 }
 .ce-card-hover:hover {
   transform: translateY(-2px);
-  border-color: rgba(245, 197, 24, 0.35);
-  box-shadow: 0 12px 32px -12px rgba(0,0,0,0.5);
+  border-color: rgba(0, 154, 209, 0.35);
+  box-shadow: 0 12px 28px -14px rgba(11, 35, 56, 0.25);
 }
 
 .ce-nav-active {
-  box-shadow: 0 0 0 1px rgba(245,197,24,0.4), 0 6px 20px -6px rgba(245,197,24,0.55);
+  box-shadow: 0 0 0 1px rgba(0,180,229,0.35), 0 6px 16px -6px rgba(0,105,168,0.35);
 }
 
 .ce-gradient-text {
-  background: linear-gradient(90deg, #f5c518, #ffdf7a, #f5c518);
+  background: linear-gradient(90deg, #0069A8, #00B4E5, #0069A8);
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
@@ -141,8 +147,8 @@ body { background-color: #0f1115; }
 }
 .ce-grid-bg {
   background-image:
-    linear-gradient(rgba(245,197,24,0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(245,197,24,0.06) 1px, transparent 1px);
+    linear-gradient(rgba(0,105,168,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,105,168,0.08) 1px, transparent 1px);
   background-size: 40px 40px;
   animation: ce-grid-drift 14s linear infinite;
 }
@@ -153,15 +159,16 @@ body { background-color: #0f1115; }
 }
 .ce-scan-glow { animation: ce-scan-glow 3.2s ease-in-out infinite; }
 
+/* Cartão "vidro" claro — usado no login e em destaques, sobre fundo claro. */
 .ce-glass-card {
-  background: linear-gradient(180deg, rgba(22,24,29,0.92), rgba(15,17,21,0.96));
+  background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(244,247,250,0.96));
   backdrop-filter: blur(16px);
-  box-shadow: 0 0 0 1px rgba(245,197,24,0.12), 0 30px 80px -20px rgba(0,0,0,0.7), 0 0 60px -25px rgba(245,197,24,0.35);
+  box-shadow: 0 0 0 1px rgba(0,105,168,0.10), 0 30px 60px -25px rgba(11,35,56,0.25), 0 0 40px -28px rgba(0,180,229,0.3);
 }
 
 @keyframes ce-border-glow {
-  0%, 100% { box-shadow: 0 0 0 1px rgba(245,197,24,0.12), 0 30px 80px -20px rgba(0,0,0,0.7), 0 0 40px -20px rgba(245,197,24,0.25); }
-  50% { box-shadow: 0 0 0 1px rgba(245,197,24,0.28), 0 30px 80px -20px rgba(0,0,0,0.7), 0 0 70px -15px rgba(245,197,24,0.5); }
+  0%, 100% { box-shadow: 0 0 0 1px rgba(0,105,168,0.10), 0 24px 50px -25px rgba(11,35,56,0.22); }
+  50% { box-shadow: 0 0 0 1px rgba(0,180,229,0.28), 0 24px 50px -25px rgba(11,35,56,0.22), 0 0 30px -12px rgba(0,180,229,0.35); }
 }
 .ce-glass-card-glow { animation: ce-border-glow 4s ease-in-out infinite; }
 
@@ -171,23 +178,25 @@ body { background-color: #0f1115; }
 }
 .ce-needle-wobble { animation: ce-needle-wobble 1.3s ease-in-out infinite; }
 
+/* Destaque discreto (não-neon) para o multímetro do painel — sombra suave em vez de brilho
+   exagerado, alinhado ao pedido de identidade "profissional, não excessivamente carregada". */
 @keyframes ce-neon-pulse {
   0%, 100% {
-    box-shadow: 0 0 0 1px rgba(245,197,24,0.4), 0 0 22px rgba(245,197,24,0.4), 0 0 50px rgba(245,197,24,0.2), 0 25px 60px -20px rgba(0,0,0,0.65);
-    border-color: rgba(245,197,24,0.4);
+    box-shadow: 0 0 0 1px rgba(0,105,168,0.18), 0 0 16px rgba(0,180,229,0.18), 0 20px 45px -22px rgba(11,35,56,0.3);
+    border-color: rgba(0,105,168,0.25);
   }
   50% {
-    box-shadow: 0 0 0 1px rgba(245,197,24,0.85), 0 0 40px rgba(245,197,24,0.85), 0 0 90px rgba(245,197,24,0.45), 0 25px 60px -20px rgba(0,0,0,0.65);
-    border-color: rgba(245,197,24,0.85);
+    box-shadow: 0 0 0 1px rgba(0,180,229,0.4), 0 0 26px rgba(0,180,229,0.3), 0 20px 45px -22px rgba(11,35,56,0.3);
+    border-color: rgba(0,180,229,0.45);
   }
 }
-.ce-neon-pulse { animation: ce-neon-pulse 2.2s ease-in-out infinite; }
+.ce-neon-pulse { animation: ce-neon-pulse 2.6s ease-in-out infinite; }
 
 .ce-input-glow {
   transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 .ce-input-glow:focus {
-  box-shadow: 0 0 0 3px rgba(245,197,24,0.15);
+  box-shadow: 0 0 0 3px rgba(0,180,229,0.18);
 }
 
 @keyframes ce-spotlight-in {

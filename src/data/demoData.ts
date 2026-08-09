@@ -7,8 +7,8 @@ export const ORG_ID = 'org-condutor-eletrico';
 
 export const demoOrganization: Organization = {
   id: ORG_ID,
-  razao_social: 'Condutor Elétrico Serviços Elétricos Ltda (dado demonstrativo)',
-  nome_fantasia: 'Condutor Elétrico',
+  razao_social: 'Condutor Elétrico Brasil Serviços Elétricos Ltda (dado demonstrativo)',
+  nome_fantasia: 'Condutor Elétrico Brasil',
   documento: '00.000.000/0001-00 (demonstrativo)',
   telefone: '(31) 99115-4659',
   whatsapp: '5531991154659',
@@ -17,8 +17,8 @@ export const demoOrganization: Organization = {
   cidade: 'São Paulo',
   estado: 'SP',
   cep: '01000-000',
-  cor_principal: '#16181d',
-  cor_secundaria: '#f5c518',
+  cor_principal: '#0069A8',
+  cor_secundaria: '#00B4E5',
   instagram: '@condutoreletricobrasil',
   chave_pix: 'contato@condutoreletrico.com.br (demonstrativo)',
   condicoes_padrao: 'Pagamento conforme condições combinadas na proposta. Início dos trabalhos após aprovação e confirmação do pagamento de entrada, quando aplicável.',

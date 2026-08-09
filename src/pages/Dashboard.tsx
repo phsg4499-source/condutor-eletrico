@@ -16,16 +16,16 @@ import {
 type Accent = 'neutral' | 'energy' | 'success' | 'danger' | 'info';
 
 const ACCENTS: Record<Accent, { bg: string; text: string; ring: string }> = {
-  neutral: { bg: 'bg-white/[0.06]', text: 'text-gray-300', ring: 'group-hover:border-white/20' },
-  energy: { bg: 'bg-[#f5c518]/15', text: 'text-[#f5c518]', ring: 'group-hover:border-[#f5c518]/40' },
-  success: { bg: 'bg-emerald-500/15', text: 'text-emerald-400', ring: 'group-hover:border-emerald-500/40' },
-  danger: { bg: 'bg-red-500/15', text: 'text-red-400', ring: 'group-hover:border-red-500/40' },
-  info: { bg: 'bg-sky-500/15', text: 'text-sky-400', ring: 'group-hover:border-sky-500/40' },
+  neutral: { bg: 'bg-slate-100', text: 'text-slate-500', ring: 'group-hover:border-slate-300' },
+  energy: { bg: 'bg-[#00B4E5]/12', text: 'text-[#0069A8]', ring: 'group-hover:border-[#00B4E5]/50' },
+  success: { bg: 'bg-emerald-100', text: 'text-emerald-600', ring: 'group-hover:border-emerald-300' },
+  danger: { bg: 'bg-red-100', text: 'text-red-600', ring: 'group-hover:border-red-300' },
+  info: { bg: 'bg-sky-100', text: 'text-sky-600', ring: 'group-hover:border-sky-300' },
 };
 
 function CardShell({ to, delay, accent = 'neutral', children }: { to?: string; delay: number; accent?: Accent; children: ReactNode }) {
   const a = ACCENTS[accent];
-  const className = `group ce-card-hover ce-fade-up relative bg-[#16181d] border border-white/5 rounded-xl p-4 overflow-hidden ${a.ring} ${to ? 'cursor-pointer' : ''}`;
+  const className = `group ce-card-hover ce-fade-up relative bg-white border border-slate-200 shadow-sm rounded-xl p-4 overflow-hidden ${a.ring} ${to ? 'cursor-pointer' : ''}`;
   if (to) return <Link to={to} className={`block ${className}`} style={{ animationDelay: `${delay}ms` }}>{children}</Link>;
   return <div className={className} style={{ animationDelay: `${delay}ms` }}>{children}</div>;
 }
@@ -47,9 +47,9 @@ function Kpi({ label, value, hint, delay = 0, formatter, to, icon, accent = 'neu
     <CardShell to={to} delay={delay} accent={accent}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <div className="text-[11px] font-medium text-gray-400 tracking-wide truncate">{label}</div>
-          <div className="text-xl font-semibold text-white mt-1.5 tabular-nums"><CountUp value={value} formatter={formatter} /></div>
-          {hint && <div className="text-[11px] text-gray-500 mt-1">{hint}</div>}
+          <div className="text-[11px] font-medium text-slate-500 tracking-wide truncate">{label}</div>
+          <div className="text-xl font-semibold text-[#0b2338] mt-1.5 tabular-nums"><CountUp value={value} formatter={formatter} /></div>
+          {hint && <div className="text-[11px] text-slate-400 mt-1">{hint}</div>}
         </div>
         <CardIcon icon={icon} accent={accent} />
       </div>
@@ -117,12 +117,12 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-white">{saudacao}{primeiroNome ? `, ${primeiroNome}` : ''}</h1>
-          <p className="text-sm text-gray-400 mt-1">Painel geral — indicadores comerciais e financeiros da Condutor Elétrico.</p>
+          <h1 className="text-2xl font-semibold text-[#0b2338]">{saudacao}{primeiroNome ? `, ${primeiroNome}` : ''}</h1>
+          <p className="text-sm text-slate-500 mt-1">Painel geral — indicadores comerciais e financeiros da Condutor Elétrico Brasil.</p>
         </div>
         <Link
           to="/app/orcamentos/novo"
-          className="ce-btn-glow ce-cta-glow flex items-center justify-center gap-2 bg-gradient-to-r from-[#f5c518] to-[#e0b60f] text-[#16181d] font-semibold px-5 py-3 rounded-xl text-sm shrink-0 shadow-[0_4px_20px_-6px_rgba(245,197,24,0.5)]"
+          className="ce-btn-glow ce-cta-glow flex items-center justify-center gap-2 bg-gradient-to-r from-[#00B4E5] to-[#0069A8] text-white font-semibold px-5 py-3 rounded-xl text-sm shrink-0 shadow-[0_4px_20px_-6px_rgba(0,105,168,0.35)]"
         >
           <Plus size={18} strokeWidth={2.5} />
           Novo orçamento
@@ -131,13 +131,13 @@ export default function Dashboard() {
 
       <div className="ce-fade-up">
         <MultimeterGauge recebido={stats.recebidoNoMes} meta={stats.meta} percentual={stats.percentualMeta} aReceber={stats.aReceber} />
-        <p className="text-xs text-gray-500 mt-2 text-right">
-          <Link to="/app/configuracoes" className="text-[#f5c518] hover:underline">Ajustar meta mensal</Link>
+        <p className="text-xs text-slate-400 mt-2 text-right">
+          <Link to="/app/configuracoes" className="text-[#0069A8] hover:underline">Ajustar meta mensal</Link>
         </p>
       </div>
 
       <div>
-        <h2 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">Orçamentos</h2>
+        <h2 className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3">Orçamentos</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           <Kpi label="Orçamentos no mês" value={stats.qtdMes} delay={0} to="/app/orcamentos" icon={FileText} />
           <KpiMoney label="Valor total orçado" value={stats.totalOrcado} delay={30} to="/app/orcamentos" icon={Banknote} />
@@ -150,7 +150,7 @@ export default function Dashboard() {
       </div>
 
       <div>
-        <h2 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">Serviços</h2>
+        <h2 className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3">Serviços</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           <Kpi label="Agendados" value={stats.agendadas} delay={180} to="/app/ordens-servico" icon={CalendarClock} accent="info" />
           <Kpi label="Em andamento" value={stats.emExecucao} delay={195} to="/app/ordens-servico" icon={Wrench} accent="energy" />
@@ -160,7 +160,7 @@ export default function Dashboard() {
       </div>
 
       <div>
-        <h2 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">Financeiro</h2>
+        <h2 className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3">Financeiro</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           <KpiMoney label="Recebido no mês" value={stats.recebidoNoMes} delay={225} to="/app/pagamentos?filtro=recebido" icon={Wallet} accent="success" />
           <KpiMoney label="A receber" value={stats.aReceber} delay={240} to="/app/pagamentos?filtro=a_receber" icon={Clock} accent="info" />
@@ -170,10 +170,10 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="bg-[#16181d] border border-white/5 rounded-xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between">
-          <h2 className="text-white font-medium text-sm">Orçamentos recentes</h2>
-          <Link to="/app/orcamentos" className="text-xs text-[#f5c518] hover:underline">Ver todos</Link>
+      <div className="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+          <h2 className="text-[#0b2338] font-medium text-sm">Orçamentos recentes</h2>
+          <Link to="/app/orcamentos" className="text-xs text-[#0069A8] hover:underline">Ver todos</Link>
         </div>
         <table className="w-full text-sm">
           <tbody>
@@ -181,14 +181,14 @@ export default function Dashboard() {
               const cliente = resolveClienteInfo(b, clients);
               const t = calculateBudget(b);
               return (
-                <tr key={b.id} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors">
-                  <td className="px-5 py-3 text-gray-300">{b.numero}</td>
-                  <td className="px-5 py-3 text-gray-300">{cliente.nome}</td>
-                  <td className="px-5 py-3 text-gray-300 hidden sm:table-cell">{b.titulo}</td>
-                  <td className="px-5 py-3 text-white font-medium">{formatMoney(t.totalVenda)}</td>
+                <tr key={b.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
+                  <td className="px-5 py-3 text-slate-600">{b.numero}</td>
+                  <td className="px-5 py-3 text-slate-600">{cliente.nome}</td>
+                  <td className="px-5 py-3 text-slate-600 hidden sm:table-cell">{b.titulo}</td>
+                  <td className="px-5 py-3 text-[#0b2338] font-medium">{formatMoney(t.totalVenda)}</td>
                   <td className="px-5 py-3"><BudgetStatusBadge status={b.status} /></td>
                   <td className="px-5 py-3 text-right">
-                    <Link to={`/app/orcamentos/${b.id}`} className="text-xs text-[#f5c518] hover:underline">Abrir</Link>
+                    <Link to={`/app/orcamentos/${b.id}`} className="text-xs text-[#0069A8] hover:underline">Abrir</Link>
                   </td>
                 </tr>
               );

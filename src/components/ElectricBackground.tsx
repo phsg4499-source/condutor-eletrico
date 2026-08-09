@@ -13,13 +13,13 @@ export default function ElectricBackground({ subtle = false }: { subtle?: boolea
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-      <div className={`ce-grid-bg absolute inset-0 ${subtle ? 'opacity-[0.12]' : 'opacity-60'}`} />
+      <div className={`ce-grid-bg absolute inset-0 ${subtle ? 'opacity-[0.08]' : 'opacity-40'}`} />
       <svg viewBox="0 0 1200 800" preserveAspectRatio="none" className="absolute inset-0 w-full h-full">
         <defs>
           <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#f5c518" stopOpacity="0" />
-            <stop offset="50%" stopColor="#f5c518" stopOpacity={subtle ? 0.35 : 0.9} />
-            <stop offset="100%" stopColor="#f5c518" stopOpacity="0" />
+            <stop offset="0%" stopColor="#00B4E5" stopOpacity="0" />
+            <stop offset="50%" stopColor="#0069A8" stopOpacity={subtle ? 0.25 : 0.7} />
+            <stop offset="100%" stopColor="#00B4E5" stopOpacity="0" />
           </linearGradient>
         </defs>
         {lines.map((line, i) => (
@@ -29,14 +29,14 @@ export default function ElectricBackground({ subtle = false }: { subtle?: boolea
             className="ce-current-line"
             stroke={`url(#${gradId})`}
             strokeWidth={i === 2 ? 2 : 1.4}
-            style={{ opacity: subtle ? line.opacity * 0.3 : line.opacity, animationDuration: `${line.duration}s`, animationDelay: `${line.delay}s` }}
+            style={{ opacity: subtle ? line.opacity * 0.18 : line.opacity, animationDuration: `${line.duration}s`, animationDelay: `${line.delay}s` }}
           />
         ))}
       </svg>
       {!subtle && (
         <>
-          <div className="ce-blob absolute -top-24 -left-16 w-[26rem] h-[26rem] rounded-full bg-[#f5c518]/10 blur-3xl" />
-          <div className="ce-blob ce-blob-delay absolute bottom-0 -right-16 w-[30rem] h-[30rem] rounded-full bg-blue-500/[0.08] blur-3xl" />
+          <div className="ce-blob absolute -top-24 -left-16 w-[26rem] h-[26rem] rounded-full bg-[#00B4E5]/10 blur-3xl" />
+          <div className="ce-blob ce-blob-delay absolute bottom-0 -right-16 w-[30rem] h-[30rem] rounded-full bg-[#0069A8]/[0.08] blur-3xl" />
         </>
       )}
     </div>

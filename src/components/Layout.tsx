@@ -42,8 +42,8 @@ export default function Layout() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#0f1115] flex flex-col items-center justify-center gap-4">
-        <Logo variant="symbol" theme="dark" animated className="w-12 h-12" />
+      <div className="min-h-screen bg-[#f4f7fa] flex flex-col items-center justify-center gap-4">
+        <Logo variant="symbol" theme="light" animated className="w-12 h-12" />
         <p className="text-xs text-gray-500">Carregando seus dados...</p>
       </div>
     );
@@ -52,13 +52,13 @@ export default function Layout() {
   if (!user) return <Navigate to="/login" replace />;
 
   return (
-    <div className="relative min-h-screen bg-[#0f1115] text-gray-100 flex overflow-hidden">
+    <div className="relative min-h-screen bg-[#f4f7fa] text-slate-800 flex overflow-hidden">
       <div className="fixed inset-0 z-0">
         <ElectricBackground subtle />
       </div>
-      <aside className={`fixed z-30 inset-y-0 left-0 w-64 bg-gradient-to-b from-[#1a1d24] to-[#16181d] border-r border-white/5 transform transition-transform lg:translate-x-0 lg:static ${open ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="h-16 flex items-center px-5 border-b border-white/5">
-          <Logo variant="horizontal" theme="dark" />
+      <aside className={`fixed z-30 inset-y-0 left-0 w-64 bg-white border-r border-slate-200 transform transition-transform lg:translate-x-0 lg:static ${open ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="h-16 flex items-center px-5 border-b border-slate-100">
+          <Logo variant="horizontal" theme="light" />
         </div>
         <nav className="p-3 space-y-0.5">
           {navItems.map(({ to, label, icon: Icon, end }) => (
@@ -70,8 +70,8 @@ export default function Layout() {
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
                   isActive
-                    ? 'ce-nav-active bg-gradient-to-r from-[#f5c518] to-[#e0b60f] text-[#16181d]'
-                    : 'text-gray-400 hover:text-gray-100 hover:bg-white/[0.05]'
+                    ? 'ce-nav-active bg-gradient-to-r from-[#00B4E5] to-[#0069A8] text-white'
+                    : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
                 }`
               }
             >
@@ -80,30 +80,30 @@ export default function Layout() {
             </NavLink>
           ))}
         </nav>
-        <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-white/5 space-y-1 bg-black/10">
-          <button onClick={logout} className="flex items-center gap-2 text-sm text-gray-400 hover:text-white px-3 py-2 w-full rounded-lg hover:bg-white/5 transition-colors">
+        <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-slate-100 space-y-1 bg-slate-50/60">
+          <button onClick={logout} className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 px-3 py-2 w-full rounded-lg hover:bg-slate-100 transition-colors">
             <LogOut size={16} /> Sair
           </button>
-          <p className="text-[10px] text-gray-600 px-3">Desenvolvido por Simplifica Seguros</p>
+          <p className="text-[10px] text-slate-400 px-3">Desenvolvido por Simplifica Seguros</p>
         </div>
       </aside>
 
       <div className="relative z-10 flex-1 flex flex-col min-w-0">
-        <header className="h-16 border-b border-white/5 flex items-center justify-between px-4 lg:px-8 bg-[#0f1115]/85 backdrop-blur-md sticky top-0 z-20 shadow-[0_1px_0_rgba(245,197,24,0.06)]">
-          <button className="lg:hidden text-gray-300" onClick={() => setOpen(o => !o)}>
+        <header className="h-16 border-b border-slate-200 flex items-center justify-between px-4 lg:px-8 bg-white/85 backdrop-blur-md sticky top-0 z-20 shadow-[0_1px_0_rgba(0,105,168,0.08)]">
+          <button className="lg:hidden text-slate-500" onClick={() => setOpen(o => !o)}>
             {open ? <X size={22} /> : <Menu size={22} />}
           </button>
           <div className="flex-1" />
           <TrialBadge organizationCreatedAt={db.organization.created_at} />
           {isDemoMode && (
-            <span className="hidden sm:inline text-xs px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 mr-3">
+            <span className="hidden sm:inline text-xs px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 border border-amber-300 mr-3">
               Modo demonstração — dados locais
             </span>
           )}
-          <button onClick={() => setShowOnboarding(true)} title="Rever guia de introdução" className="text-gray-400 hover:text-[#f5c518] mr-3">
+          <button onClick={() => setShowOnboarding(true)} title="Rever guia de introdução" className="text-slate-400 hover:text-[#0069A8] mr-3">
             <HelpCircle size={18} />
           </button>
-          <div className="text-sm text-gray-300">{user.nome}</div>
+          <div className="text-sm text-slate-600">{user.nome}</div>
         </header>
         <main className="flex-1 p-4 lg:p-8 max-w-7xl w-full mx-auto">
           <Outlet />

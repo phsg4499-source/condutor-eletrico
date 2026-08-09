@@ -1,6 +1,14 @@
-// Identidade visual original da Condutor Elétrico.
-// Símbolo: um "C" formado por um traço de circuito que conduz um pulso de energia,
-// terminando em um nó (ponto de conexão), remetendo à condução de eletricidade com precisão.
+// Identidade visual oficial da Condutor Elétrico Brasil (logomarca fornecida pelo cliente).
+// Duas variantes de raster: "claro" tem o texto em branco (para fundos escuros/azuis) e
+// "escuro" tem o texto em azul-marinho (para fundos claros/brancos) — nunca deformada,
+// esticada ou comprimida (sempre com object-fit: contain e proporção original preservada).
+// O símbolo isolado (ícone pequeno, ex.: aba lateral recolhida) usa um traço vetorial próprio,
+// já que o anel da logomarca real está interligado ao texto na arte fornecida.
+
+const LOGO_SRC = {
+  claro: '/brand/logo-horizontal-claro.png', // texto branco — fundos escuros
+  escuro: '/brand/logo-horizontal-escuro.png', // texto azul-marinho — fundos claros
+};
 
 interface LogoProps {
   variant?: 'horizontal' | 'vertical' | 'symbol';
@@ -10,10 +18,10 @@ interface LogoProps {
 }
 
 export function LogoSymbol({ theme = 'dark', className, animated = false }: { theme?: 'dark' | 'light'; className?: string; animated?: boolean }) {
-  const stroke = theme === 'dark' ? '#f5f6f8' : '#16181d';
-  const accent = '#f5c518';
+  const stroke = theme === 'dark' ? '#ffffff' : '#0b2338';
+  const accent = '#00B4E5';
   return (
-    <svg viewBox="0 0 100 100" className={className} xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Símbolo Condutor Elétrico">
+    <svg viewBox="0 0 100 100" className={className} xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Símbolo Condutor Elétrico Brasil">
       <path
         d="M72 24 A34 34 0 1 0 72 76"
         fill="none"
@@ -37,32 +45,22 @@ export function LogoSymbol({ theme = 'dark', className, animated = false }: { th
 }
 
 export default function Logo({ variant = 'horizontal', theme = 'dark', className, animated = false }: LogoProps) {
-  const textColor = theme === 'dark' ? '#f5f6f8' : '#16181d';
-  const subColor = theme === 'dark' ? '#a8adba' : '#565c68';
-
   if (variant === 'symbol') return <LogoSymbol theme={theme} className={className} animated={animated} />;
+
+  const src = theme === 'dark' ? LOGO_SRC.claro : LOGO_SRC.escuro;
+  const alt = 'Condutor Elétrico Brasil';
 
   if (variant === 'vertical') {
     return (
-      <div className={`flex flex-col items-center gap-2 ${className ?? ''}`}>
-        <LogoSymbol theme={theme} className="w-14 h-14" animated={animated} />
-        <div className="text-center leading-tight">
-          <div className="font-extrabold tracking-tight text-lg" style={{ color: textColor }}>CONDUTOR</div>
-          <div className="font-extrabold tracking-tight text-lg -mt-1" style={{ color: '#f5c518' }}>ELÉTRICO</div>
-        </div>
+      <div className={`flex flex-col items-center ${className ?? ''}`}>
+        <img src={src} alt={alt} className="max-w-[220px] w-full h-auto object-contain" />
       </div>
     );
   }
 
   return (
-    <div className={`flex items-center gap-3 ${className ?? ''}`}>
-      <LogoSymbol theme={theme} className="w-10 h-10 shrink-0" animated={animated} />
-      <div className="leading-tight">
-        <div className="font-extrabold tracking-tight text-base" style={{ color: textColor }}>
-          CONDUTOR <span style={{ color: '#f5c518' }}>ELÉTRICO</span>
-        </div>
-        <div className="text-[10px] uppercase tracking-widest" style={{ color: subColor }}>Serviços elétricos</div>
-      </div>
+    <div className={`flex items-center ${className ?? ''}`}>
+      <img src={src} alt={alt} className="h-9 w-auto object-contain" style={{ maxWidth: 220 }} />
     </div>
   );
 }
