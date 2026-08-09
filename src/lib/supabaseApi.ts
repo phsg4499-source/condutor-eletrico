@@ -150,6 +150,25 @@ export async function remoteUpdateService(id: string, data: Partial<ServiceItem>
   if (error) throw error;
 }
 
+// Consulta o maior número de orçamento já usado (para o prefixo do ano, ex.: "2026-") direto no
+// Supabase — fonte real da verdade. Usado para gerar o próximo número em caso de colisão, em vez
+// de confiar só no cache local (que pode estar bem atrasado em relação ao banco real).
+export async function remoteMaxBudgetNumero(organizationId: string, prefix: string): Promise<number> {
+  const db = must();
+  const { data, error } = await db
+    .from('budgets')
+    .select('numero')
+    .eq('organization_id', organizationId)
+    .like('numero', `${prefix}%`)
+    .order('numero', { ascending: false })
+    .limit(1);
+  if (error) throw error;
+  const numero = data?.[0]?.numero as string | undefined;
+  if (!numero) return 0;
+  const seq = parseInt(numero.slice(prefix.length), 10);
+  return Number.isFinite(seq) ? seq : 0;
+}
+
 export async function remoteInsertBudget(budget: Budget) {
   const db = must();
   const { itens, custos_extras, historico_status, ...budgetRow } = budget;

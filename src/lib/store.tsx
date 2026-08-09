@@ -8,7 +8,7 @@ import {
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import {
   DEFAULT_ORG_ID, fetchOrganizationData, remoteUpdateOrganization, remoteInsertClient, remoteUpdateClient,
-  remoteInsertMaterial, remoteUpdateMaterial, remoteInsertService, remoteUpdateService, remoteInsertBudget,
+  remoteInsertMaterial, remoteUpdateMaterial, remoteInsertService, remoteUpdateService, remoteInsertBudget, remoteMaxBudgetNumero,
   remoteUpdateBudget, remoteDeleteBudget, remoteUpdateBudgetStatus, remoteInsertServiceOrder, remoteSetServiceOrderStatus, remoteToggleChecklistItem,
   remoteInsertQuoteRequest, remoteInsertOrcamentista, remoteUpdateOrcamentista,
   remoteInsertCompromisso, remoteUpdateCompromisso, remoteDeleteCompromisso,
@@ -343,7 +343,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [db.budgets]);
 
   const addBudget: StoreContextValue['addBudget'] = useCallback(async (data) => {
-    const numeroEscolhidoPeloChamador = Boolean(data.numero);
     let budget: Budget = {
       id: newId(), organization_id: orgId, numero: data.numero || nextBudgetNumber(), titulo: '', tipo_servico: 'Instalação',
       local_servico: '', data_emissao: todayISO(), validade_dias: 10, responsavel: 'Felipe Ribeiro',
@@ -362,6 +361,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     const idOtimista = budget.id;
     const MAX_TENTATIVAS = 6;
+    const ano = new Date().getFullYear();
+    const prefixo = `${ano}-`;
     for (let tentativa = 1; tentativa <= MAX_TENTATIVAS; tentativa++) {
       try {
         await remoteInsertBudget(budget);
@@ -369,15 +370,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       } catch (err) {
         const codigo = (err as { code?: string } | null)?.code;
         const ehColisaoDeNumero = codigo === '23505';
-        // Colisão de número: o cache local pode estar desatualizado em relação ao banco de verdade
-        // (ex.: um orçamento cuja exclusão remota falhou silenciosamente antes, mas sumiu da tela).
-        // Em vez de confiar de novo no cache, avança o número em sequência e tenta de novo direto
-        // contra o Supabase — que é a fonte real da verdade — até achar um número livre.
-        if (ehColisaoDeNumero && !numeroEscolhidoPeloChamador && tentativa < MAX_TENTATIVAS) {
-          const ano = new Date().getFullYear();
-          const prefixo = `${ano}-`;
-          const seqAtual = budget.numero.startsWith(prefixo) ? parseInt(budget.numero.slice(prefixo.length), 10) : 0;
-          const proximoNumero = `${prefixo}${String((Number.isFinite(seqAtual) ? seqAtual : 0) + 1).padStart(4, '0')}`;
+        // Colisão de número: o cache local pode estar bem desatualizado em relação ao banco de
+        // verdade (ex.: outros orçamentos criados em outra sessão/dispositivo, ou uma exclusão
+        // remota que falhou silenciosamente antes). Em vez de só somar 1 ao número que já tinha
+        // (o que pode colidir de novo se o cache estiver muito atrasado), consulta o maior número
+        // real no Supabase e parte dele — assim converge rápido mesmo com o cache bem defasado.
+        // Faz isso sempre que houver colisão, mesmo que o número tenha sido passado manualmente,
+        // porque nunca faz sentido devolver esse erro pro usuário se dá pra resolver sozinho.
+        if (ehColisaoDeNumero && tentativa < MAX_TENTATIVAS) {
+          let proximaSeq: number;
+          try {
+            proximaSeq = (await remoteMaxBudgetNumero(orgId, prefixo)) + 1;
+          } catch {
+            const seqAtual = budget.numero.startsWith(prefixo) ? parseInt(budget.numero.slice(prefixo.length), 10) : 0;
+            proximaSeq = (Number.isFinite(seqAtual) ? seqAtual : 0) + 1;
+          }
+          const proximoNumero = `${prefixo}${String(proximaSeq).padStart(4, '0')}`;
           budget = { ...budget, numero: proximoNumero };
           setDb(prev => ({ ...prev, budgets: prev.budgets.map(b => b.id === idOtimista ? budget : b) }));
           continue;
