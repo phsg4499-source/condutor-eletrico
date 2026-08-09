@@ -16,7 +16,7 @@ const formasPagamento: { value: FormaPagamento; label: string }[] = [
 ];
 
 export default function BudgetWizard() {
-  const { db, addBudget, updateBudget, nextBudgetNumber } = useStore();
+  const { db, addBudget, updateBudget } = useStore();
   const toast = useToast();
   const navigate = useNavigate();
   const { id } = useParams();
@@ -132,7 +132,13 @@ export default function BudgetWizard() {
       }
 
       const result = await addBudget({
-        numero: nextBudgetNumber(), ...clientFields, titulo, tipo_servico: tipoServico,
+        // Não passamos "numero" aqui de propósito: se o gerarmos aqui e ele colidir com um já
+        // existente no banco, o addBudget trata isso como "número escolhido pelo usuário" e NÃO
+        // tenta de novo sozinho — devolve erro na hora e pede pra clicar em salvar de novo, o que
+        // recalculava o mesmo número (porque o estado local do formulário não muda) e falhava de
+        // novo, indefinidamente. Deixando o addBudget gerar o número internamente, ele tenta
+        // números novos automaticamente contra o Supabase (fonte real) até achar um livre.
+        ...clientFields, titulo, tipo_servico: tipoServico,
         local_servico: localServico, data_emissao: todayISO(), validade_dias: 10, prazo_estimado: prazo,
         responsavel: responsavelSelecionado?.nome ?? db.organization.responsavel, orcamentista_id: orcamentistaId || undefined,
         status, itens, custos_extras: custosExtras,
