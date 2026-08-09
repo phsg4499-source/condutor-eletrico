@@ -49,31 +49,31 @@ export default function OnboardingTour({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-[200] ce-spotlight-in">
       <div key={step} className="ce-pop-in ce-glass-card rounded-2xl p-6 w-full max-w-md relative overflow-hidden">
-        <div className="ce-blob absolute -top-16 -right-16 w-48 h-48 rounded-full bg-[#f5c518]/10 blur-3xl pointer-events-none" />
+        <div className="ce-blob absolute -top-16 -right-16 w-48 h-48 rounded-full bg-[#00B4E5]/10 blur-3xl pointer-events-none" />
         <div className="flex items-center justify-between mb-5 relative">
-          <Logo variant="horizontal" theme="dark" />
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-300"><X size={18} /></button>
+          <Logo variant="horizontal" theme="light" />
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={18} /></button>
         </div>
 
         <div className="relative">
-          <div className="w-12 h-12 rounded-xl bg-[#f5c518]/15 flex items-center justify-center mb-4 ce-glow-pulse">
-            <Icon className="text-[#f5c518]" size={24} />
+          <div className="w-12 h-12 rounded-xl bg-[#00B4E5]/15 flex items-center justify-center mb-4 ce-glow-pulse">
+            <Icon className="text-[#00B4E5]" size={24} />
           </div>
-          <h2 className="text-white font-semibold text-lg mb-2">{current.title}</h2>
-          <p className="text-sm text-gray-400 leading-relaxed">{current.text}</p>
+          <h2 className="text-[#0b2338] font-semibold text-lg mb-2">{current.title}</h2>
+          <p className="text-sm text-slate-500 leading-relaxed">{current.text}</p>
         </div>
 
         <div className="flex items-center gap-1.5 mt-6 mb-5">
           {steps.map((_, i) => (
-            <div key={i} className={`h-1.5 rounded-full transition-all ${i === step ? 'w-6 bg-[#f5c518]' : 'w-1.5 bg-white/15'}`} />
+            <div key={i} className={`h-1.5 rounded-full transition-all ${i === step ? 'w-6 bg-[#00B4E5]' : 'w-1.5 bg-slate-200'}`} />
           ))}
         </div>
 
         <div className="flex items-center justify-between">
-          <button onClick={onClose} className="text-sm text-gray-500 hover:text-gray-300">Pular tour</button>
+          <button onClick={onClose} className="text-sm text-slate-400 hover:text-slate-600">Pular tour</button>
           <button
             onClick={() => (isLast ? onClose() : setStep(s => s + 1))}
-            className="ce-btn-glow flex items-center gap-2 bg-[#f5c518] text-[#16181d] font-semibold px-5 py-2.5 rounded-lg text-sm hover:bg-[#e0b60f]"
+            className="ce-btn-glow flex items-center gap-2 bg-[#00B4E5] text-[#0b2338] font-semibold px-5 py-2.5 rounded-lg text-sm hover:bg-[#0069A8]"
           >
             {isLast ? 'Começar a usar' : 'Próximo'} <ArrowRight size={16} />
           </button>

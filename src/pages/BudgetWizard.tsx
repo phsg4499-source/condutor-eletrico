@@ -166,26 +166,26 @@ export default function BudgetWizard() {
 
   if (isEditing && !existingBudget) {
     return (
-      <div className="text-gray-400">
-        Orçamento não encontrado. <Link to="/app/orcamentos" className="text-[#f5c518] hover:underline">Voltar</Link>
+      <div className="text-slate-500">
+        Orçamento não encontrado. <Link to="/app/orcamentos" className="text-[#00B4E5] hover:underline">Voltar</Link>
       </div>
     );
   }
 
   return (
     <div className="space-y-8 max-w-4xl">
-      <Link to={isEditing ? `/app/orcamentos/${id}` : '/app/orcamentos'} className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-white">
+      <Link to={isEditing ? `/app/orcamentos/${id}` : '/app/orcamentos'} className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-[#0b2338]">
         <ArrowLeft size={16} /> Voltar
       </Link>
 
       <div className="ce-fade-up">
-        <h1 className="text-2xl font-semibold text-white">{isEditing ? `Editar orçamento nº ${existingBudget?.numero}` : 'Novo orçamento'}</h1>
-        <p className="text-sm text-gray-400 mt-1">
+        <h1 className="text-2xl font-semibold text-[#0b2338]">{isEditing ? `Editar orçamento nº ${existingBudget?.numero}` : 'Novo orçamento'}</h1>
+        <p className="text-sm text-slate-500 mt-1">
           {isEditing ? 'Ajuste os dados abaixo e salve para atualizar o orçamento.' : 'Preencha as etapas abaixo. O número será gerado automaticamente.'}
         </p>
       </div>
 
-      <div className="bg-[#f5c518]/10 border border-[#f5c518]/20 rounded-lg px-4 py-3 text-xs text-amber-300">
+      <div className="bg-[#00B4E5]/10 border border-[#00B4E5]/20 rounded-lg px-4 py-3 text-xs text-[#0069A8]">
         Dica: comece escolhendo o cliente e adicionando itens do catálogo de serviços/materiais — os valores de custo e venda
         já vêm preenchidos e você pode ajustar quantidade e preço na hora. O custo e a margem (etapa 5) são só para você, o
         cliente só vê o valor final no PDF.
@@ -195,17 +195,17 @@ export default function BudgetWizard() {
         {!isEditing && (
           <div className="flex gap-2 mb-2">
             <button type="button" onClick={() => setClientMode('existing')}
-              className={`flex-1 py-2 rounded-lg text-sm border ${clientMode === 'existing' ? 'bg-[#f5c518] text-[#16181d] border-[#f5c518]' : 'border-white/10 text-gray-300'}`}>
+              className={`flex-1 py-2 rounded-lg text-sm border ${clientMode === 'existing' ? 'bg-[#00B4E5] text-[#0b2338] border-[#00B4E5]' : 'border-slate-200 text-slate-600'}`}>
               Cliente já cadastrado
             </button>
             <button type="button" onClick={() => setClientMode('avulso')}
-              className={`flex-1 py-2 rounded-lg text-sm border ${clientMode === 'avulso' ? 'bg-[#f5c518] text-[#16181d] border-[#f5c518]' : 'border-white/10 text-gray-300'}`}>
+              className={`flex-1 py-2 rounded-lg text-sm border ${clientMode === 'avulso' ? 'bg-[#00B4E5] text-[#0b2338] border-[#00B4E5]' : 'border-slate-200 text-slate-600'}`}>
               Cliente sem cadastro
             </button>
           </div>
         )}
         {!isEditing && (
-          <p className="text-[11px] text-gray-500 mb-4">
+          <p className="text-[11px] text-slate-400 mb-4">
             Você não precisa cadastrar o cliente para fazer o orçamento. Escolha "Cliente sem cadastro" e digite só o nome e
             telefone — se quiser, você cadastra esse cliente depois, na tela de Clientes, sem nenhuma pressa.
           </p>
@@ -214,9 +214,9 @@ export default function BudgetWizard() {
         <div className="grid sm:grid-cols-2 gap-4">
           {clientMode === 'existing' ? (
             <div>
-              <label className="text-xs text-gray-400">Cliente *</label>
+              <label className="text-xs text-slate-500">Cliente *</label>
               <select value={clientId} onChange={e => setClientId(e.target.value)}
-                className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white">
+                className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338]">
                 <option value="">Selecione...</option>
                 {db.clients.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
               </select>
@@ -235,12 +235,12 @@ export default function BudgetWizard() {
           )}
           <div>
             <Field label="Título do orçamento *" value={titulo} onChange={setTitulo} placeholder="Ex: Instalação elétrica completa - Apto 302" />
-            <p className="text-[11px] text-gray-500 mt-1">Esse texto aparece em destaque no topo do PDF que o cliente recebe.</p>
+            <p className="text-[11px] text-slate-400 mt-1">Esse texto aparece em destaque no topo do PDF que o cliente recebe.</p>
           </div>
           <div>
-            <label className="text-xs text-gray-400">Responsável pelo orçamento</label>
+            <label className="text-xs text-slate-500">Responsável pelo orçamento</label>
             <select value={orcamentistaId} onChange={e => setOrcamentistaId(e.target.value)}
-              className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white">
+              className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338]">
               <option value="">{db.organization.responsavel} (padrão)</option>
               {orcamentistasAtivos.map(o => <option key={o.id} value={o.id}>{o.nome} — {o.cargo}</option>)}
             </select>
@@ -256,27 +256,27 @@ export default function BudgetWizard() {
       <Section title="2. Serviços e materiais">
         <div className="flex flex-wrap gap-2 mb-4">
           <select onChange={e => { if (e.target.value) addServiceItem(e.target.value); e.target.value = ''; }}
-            className="rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white">
+            className="rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338]">
             <option value="">+ Adicionar serviço cadastrado...</option>
             {db.services.map(s => <option key={s.id} value={s.id}>{s.nome}</option>)}
           </select>
           <select onChange={e => { if (e.target.value) addMaterialItem(e.target.value); e.target.value = ''; }}
-            className="rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white">
+            className="rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338]">
             <option value="">+ Adicionar material cadastrado...</option>
             {db.materials.map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}
           </select>
-          <button type="button" onClick={() => addCustomItem('servico')} className="text-xs px-3 py-2 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5">+ Serviço personalizado</button>
-          <button type="button" onClick={() => addCustomItem('material')} className="text-xs px-3 py-2 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5">+ Material personalizado</button>
+          <button type="button" onClick={() => addCustomItem('servico')} className="text-xs px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100">+ Serviço personalizado</button>
+          <button type="button" onClick={() => addCustomItem('material')} className="text-xs px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100">+ Material personalizado</button>
         </div>
 
-        <p className="text-[11px] text-gray-500 mb-2">
+        <p className="text-[11px] text-slate-400 mb-2">
           "Custo (interno)" é o quanto você gasta — nunca aparece pro cliente. "Valor (cliente)" é o preço que ele vê e paga.
           A diferença entre os dois é o seu lucro. No celular, arraste para o lado para ver todas as colunas.
         </p>
         <div className="overflow-x-auto -mx-2 px-2">
           <div className="min-w-[600px]">
             {itens.length > 0 && (
-              <div className="grid grid-cols-12 gap-2 px-2 mb-1 text-[10px] uppercase text-gray-500">
+              <div className="grid grid-cols-12 gap-2 px-2 mb-1 text-[10px] uppercase text-slate-400">
                 <span className="col-span-1">Tipo</span>
                 <span className="col-span-4">Descrição</span>
                 <span className="col-span-1">Qtd</span>
@@ -287,67 +287,67 @@ export default function BudgetWizard() {
             )}
             <div className="space-y-2">
               {itens.map(item => (
-                <div key={item.id} className="grid grid-cols-12 gap-2 items-center bg-[#0f1115] border border-white/5 rounded-lg p-2">
-                  <span className={`col-span-1 text-[10px] uppercase text-center rounded px-1 py-1 ${item.tipo === 'servico' ? 'bg-blue-600/30 text-blue-300' : 'bg-purple-600/30 text-purple-300'}`}>{item.tipo === 'servico' ? 'Serv.' : 'Mat.'}</span>
+                <div key={item.id} className="grid grid-cols-12 gap-2 items-center bg-white border border-slate-200 rounded-lg p-2">
+                  <span className={`col-span-1 text-[10px] uppercase text-center rounded px-1 py-1 ${item.tipo === 'servico' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>{item.tipo === 'servico' ? 'Serv.' : 'Mat.'}</span>
                   <input value={item.nome} onChange={e => updateItem(item.id, { nome: e.target.value })} placeholder="Descrição"
-                    className="col-span-4 bg-transparent border border-white/10 rounded px-2 py-1.5 text-xs text-white" />
+                    className="col-span-4 bg-transparent border border-slate-200 rounded px-2 py-1.5 text-xs text-[#0b2338]" />
                   <input type="number" value={item.quantidade} onChange={e => updateItem(item.id, { quantidade: Number(e.target.value) })}
-                    className="col-span-1 bg-transparent border border-white/10 rounded px-2 py-1.5 text-xs text-white" title="Quantidade" />
+                    className="col-span-1 bg-transparent border border-slate-200 rounded px-2 py-1.5 text-xs text-[#0b2338]" title="Quantidade" />
                   <input type="number" value={item.custo_unitario} onChange={e => updateItem(item.id, { custo_unitario: Number(e.target.value) })}
-                    className="col-span-2 bg-transparent border border-white/10 rounded px-2 py-1.5 text-xs text-white" title="Custo interno unitário" />
+                    className="col-span-2 bg-transparent border border-slate-200 rounded px-2 py-1.5 text-xs text-[#0b2338]" title="Custo interno unitário" />
                   <input type="number" value={item.valor_unitario} onChange={e => updateItem(item.id, { valor_unitario: Number(e.target.value) })}
-                    className="col-span-2 bg-transparent border border-white/10 rounded px-2 py-1.5 text-xs text-white" title="Valor de venda unitário" />
-                  <span className="col-span-1 text-xs text-white text-right">{formatMoney(item.quantidade * item.valor_unitario - item.desconto)}</span>
-                  <button type="button" onClick={() => removeItem(item.id)} className="col-span-1 text-gray-500 hover:text-red-400 flex justify-end"><Trash2 size={14} /></button>
+                    className="col-span-2 bg-transparent border border-slate-200 rounded px-2 py-1.5 text-xs text-[#0b2338]" title="Valor de venda unitário" />
+                  <span className="col-span-1 text-xs text-[#0b2338] text-right">{formatMoney(item.quantidade * item.valor_unitario - item.desconto)}</span>
+                  <button type="button" onClick={() => removeItem(item.id)} className="col-span-1 text-slate-400 hover:text-red-400 flex justify-end"><Trash2 size={14} /></button>
                 </div>
               ))}
             </div>
           </div>
         </div>
-        {itens.length === 0 && <p className="text-xs text-gray-500 mt-2">Nenhum item adicionado ainda.</p>}
+        {itens.length === 0 && <p className="text-xs text-slate-400 mt-2">Nenhum item adicionado ainda.</p>}
       </Section>
 
       <Section title="3. Custos adicionais">
-        <button type="button" onClick={addExtraCost} className="flex items-center gap-1 text-xs px-3 py-2 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 mb-3">
+        <button type="button" onClick={addExtraCost} className="flex items-center gap-1 text-xs px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 mb-3">
           <Plus size={14} /> Adicionar custo (deslocamento, taxas, etc.)
         </button>
         <div className="space-y-2">
           {custosExtras.map(cost => (
             <div key={cost.id} className="grid grid-cols-12 gap-2 items-center">
               <input value={cost.descricao} onChange={e => setCustosExtras(prev => prev.map(c => c.id === cost.id ? { ...c, descricao: e.target.value } : c))}
-                placeholder="Descrição" className="col-span-7 sm:col-span-8 bg-[#0f1115] border border-white/10 rounded px-2 py-1.5 text-xs text-white" />
+                placeholder="Descrição" className="col-span-7 sm:col-span-8 bg-white border border-slate-200 rounded px-2 py-1.5 text-xs text-[#0b2338]" />
               <input type="number" value={cost.valor} onChange={e => setCustosExtras(prev => prev.map(c => c.id === cost.id ? { ...c, valor: Number(e.target.value) } : c))}
-                placeholder="Valor" className="col-span-4 sm:col-span-3 bg-[#0f1115] border border-white/10 rounded px-2 py-1.5 text-xs text-white" />
-              <button type="button" onClick={() => setCustosExtras(prev => prev.filter(c => c.id !== cost.id))} className="col-span-1 text-gray-500 hover:text-red-400 flex justify-end"><Trash2 size={14} /></button>
+                placeholder="Valor" className="col-span-4 sm:col-span-3 bg-white border border-slate-200 rounded px-2 py-1.5 text-xs text-[#0b2338]" />
+              <button type="button" onClick={() => setCustosExtras(prev => prev.filter(c => c.id !== cost.id))} className="col-span-1 text-slate-400 hover:text-red-400 flex justify-end"><Trash2 size={14} /></button>
             </div>
           ))}
         </div>
       </Section>
 
       <Section title="4. Condições comerciais">
-        <p className="text-[11px] text-gray-500 mb-3">
+        <p className="text-[11px] text-slate-400 mb-3">
           Estas informações aparecem no PDF como as condições da proposta. Use "Entrada" e "Parcelas" juntos se o pagamento
           vai ser dividido (ex: entrada + 3x). Se for à vista, deixe parcelas em 1.
         </p>
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
-            <label className="text-xs text-gray-400">Forma de pagamento</label>
+            <label className="text-xs text-slate-500">Forma de pagamento</label>
             <select value={formaPagamento} onChange={e => setFormaPagamento(e.target.value as FormaPagamento)}
-              className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white">
+              className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338]">
               {formasPagamento.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
             </select>
           </div>
           <div>
             <Field label="Garantia" value={garantia} onChange={setGarantia} placeholder="Ex: 90 dias" />
-            <p className="text-[11px] text-gray-500 mt-1">Prazo de garantia do serviço executado, mostrado no PDF.</p>
+            <p className="text-[11px] text-slate-400 mt-1">Prazo de garantia do serviço executado, mostrado no PDF.</p>
           </div>
           <div>
             <NumField label="Validade da proposta (dias)" value={validadeDias} onChange={setValidadeDias} />
-            <p className="text-[11px] text-gray-500 mt-1">Por quantos dias a partir da emissão este orçamento vale, mostrado no PDF.</p>
+            <p className="text-[11px] text-slate-400 mt-1">Por quantos dias a partir da emissão este orçamento vale, mostrado no PDF.</p>
           </div>
           <div>
             <NumField label="Desconto (%)" value={descontoPercentual} onChange={setDescontoPercentual} />
-            <p className="text-[11px] text-gray-500 mt-1">Use % ou R$ — não os dois ao mesmo tempo, pra não descontar em dobro.</p>
+            <p className="text-[11px] text-slate-400 mt-1">Use % ou R$ — não os dois ao mesmo tempo, pra não descontar em dobro.</p>
           </div>
           <NumField label="Desconto (R$)" value={descontoValor} onChange={setDescontoValor} />
           <NumField label="Entrada (R$)" value={entrada} onChange={setEntrada} />
@@ -379,13 +379,13 @@ export default function BudgetWizard() {
 
       <div className="flex gap-3 pb-8">
         {isEditing ? (
-          <button type="button" disabled={salvando} onClick={() => saveBudget('pronto_para_envio')} className="ce-btn-glow px-5 py-2.5 rounded-lg bg-[#f5c518] text-[#16181d] font-semibold text-sm hover:bg-[#e0b60f] disabled:opacity-60 disabled:cursor-not-allowed">
+          <button type="button" disabled={salvando} onClick={() => saveBudget('pronto_para_envio')} className="ce-btn-glow px-5 py-2.5 rounded-lg bg-[#00B4E5] text-[#0b2338] font-semibold text-sm hover:bg-[#0069A8] disabled:opacity-60 disabled:cursor-not-allowed">
             {salvando ? 'Salvando...' : 'Salvar alterações'}
           </button>
         ) : (
           <>
-            <button type="button" disabled={salvando} onClick={() => saveBudget('rascunho')} className="px-5 py-2.5 rounded-lg border border-white/10 text-gray-200 text-sm hover:bg-white/5 disabled:opacity-60 disabled:cursor-not-allowed">{salvando ? 'Salvando...' : 'Salvar rascunho'}</button>
-            <button type="button" disabled={salvando} onClick={() => saveBudget('pronto_para_envio')} className="ce-btn-glow px-5 py-2.5 rounded-lg bg-[#f5c518] text-[#16181d] font-semibold text-sm hover:bg-[#e0b60f] disabled:opacity-60 disabled:cursor-not-allowed">{salvando ? 'Salvando...' : 'Salvar orçamento'}</button>
+            <button type="button" disabled={salvando} onClick={() => saveBudget('rascunho')} className="px-5 py-2.5 rounded-lg border border-slate-200 text-slate-600 text-sm hover:bg-slate-100 disabled:opacity-60 disabled:cursor-not-allowed">{salvando ? 'Salvando...' : 'Salvar rascunho'}</button>
+            <button type="button" disabled={salvando} onClick={() => saveBudget('pronto_para_envio')} className="ce-btn-glow px-5 py-2.5 rounded-lg bg-[#00B4E5] text-[#0b2338] font-semibold text-sm hover:bg-[#0069A8] disabled:opacity-60 disabled:cursor-not-allowed">{salvando ? 'Salvando...' : 'Salvar orçamento'}</button>
           </>
         )}
       </div>
@@ -395,8 +395,8 @@ export default function BudgetWizard() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-[#16181d] border border-white/5 rounded-xl p-5">
-      <h2 className="text-white font-medium text-sm mb-4">{title}</h2>
+    <div className="bg-white border border-slate-200 rounded-xl p-5">
+      <h2 className="text-[#0b2338] font-medium text-sm mb-4">{title}</h2>
       {children}
     </div>
   );
@@ -405,9 +405,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Field({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
     <div>
-      <label className="text-xs text-gray-400">{label}</label>
+      <label className="text-xs text-slate-500">{label}</label>
       <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-        className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-[#f5c518]" />
+        className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338] focus:outline-none focus:border-[#00B4E5]" />
     </div>
   );
 }
@@ -415,9 +415,9 @@ function Field({ label, value, onChange, placeholder }: { label: string; value: 
 function NumField({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
   return (
     <div>
-      <label className="text-xs text-gray-400">{label}</label>
+      <label className="text-xs text-slate-500">{label}</label>
       <input type="number" value={value} onChange={e => onChange(Number(e.target.value))}
-        className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-[#f5c518]" />
+        className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338] focus:outline-none focus:border-[#00B4E5]" />
     </div>
   );
 }
@@ -425,18 +425,18 @@ function NumField({ label, value, onChange }: { label: string; value: number; on
 function TextArea({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
     <div>
-      <label className="text-xs text-gray-400">{label}</label>
+      <label className="text-xs text-slate-500">{label}</label>
       <textarea value={value} onChange={e => onChange(e.target.value)} rows={3}
-        className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-[#f5c518]" />
+        className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338] focus:outline-none focus:border-[#00B4E5]" />
     </div>
   );
 }
 
 function Row({ label, value, highlight }: { label: string; value: string; highlight?: 'internal' | 'final' }) {
   return (
-    <div className={`flex items-center justify-between px-3 py-2 rounded-lg ${highlight === 'final' ? 'bg-[#f5c518]/10 border border-[#f5c518]/30' : highlight === 'internal' ? 'bg-white/5' : ''}`}>
-      <span className="text-gray-400">{label}</span>
-      <span className={highlight === 'final' ? 'text-[#f5c518] font-semibold' : 'text-white'}>{value}</span>
+    <div className={`flex items-center justify-between px-3 py-2 rounded-lg ${highlight === 'final' ? 'bg-[#00B4E5]/10 border border-[#00B4E5]/30' : highlight === 'internal' ? 'bg-slate-50' : ''}`}>
+      <span className="text-slate-500">{label}</span>
+      <span className={highlight === 'final' ? 'text-[#00B4E5] font-semibold' : 'text-[#0b2338]'}>{value}</span>
     </div>
   );
 }

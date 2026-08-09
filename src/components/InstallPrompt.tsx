@@ -85,40 +85,40 @@ export default function InstallPrompt() {
   return (
     <div className="fixed bottom-4 left-4 right-4 z-50 sm:left-auto sm:right-4 sm:max-w-sm ce-toast-in">
       <div className="ce-glass-card rounded-2xl p-4 flex gap-3 items-start">
-        <div className="w-10 h-10 rounded-xl bg-[#f5c518]/15 border border-[#f5c518]/25 flex items-center justify-center shrink-0">
-          <Download size={18} className="text-[#f5c518]" />
+        <div className="w-10 h-10 rounded-xl bg-[#00B4E5]/15 border border-[#00B4E5]/25 flex items-center justify-center shrink-0">
+          <Download size={18} className="text-[#00B4E5]" />
         </div>
         <div className="flex-1 min-w-0">
           {!showIosSteps ? (
             <>
-              <p className="text-sm font-semibold text-white">Instalar como aplicativo</p>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-sm font-semibold text-[#0b2338]">Instalar como aplicativo</p>
+              <p className="text-xs text-slate-500 mt-1">
                 Adicione o Condutor Elétrico na tela do seu celular para abrir como um app, mais rápido e sem precisar do navegador.
               </p>
               <div className="flex gap-2 mt-3">
-                <button onClick={handleInstallClick} className="ce-btn-glow flex-1 bg-[#f5c518] text-[#16181d] font-semibold text-xs px-3 py-2 rounded-lg hover:bg-[#e0b60f]">
+                <button onClick={handleInstallClick} className="ce-btn-glow flex-1 bg-[#00B4E5] text-[#0b2338] font-semibold text-xs px-3 py-2 rounded-lg hover:bg-[#0069A8]">
                   Instalar agora
                 </button>
-                <button onClick={dismiss} className="text-xs text-gray-400 px-3 py-2 hover:text-white">Agora não</button>
+                <button onClick={dismiss} className="text-xs text-slate-500 px-3 py-2 hover:text-[#0b2338]">Agora não</button>
               </div>
             </>
           ) : (
             <>
-              <p className="text-sm font-semibold text-white">Como instalar no iPhone/iPad</p>
-              <ol className="text-xs text-gray-400 mt-2 space-y-1.5">
+              <p className="text-sm font-semibold text-[#0b2338]">Como instalar no iPhone/iPad</p>
+              <ol className="text-xs text-slate-500 mt-2 space-y-1.5">
                 <li className="flex items-center gap-1.5">
-                  1. Toque no ícone <Share size={13} className="text-gray-300 inline" /> "Compartilhar" na barra do Safari.
+                  1. Toque no ícone <Share size={13} className="text-slate-600 inline" /> "Compartilhar" na barra do Safari.
                 </li>
                 <li className="flex items-center gap-1.5">
-                  2. Escolha <PlusSquare size={13} className="text-gray-300 inline" /> "Adicionar à Tela de Início".
+                  2. Escolha <PlusSquare size={13} className="text-slate-600 inline" /> "Adicionar à Tela de Início".
                 </li>
                 <li>3. Toque em "Adicionar". Pronto — o ícone aparece na sua tela como um app.</li>
               </ol>
-              <button onClick={dismiss} className="text-xs text-gray-400 mt-3 hover:text-white">Entendi</button>
+              <button onClick={dismiss} className="text-xs text-slate-500 mt-3 hover:text-[#0b2338]">Entendi</button>
             </>
           )}
         </div>
-        <button onClick={dismiss} className="text-gray-500 hover:text-white shrink-0" aria-label="Fechar">
+        <button onClick={dismiss} className="text-slate-400 hover:text-[#0b2338] shrink-0" aria-label="Fechar">
           <X size={16} />
         </button>
       </div>

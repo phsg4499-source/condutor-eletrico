@@ -19,10 +19,10 @@ export default function Settings() {
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-white">Configurações da empresa</h1>
-        <p className="text-sm text-gray-400 mt-1">Estes dados são usados no site institucional, PDF e mensagens.</p>
+        <h1 className="text-2xl font-semibold text-[#0b2338]">Configurações da empresa</h1>
+        <p className="text-sm text-slate-500 mt-1">Estes dados são usados no site institucional, PDF e mensagens.</p>
       </div>
-      <form onSubmit={submit} className="bg-[#16181d] border border-white/5 rounded-xl p-5 space-y-4">
+      <form onSubmit={submit} className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="Nome fantasia" value={form.nome_fantasia ?? ''} onChange={v => setForm(f => ({ ...f, nome_fantasia: v }))} />
           <Field label="Responsável" value={form.responsavel ?? ''} onChange={v => setForm(f => ({ ...f, responsavel: v }))} />
@@ -36,7 +36,7 @@ export default function Settings() {
           <Field label="Garantia padrão" value={form.garantia_padrao ?? ''} onChange={v => setForm(f => ({ ...f, garantia_padrao: v }))} />
         </div>
         <div>
-          <p className="text-xs text-gray-400 pt-1">Endereço (aparece no rodapé do PDF do orçamento e do recibo)</p>
+          <p className="text-xs text-slate-500 pt-1">Endereço (aparece no rodapé do PDF do orçamento e do recibo)</p>
         </div>
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="Endereço (rua e número)" value={form.endereco ?? ''} onChange={v => setForm(f => ({ ...f, endereco: v }))} placeholder="Ex: Rua Conde Ribeiro do Vale, 210 - Sagrada Família" />
@@ -45,25 +45,25 @@ export default function Settings() {
           <Field label="CEP" value={form.cep ?? ''} onChange={v => setForm(f => ({ ...f, cep: v }))} />
         </div>
         <div>
-          <label className="text-xs text-gray-400">Frase de experiência (aparece no cabeçalho do PDF)</label>
+          <label className="text-xs text-slate-500">Frase de experiência (aparece no cabeçalho do PDF)</label>
           <input value={form.experiencia ?? ''} onChange={e => setForm(f => ({ ...f, experiencia: e.target.value }))}
             placeholder="Ex: Mais de 10 anos de atuação em instalações elétricas."
-            className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-[#f5c518]" />
+            className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338] focus:outline-none focus:border-[#00B4E5]" />
         </div>
-        <button type="submit" className="ce-btn-glow bg-[#f5c518] text-[#16181d] font-semibold rounded-lg px-5 py-2.5 text-sm hover:bg-[#e0b60f]">Salvar configurações</button>
+        <button type="submit" className="ce-btn-glow bg-[#00B4E5] text-[#0b2338] font-semibold rounded-lg px-5 py-2.5 text-sm hover:bg-[#0069A8]">Salvar configurações</button>
         {saved && <span className="ml-3 text-xs text-emerald-400">Salvo com sucesso.</span>}
       </form>
 
-      <form onSubmit={submit} className="bg-[#16181d] border border-white/5 rounded-xl p-5 space-y-4">
+      <form onSubmit={submit} className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
         <div>
-          <h2 className="text-white font-medium">Precificação</h2>
-          <p className="text-xs text-gray-500 mt-1">Define como o sistema calcula margem e alerta sobre preços baixos nos orçamentos.</p>
+          <h2 className="text-[#0b2338] font-medium">Precificação</h2>
+          <p className="text-xs text-slate-400 mt-1">Define como o sistema calcula margem e alerta sobre preços baixos nos orçamentos.</p>
         </div>
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
-            <label className="text-xs text-gray-400">Modo de cálculo de margem</label>
+            <label className="text-xs text-slate-500">Modo de cálculo de margem</label>
             <select value={form.modo_calculo_margem ?? 'markup_sobre_custo'} onChange={e => setForm(f => ({ ...f, modo_calculo_margem: e.target.value as typeof f.modo_calculo_margem }))}
-              className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white">
+              className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338]">
               <option value="markup_sobre_custo">Markup sobre o custo</option>
               <option value="margem_sobre_venda">Margem sobre a venda</option>
               <option value="valor_fixo">Valor fixo por item</option>
@@ -73,21 +73,21 @@ export default function Settings() {
           <Field label="Margem mínima aceitável (%)" value={String(form.margem_minima_percentual ?? 20)} onChange={v => setForm(f => ({ ...f, margem_minima_percentual: Number(v) || 0 }))} />
           <Field label="Impostos estimados (%)" value={String(form.impostos_estimados_percentual ?? 0)} onChange={v => setForm(f => ({ ...f, impostos_estimados_percentual: Number(v) || 0 }))} />
         </div>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-slate-400">
           Orçamentos com margem abaixo do mínimo configurado mostram um alerta na etapa de revisão e na tela do orçamento.
         </p>
-        <button type="submit" className="ce-btn-glow bg-[#f5c518] text-[#16181d] font-semibold rounded-lg px-5 py-2.5 text-sm hover:bg-[#e0b60f]">Salvar precificação</button>
+        <button type="submit" className="ce-btn-glow bg-[#00B4E5] text-[#0b2338] font-semibold rounded-lg px-5 py-2.5 text-sm hover:bg-[#0069A8]">Salvar precificação</button>
       </form>
 
-      <form onSubmit={submit} className="bg-[#16181d] border border-white/5 rounded-xl p-5 space-y-4">
+      <form onSubmit={submit} className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
         <div>
-          <h2 className="text-white font-medium">Meta do painel geral</h2>
-          <p className="text-xs text-gray-500 mt-1">Usada no indicador de faturamento mensal do Dashboard.</p>
+          <h2 className="text-[#0b2338] font-medium">Meta do painel geral</h2>
+          <p className="text-xs text-slate-400 mt-1">Usada no indicador de faturamento mensal do Dashboard.</p>
         </div>
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="Meta de faturamento mensal (R$)" value={String(form.meta_faturamento_mensal ?? 25000)} onChange={v => setForm(f => ({ ...f, meta_faturamento_mensal: Number(v) || 0 }))} />
         </div>
-        <button type="submit" className="ce-btn-glow bg-[#f5c518] text-[#16181d] font-semibold rounded-lg px-5 py-2.5 text-sm hover:bg-[#e0b60f]">Salvar meta</button>
+        <button type="submit" className="ce-btn-glow bg-[#00B4E5] text-[#0b2338] font-semibold rounded-lg px-5 py-2.5 text-sm hover:bg-[#0069A8]">Salvar meta</button>
       </form>
     </div>
   );
@@ -96,9 +96,9 @@ export default function Settings() {
 function Field({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
     <div>
-      <label className="text-xs text-gray-400">{label}</label>
+      <label className="text-xs text-slate-500">{label}</label>
       <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-        className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-[#f5c518]" />
+        className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338] focus:outline-none focus:border-[#00B4E5]" />
     </div>
   );
 }

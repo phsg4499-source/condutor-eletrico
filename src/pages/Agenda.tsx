@@ -15,10 +15,10 @@ const tipoLabels: Record<CompromissoTipo, string> = {
 };
 
 const tipoColors: Record<CompromissoTipo, string> = {
-  visita_orcamento: 'bg-blue-600/30 text-blue-300',
-  execucao_servico: 'bg-purple-600/30 text-purple-300',
+  visita_orcamento: 'bg-blue-100 text-blue-700',
+  execucao_servico: 'bg-purple-100 text-purple-700',
   reuniao: 'bg-teal-600/30 text-teal-300',
-  outro: 'bg-gray-600/30 text-gray-300',
+  outro: 'bg-gray-600/30 text-slate-600',
 };
 
 function pad(n: number) { return String(n).padStart(2, '0'); }
@@ -152,51 +152,51 @@ export default function Agenda() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 ce-fade-up">
         <div>
-          <h1 className="text-2xl font-semibold text-white">Agenda</h1>
-          <p className="text-sm text-gray-400 mt-1">Visitas, orçamentos presenciais, execuções de serviço e reuniões.</p>
+          <h1 className="text-2xl font-semibold text-[#0b2338]">Agenda</h1>
+          <p className="text-sm text-slate-500 mt-1">Visitas, orçamentos presenciais, execuções de serviço e reuniões.</p>
         </div>
         <div className="flex gap-2">
           <button onClick={() => setVerServicosSemana(v => !v)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm border transition ${
-              verServicosSemana ? 'bg-[#f5c518] text-[#16181d] border-[#f5c518] font-semibold' : 'border-white/10 text-gray-300 hover:border-white/30'
+              verServicosSemana ? 'bg-[#00B4E5] text-[#0b2338] border-[#00B4E5] font-semibold' : 'border-slate-200 text-slate-600 hover:border-slate-300'
             }`}>
             <CalendarRange size={16} /> Serviços da semana
           </button>
-          <button onClick={openNewForm} className="ce-btn-glow ce-cta-glow flex items-center gap-2 bg-[#f5c518] text-[#16181d] font-semibold px-4 py-2 rounded-lg text-sm hover:bg-[#e0b60f]">
+          <button onClick={openNewForm} className="ce-btn-glow ce-cta-glow flex items-center gap-2 bg-[#00B4E5] text-[#0b2338] font-semibold px-4 py-2 rounded-lg text-sm hover:bg-[#0069A8]">
             <Plus size={16} /> Novo compromisso
           </button>
         </div>
       </div>
 
       {verServicosSemana && (
-        <div className="ce-card-hover bg-[#16181d] border border-white/5 rounded-xl p-4 ce-fade-up space-y-3">
-          <h2 className="text-white font-medium text-sm flex items-center gap-2">
+        <div className="ce-card-hover bg-white border border-slate-200 rounded-xl p-4 ce-fade-up space-y-3">
+          <h2 className="text-[#0b2338] font-medium text-sm flex items-center gap-2">
             <Wrench size={15} className="text-purple-300" /> Serviços desta semana
           </h2>
           {servicosCompromissosSemana.length === 0 && servicosOrdensSemana.length === 0 && (
-            <p className="text-xs text-gray-500">Nenhum serviço agendado para esta semana.</p>
+            <p className="text-xs text-slate-400">Nenhum serviço agendado para esta semana.</p>
           )}
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {servicosOrdensSemana.map(o => (
               <Link key={o.id} to={`/app/ordens-servico/${o.id}`}
-                className="block bg-[#0f1115] border border-white/5 rounded-lg p-3 hover:border-[#f5c518]/30">
+                className="block bg-white border border-slate-200 rounded-lg p-3 hover:border-[#00B4E5]/30">
                 <div className="flex items-center gap-2 text-[10px] uppercase text-teal-300"><Wrench size={11} /> Ordem de serviço</div>
-                <p className="text-sm text-white mt-1">{o.numero}</p>
-                <p className="text-xs text-gray-400">{resolveClienteInfo(o, db.clients).nome}</p>
-                <p className="text-xs text-gray-500 mt-1">{new Date(o.data_prevista + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })}</p>
+                <p className="text-sm text-[#0b2338] mt-1">{o.numero}</p>
+                <p className="text-xs text-slate-500">{resolveClienteInfo(o, db.clients).nome}</p>
+                <p className="text-xs text-slate-400 mt-1">{new Date(o.data_prevista + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })}</p>
               </Link>
             ))}
             {servicosCompromissosSemana.map(c => {
               const cliente = resolveClienteInfo(c, db.clients);
               return (
-                <div key={c.id} className="bg-[#0f1115] border border-white/5 rounded-lg p-3 space-y-1">
+                <div key={c.id} className="bg-white border border-slate-200 rounded-lg p-3 space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-purple-600/30 text-purple-300">{tipoLabels.execucao_servico}</span>
+                    <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">{tipoLabels.execucao_servico}</span>
                     <CompromissoStatusBadge status={c.status} />
                   </div>
-                  <p className="text-sm text-white font-medium">{c.titulo}</p>
-                  {(c.client_id || c.cliente_nome_avulso) && <p className="text-xs text-gray-400">Cliente: {cliente.nome}</p>}
-                  <p className="text-xs text-gray-500">
+                  <p className="text-sm text-[#0b2338] font-medium">{c.titulo}</p>
+                  {(c.client_id || c.cliente_nome_avulso) && <p className="text-xs text-slate-500">Cliente: {cliente.nome}</p>}
+                  <p className="text-xs text-slate-400">
                     {new Date(c.data + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })}
                     {c.hora ? ` às ${c.hora}` : ''}
                   </p>
@@ -208,13 +208,13 @@ export default function Agenda() {
       )}
 
       <div className="grid lg:grid-cols-[1fr_360px] gap-5">
-        <div className="ce-card-hover bg-[#16181d] border border-white/5 rounded-xl p-4 ce-fade-up ce-fade-up-1">
+        <div className="ce-card-hover bg-white border border-slate-200 rounded-xl p-4 ce-fade-up ce-fade-up-1">
           <div className="flex items-center justify-between mb-4">
-            <button onClick={() => goToMonth(-1)} className="text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-white/5"><ChevronLeft size={18} /></button>
-            <h2 className="text-white font-medium text-sm">{monthNames[viewMonth]} de {viewYear}</h2>
-            <button onClick={() => goToMonth(1)} className="text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-white/5"><ChevronRight size={18} /></button>
+            <button onClick={() => goToMonth(-1)} className="text-slate-500 hover:text-[#0b2338] p-1.5 rounded-lg hover:bg-slate-100"><ChevronLeft size={18} /></button>
+            <h2 className="text-[#0b2338] font-medium text-sm">{monthNames[viewMonth]} de {viewYear}</h2>
+            <button onClick={() => goToMonth(1)} className="text-slate-500 hover:text-[#0b2338] p-1.5 rounded-lg hover:bg-slate-100"><ChevronRight size={18} /></button>
           </div>
-          <div className="grid grid-cols-7 gap-1 text-center text-[10px] uppercase text-gray-500 mb-1">
+          <div className="grid grid-cols-7 gap-1 text-center text-[10px] uppercase text-slate-400 mb-1">
             {weekDays.map((d, i) => <div key={i} className="py-1">{d}</div>)}
           </div>
           <div className="grid grid-cols-7 gap-1">
@@ -227,10 +227,10 @@ export default function Agenda() {
               return (
                 <button key={i} onClick={() => setSelectedDate(iso)}
                   className={`relative aspect-square rounded-lg text-xs flex flex-col items-center justify-center gap-0.5 transition-colors
-                    ${isSelected ? 'bg-[#f5c518] text-[#16181d] font-semibold' : isToday ? 'bg-white/10 text-white' : 'text-gray-300 hover:bg-white/5'}`}>
+                    ${isSelected ? 'bg-[#00B4E5] text-[#0b2338] font-semibold' : isToday ? 'bg-slate-100 text-[#0b2338]' : 'text-slate-600 hover:bg-slate-100'}`}>
                   {day}
                   {itemCount > 0 && (
-                    <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-[#16181d]' : 'bg-[#f5c518]'}`} />
+                    <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-[#00B4E5]'}`} />
                   )}
                 </button>
               );
@@ -238,48 +238,48 @@ export default function Agenda() {
           </div>
         </div>
 
-        <div className="ce-card-hover bg-[#16181d] border border-white/5 rounded-xl p-4 ce-fade-up ce-fade-up-2 space-y-3">
-          <h2 className="text-white font-medium text-sm">
+        <div className="ce-card-hover bg-white border border-slate-200 rounded-xl p-4 ce-fade-up ce-fade-up-2 space-y-3">
+          <h2 className="text-[#0b2338] font-medium text-sm">
             {new Date(selectedDate + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
           </h2>
 
           {selectedOrdens.map(o => (
             <Link key={o.id} to={`/app/ordens-servico/${o.id}`}
-              className="block bg-[#0f1115] border border-white/5 rounded-lg p-3 hover:border-[#f5c518]/30">
+              className="block bg-white border border-slate-200 rounded-lg p-3 hover:border-[#00B4E5]/30">
               <div className="flex items-center gap-2 text-[10px] uppercase text-teal-300"><Wrench size={11} /> Ordem de serviço</div>
-              <p className="text-sm text-white mt-1">{o.numero}</p>
-              <p className="text-xs text-gray-400">{resolveClienteInfo(o, db.clients).nome}</p>
+              <p className="text-sm text-[#0b2338] mt-1">{o.numero}</p>
+              <p className="text-xs text-slate-500">{resolveClienteInfo(o, db.clients).nome}</p>
             </Link>
           ))}
 
           {selectedCompromissos.length === 0 && selectedOrdens.length === 0 && (
-            <p className="text-xs text-gray-500">Nada agendado para este dia.</p>
+            <p className="text-xs text-slate-400">Nada agendado para este dia.</p>
           )}
 
           {selectedCompromissos.map(c => {
             const cliente = resolveClienteInfo(c, db.clients);
             const orcamentista = db.orcamentistas.find(o => o.id === c.orcamentista_id);
             return (
-              <div key={c.id} className="bg-[#0f1115] border border-white/5 rounded-lg p-3 space-y-1.5">
+              <div key={c.id} className="bg-white border border-slate-200 rounded-lg p-3 space-y-1.5">
                 <div className="flex items-start justify-between gap-2">
                   <span className={`text-[10px] uppercase px-1.5 py-0.5 rounded ${tipoColors[c.tipo]}`}>{tipoLabels[c.tipo]}</span>
                   <CompromissoStatusBadge status={c.status} />
                 </div>
-                <p className="text-sm text-white font-medium">{c.titulo}</p>
+                <p className="text-sm text-[#0b2338] font-medium">{c.titulo}</p>
                 {(c.hora || c.local) && (
-                  <div className="flex flex-wrap gap-3 text-xs text-gray-400">
+                  <div className="flex flex-wrap gap-3 text-xs text-slate-500">
                     {c.hora && <span className="flex items-center gap-1"><Clock size={12} /> {c.hora}</span>}
                     {c.local && <span className="flex items-center gap-1"><MapPin size={12} /> {c.local}</span>}
                   </div>
                 )}
-                {(c.client_id || c.cliente_nome_avulso) && <p className="text-xs text-gray-400">Cliente: {cliente.nome}</p>}
-                {orcamentista && <p className="text-xs text-gray-500">Responsável: {orcamentista.nome}</p>}
-                {c.observacoes && <p className="text-xs text-gray-500">{c.observacoes}</p>}
+                {(c.client_id || c.cliente_nome_avulso) && <p className="text-xs text-slate-500">Cliente: {cliente.nome}</p>}
+                {orcamentista && <p className="text-xs text-slate-400">Responsável: {orcamentista.nome}</p>}
+                {c.observacoes && <p className="text-xs text-slate-400">{c.observacoes}</p>}
                 <div className="flex gap-3 pt-1">
                   <button onClick={() => handleToggleConcluido(c)} className="text-xs text-emerald-400 hover:underline">
                     {c.status === 'concluido' ? 'Reabrir' : 'Marcar concluído'}
                   </button>
-                  <button onClick={() => openEditForm(c.id)} className="text-xs text-[#f5c518] hover:underline">Editar</button>
+                  <button onClick={() => openEditForm(c.id)} className="text-xs text-[#00B4E5] hover:underline">Editar</button>
                   <button onClick={() => handleDelete(c.id, c.titulo)} className="text-xs text-red-400 hover:underline ml-auto flex items-center gap-1">
                     <Trash2 size={12} /> Excluir
                   </button>
@@ -410,32 +410,32 @@ function CompromissoForm({ compromisso, prefill, defaultDate, orcamentistasAtivo
   return (
     <div className="fixed inset-0 z-40 bg-black/60 flex items-center justify-center p-4" onClick={onClose}>
       <form onSubmit={submit} onClick={e => e.stopPropagation()}
-        className="ce-pop-in bg-[#16181d] border border-white/10 rounded-xl p-5 w-full max-w-lg space-y-4 max-h-[85vh] overflow-y-auto">
-        <h2 className="text-white font-medium">{compromisso ? 'Editar compromisso' : 'Novo compromisso'}</h2>
+        className="ce-pop-in bg-white border border-slate-200 rounded-xl p-5 w-full max-w-lg space-y-4 max-h-[85vh] overflow-y-auto">
+        <h2 className="text-[#0b2338] font-medium">{compromisso ? 'Editar compromisso' : 'Novo compromisso'}</h2>
 
         <div>
-          <label className="text-xs text-gray-400">Título *</label>
+          <label className="text-xs text-slate-500">Título *</label>
           <input value={titulo} onChange={e => setTitulo(e.target.value)} placeholder="Ex: Visita técnica para orçamento"
-            className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-[#f5c518]" />
+            className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338] focus:outline-none focus:border-[#00B4E5]" />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-gray-400">Data *</label>
+            <label className="text-xs text-slate-500">Data *</label>
             <input type="date" value={data} onChange={e => setData(e.target.value)}
-              className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white" />
+              className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338]" />
           </div>
           <div>
-            <label className="text-xs text-gray-400">Hora</label>
+            <label className="text-xs text-slate-500">Hora</label>
             <input type="time" value={hora} onChange={e => setHora(e.target.value)}
-              className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white" />
+              className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338]" />
           </div>
         </div>
 
         <div>
-          <label className="text-xs text-gray-400">Tipo</label>
+          <label className="text-xs text-slate-500">Tipo</label>
           <select value={tipo} onChange={e => setTipo(e.target.value as CompromissoTipo)}
-            className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white">
+            className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338]">
             <option value="visita_orcamento">Visita para orçamento</option>
             <option value="execucao_servico">Execução de serviço</option>
             <option value="reuniao">Reunião</option>
@@ -444,18 +444,18 @@ function CompromissoForm({ compromisso, prefill, defaultDate, orcamentistasAtivo
         </div>
 
         <div>
-          <label className="text-xs text-gray-400 block mb-1.5">Cliente (opcional)</label>
+          <label className="text-xs text-slate-500 block mb-1.5">Cliente (opcional)</label>
           <div className="flex gap-2 mb-2">
             <button type="button" onClick={() => setClienteMode('nenhum')}
-              className={`flex-1 py-1.5 rounded-lg text-xs border ${clienteMode === 'nenhum' ? 'bg-[#f5c518] text-[#16181d] border-[#f5c518]' : 'border-white/10 text-gray-300'}`}>Sem cliente</button>
+              className={`flex-1 py-1.5 rounded-lg text-xs border ${clienteMode === 'nenhum' ? 'bg-[#00B4E5] text-[#0b2338] border-[#00B4E5]' : 'border-slate-200 text-slate-600'}`}>Sem cliente</button>
             <button type="button" onClick={() => setClienteMode('existing')}
-              className={`flex-1 py-1.5 rounded-lg text-xs border ${clienteMode === 'existing' ? 'bg-[#f5c518] text-[#16181d] border-[#f5c518]' : 'border-white/10 text-gray-300'}`}>Cadastrado</button>
+              className={`flex-1 py-1.5 rounded-lg text-xs border ${clienteMode === 'existing' ? 'bg-[#00B4E5] text-[#0b2338] border-[#00B4E5]' : 'border-slate-200 text-slate-600'}`}>Cadastrado</button>
             <button type="button" onClick={() => setClienteMode('avulso')}
-              className={`flex-1 py-1.5 rounded-lg text-xs border ${clienteMode === 'avulso' ? 'bg-[#f5c518] text-[#16181d] border-[#f5c518]' : 'border-white/10 text-gray-300'}`}>Sem cadastro</button>
+              className={`flex-1 py-1.5 rounded-lg text-xs border ${clienteMode === 'avulso' ? 'bg-[#00B4E5] text-[#0b2338] border-[#00B4E5]' : 'border-slate-200 text-slate-600'}`}>Sem cadastro</button>
           </div>
           {clienteMode === 'existing' && (
             <select value={clientId} onChange={e => setClientId(e.target.value)}
-              className="w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white">
+              className="w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338]">
               <option value="">Selecione...</option>
               {clients.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
             </select>
@@ -463,43 +463,43 @@ function CompromissoForm({ compromisso, prefill, defaultDate, orcamentistasAtivo
           {clienteMode === 'avulso' && (
             <div className="grid grid-cols-2 gap-3">
               <input value={clienteNome} onChange={e => setClienteNome(e.target.value)} placeholder="Nome"
-                className="rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white" />
+                className="rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338]" />
               <input value={clienteTelefone} onChange={e => setClienteTelefone(e.target.value)} placeholder="Telefone"
-                className="rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white" />
+                className="rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338]" />
             </div>
           )}
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-gray-400">Responsável</label>
+            <label className="text-xs text-slate-500">Responsável</label>
             <select value={orcamentistaId} onChange={e => setOrcamentistaId(e.target.value)}
-              className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white">
+              className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338]">
               <option value="">—</option>
               {orcamentistasAtivos.map(o => <option key={o.id} value={o.id}>{o.nome}</option>)}
             </select>
           </div>
           <div>
-            <label className="text-xs text-gray-400">Local</label>
+            <label className="text-xs text-slate-500">Local</label>
             <input value={local} onChange={e => setLocal(e.target.value)} placeholder="Endereço ou referência"
-              className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white" />
+              className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338]" />
           </div>
         </div>
 
         {compromisso && (
           <div>
-            <label className="text-xs text-gray-400">Status</label>
+            <label className="text-xs text-slate-500">Status</label>
             <select value={status} onChange={e => setStatus(e.target.value as Compromisso['status'])}
-              className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white">
+              className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338]">
               {compromissoStatusOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select>
           </div>
         )}
 
         <div>
-          <label className="text-xs text-gray-400">Observações</label>
+          <label className="text-xs text-slate-500">Observações</label>
           <textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} rows={2}
-            className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white" />
+            className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338]" />
         </div>
 
         {conflito && (
@@ -509,8 +509,8 @@ function CompromissoForm({ compromisso, prefill, defaultDate, orcamentistasAtivo
         )}
 
         <div className="flex gap-3 pt-2">
-          <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-lg border border-white/10 text-gray-300 text-sm hover:bg-white/5">Cancelar</button>
-          <button type="submit" disabled={salvando} className="ce-btn-glow flex-1 py-2.5 rounded-lg bg-[#f5c518] text-[#16181d] font-semibold text-sm hover:bg-[#e0b60f] disabled:opacity-60 disabled:cursor-not-allowed">{salvando ? 'Salvando...' : 'Salvar'}</button>
+          <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-lg border border-slate-200 text-slate-600 text-sm hover:bg-slate-100">Cancelar</button>
+          <button type="submit" disabled={salvando} className="ce-btn-glow flex-1 py-2.5 rounded-lg bg-[#00B4E5] text-[#0b2338] font-semibold text-sm hover:bg-[#0069A8] disabled:opacity-60 disabled:cursor-not-allowed">{salvando ? 'Salvando...' : 'Salvar'}</button>
         </div>
       </form>
     </div>

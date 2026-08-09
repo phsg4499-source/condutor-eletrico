@@ -45,16 +45,16 @@ export default function Landing() {
   const waLink = whatsappLink(org.whatsapp, 'Olá! Gostaria de solicitar um orçamento de serviço elétrico.');
 
   return (
-    <div className="bg-[#0f1115] text-gray-100">
+    <div className="bg-white text-slate-700">
       {/* Header */}
-      <header className="border-b border-white/5 sticky top-0 bg-[#0f1115]/90 backdrop-blur z-20">
+      <header className="border-b border-slate-200 sticky top-0 bg-white/90 backdrop-blur z-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Logo variant="horizontal" theme="dark" />
+          <Logo variant="horizontal" theme="light" />
           <div className="flex items-center gap-3">
-            <a href={waLink} target="_blank" rel="noreferrer" className="hidden sm:inline-flex items-center gap-1.5 text-sm text-gray-300 hover:text-white">
+            <a href={waLink} target="_blank" rel="noreferrer" className="hidden sm:inline-flex items-center gap-1.5 text-sm text-slate-600 hover:text-[#0b2338]">
               <MessageCircle size={16} /> WhatsApp
             </a>
-            <Link to="/login" className="text-sm bg-[#f5c518] text-[#16181d] font-semibold px-4 py-2 rounded-lg hover:bg-[#e0b60f]">Acessar sistema</Link>
+            <Link to="/login" className="text-sm bg-[#00B4E5] text-[#0b2338] font-semibold px-4 py-2 rounded-lg hover:bg-[#0069A8]">Acessar sistema</Link>
           </div>
         </div>
       </header>
@@ -63,21 +63,21 @@ export default function Landing() {
       <section className="relative overflow-hidden">
         <AmbientBackground />
         <div className="absolute inset-0 opacity-[0.06] pointer-events-none" style={{
-          backgroundImage: 'repeating-linear-gradient(45deg, #f5c518 0, #f5c518 1px, transparent 1px, transparent 40px)',
+          backgroundImage: 'repeating-linear-gradient(45deg, #00B4E5 0, #00B4E5 1px, transparent 1px, transparent 40px)',
         }} />
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-28 relative">
-          <div className="flex justify-center mb-8 ce-fade-up"><LogoSymbol theme="dark" className="w-20 h-20" animated /></div>
-          <h1 className="text-3xl sm:text-5xl font-extrabold text-center max-w-3xl mx-auto leading-tight text-white ce-fade-up ce-fade-up-1">
+          <div className="flex justify-center mb-8 ce-fade-up"><LogoSymbol theme="light" className="w-20 h-20" animated /></div>
+          <h1 className="text-3xl sm:text-5xl font-extrabold text-center max-w-3xl mx-auto leading-tight text-[#0b2338] ce-fade-up ce-fade-up-1">
             Energia <span className="ce-gradient-text">segura</span> para projetos que precisam funcionar de verdade.
           </h1>
-          <p className="text-center text-gray-400 max-w-2xl mx-auto mt-5 text-base sm:text-lg ce-fade-up ce-fade-up-2">
+          <p className="text-center text-slate-500 max-w-2xl mx-auto mt-5 text-base sm:text-lg ce-fade-up ce-fade-up-2">
             A {org.nome_fantasia} atua há mais de 10 anos com instalações, manutenção e projetos elétricos residenciais,
             comerciais e empresariais, sempre com foco em segurança, organização e qualidade técnica.
           </p>
           <div className="flex flex-wrap justify-center gap-3 mt-8 ce-fade-up ce-fade-up-3">
-            <a href="#solicitar" className="ce-btn-glow bg-[#f5c518] text-[#16181d] font-semibold px-6 py-3 rounded-lg hover:bg-[#e0b60f]">Solicitar orçamento</a>
-            <Link to="/login" className="ce-btn-glow border border-white/15 text-gray-200 px-6 py-3 rounded-lg hover:bg-white/5">Acessar sistema</Link>
-            <a href={waLink} target="_blank" rel="noreferrer" className="ce-btn-glow flex items-center gap-2 border border-white/15 text-gray-200 px-6 py-3 rounded-lg hover:bg-white/5">
+            <a href="#solicitar" className="ce-btn-glow bg-[#00B4E5] text-[#0b2338] font-semibold px-6 py-3 rounded-lg hover:bg-[#0069A8]">Solicitar orçamento</a>
+            <Link to="/login" className="ce-btn-glow border border-slate-300 text-slate-600 px-6 py-3 rounded-lg hover:bg-slate-100">Acessar sistema</Link>
+            <a href={waLink} target="_blank" rel="noreferrer" className="ce-btn-glow flex items-center gap-2 border border-slate-300 text-slate-600 px-6 py-3 rounded-lg hover:bg-slate-100">
               <MessageCircle size={18} /> Falar no WhatsApp
             </a>
           </div>
@@ -87,21 +87,21 @@ export default function Landing() {
       {/* Diferenciais */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-16 grid sm:grid-cols-3 gap-6">
         {diferenciais.map(d => (
-          <div key={d.title} className="ce-card-hover bg-[#16181d] border border-white/5 rounded-2xl p-6">
-            <d.icon className="text-[#f5c518] mb-3" size={28} />
-            <h3 className="text-white font-semibold">{d.title}</h3>
-            <p className="text-sm text-gray-400 mt-2">{d.desc}</p>
+          <div key={d.title} className="ce-card-hover bg-white border border-slate-200 rounded-2xl p-6">
+            <d.icon className="text-[#00B4E5] mb-3" size={28} />
+            <h3 className="text-[#0b2338] font-semibold">{d.title}</h3>
+            <p className="text-sm text-slate-500 mt-2">{d.desc}</p>
           </div>
         ))}
       </section>
 
       {/* Serviços */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
-        <h2 className="text-2xl font-bold text-white text-center">Principais serviços</h2>
+        <h2 className="text-2xl font-bold text-[#0b2338] text-center">Principais serviços</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-8">
           {servicos.map(s => (
-            <div key={s} className="ce-card-hover flex items-center gap-2 bg-[#16181d] border border-white/5 rounded-lg px-4 py-3 text-sm text-gray-300">
-              <Zap size={14} className="text-[#f5c518] shrink-0" /> {s}
+            <div key={s} className="ce-card-hover flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-600">
+              <Zap size={14} className="text-[#00B4E5] shrink-0" /> {s}
             </div>
           ))}
         </div>
@@ -109,12 +109,12 @@ export default function Landing() {
 
       {/* Processo */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-16">
-        <h2 className="text-2xl font-bold text-white text-center mb-8">Como funciona o atendimento</h2>
+        <h2 className="text-2xl font-bold text-[#0b2338] text-center mb-8">Como funciona o atendimento</h2>
         <div className="grid sm:grid-cols-4 gap-4">
           {['Solicitação e diagnóstico', 'Vistoria (quando necessário)', 'Orçamento detalhado e aprovação', 'Execução com acompanhamento'].map((step, i) => (
-            <div key={step} className="ce-card-hover bg-[#16181d] border border-white/5 rounded-xl p-5">
-              <div className="text-[#f5c518] font-bold text-xl mb-2">{String(i + 1).padStart(2, '0')}</div>
-              <p className="text-sm text-gray-300">{step}</p>
+            <div key={step} className="ce-card-hover bg-white border border-slate-200 rounded-xl p-5">
+              <div className="text-[#00B4E5] font-bold text-xl mb-2">{String(i + 1).padStart(2, '0')}</div>
+              <p className="text-sm text-slate-600">{step}</p>
             </div>
           ))}
         </div>
@@ -122,17 +122,17 @@ export default function Landing() {
 
       {/* Formulário de solicitação */}
       <section id="solicitar" className="max-w-3xl mx-auto px-4 sm:px-6 py-16">
-        <h2 className="text-2xl font-bold text-white text-center">Solicitar orçamento</h2>
-        <p className="text-sm text-gray-400 text-center mt-2">Preencha os dados abaixo. Entraremos em contato o quanto antes.</p>
+        <h2 className="text-2xl font-bold text-[#0b2338] text-center">Solicitar orçamento</h2>
+        <p className="text-sm text-slate-500 text-center mt-2">Preencha os dados abaixo. Entraremos em contato o quanto antes.</p>
 
         {sent ? (
           <div className="mt-8 bg-emerald-600/10 border border-emerald-600/30 rounded-xl p-6 text-center">
             <CheckCircle2 className="mx-auto text-emerald-400 mb-2" size={32} />
-            <p className="text-emerald-300 font-medium">Solicitação enviada com sucesso!</p>
-            <p className="text-sm text-gray-400 mt-1">Nossa equipe entrará em contato em breve.</p>
+            <p className="text-emerald-700 font-medium">Solicitação enviada com sucesso!</p>
+            <p className="text-sm text-slate-500 mt-1">Nossa equipe entrará em contato em breve.</p>
           </div>
         ) : (
-          <form onSubmit={submitLead} className="mt-8 bg-[#16181d] border border-white/5 rounded-2xl p-6 space-y-4">
+          <form onSubmit={submitLead} className="mt-8 bg-white border border-slate-200 rounded-2xl p-6 space-y-4">
             <div className="grid sm:grid-cols-2 gap-4">
               <Field label="Nome *" value={lead.nome} onChange={v => setLead(l => ({ ...l, nome: v }))} required />
               <Field label="Telefone / WhatsApp *" value={lead.telefone} onChange={v => setLead(l => ({ ...l, telefone: v }))} required />
@@ -145,35 +145,35 @@ export default function Landing() {
             </div>
             <Field label="Serviço desejado" value={lead.servico_desejado} onChange={v => setLead(l => ({ ...l, servico_desejado: v }))} />
             <div>
-              <label className="text-xs text-gray-400">Descrição do problema ou projeto</label>
+              <label className="text-xs text-slate-500">Descrição do problema ou projeto</label>
               <textarea value={lead.descricao} onChange={e => setLead(l => ({ ...l, descricao: e.target.value }))} rows={3}
-                className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-[#f5c518]" />
+                className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338] focus:outline-none focus:border-[#00B4E5]" />
             </div>
             <Select label="Urgência" value={lead.urgencia} options={['baixa', 'media', 'alta', 'emergencia']} onChange={v => setLead(l => ({ ...l, urgencia: v as any }))} />
-            <button type="submit" className="ce-btn-glow w-full bg-[#f5c518] text-[#16181d] font-semibold rounded-lg py-3 text-sm hover:bg-[#e0b60f]">Enviar solicitação</button>
+            <button type="submit" className="ce-btn-glow w-full bg-[#00B4E5] text-[#0b2338] font-semibold rounded-lg py-3 text-sm hover:bg-[#0069A8]">Enviar solicitação</button>
           </form>
         )}
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/5">
+      <footer className="border-t border-slate-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 grid sm:grid-cols-3 gap-6">
           <div>
-            <Logo variant="horizontal" theme="dark" />
-            <p className="text-sm text-gray-500 mt-3">{org.experiencia}</p>
+            <Logo variant="horizontal" theme="light" />
+            <p className="text-sm text-slate-400 mt-3">{org.experiencia}</p>
           </div>
-          <div className="text-sm text-gray-400 space-y-1">
+          <div className="text-sm text-slate-500 space-y-1">
             <p>{org.telefone}</p>
             <p>{org.email}</p>
             <p>{org.cidade} - {org.estado}</p>
           </div>
           <div className="flex sm:justify-end items-start gap-4">
-            <a href={`https://instagram.com/${org.instagram.replace('@', '')}`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white">
+            <a href={`https://instagram.com/${org.instagram.replace('@', '')}`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-[#0b2338]">
               <Camera size={16} /> {org.instagram}
             </a>
           </div>
         </div>
-        <p className="text-center text-xs text-gray-600 pb-6">© {new Date().getFullYear()} {org.nome_fantasia}. Todos os direitos reservados.</p>
+        <p className="text-center text-xs text-slate-400 pb-6">© {new Date().getFullYear()} {org.nome_fantasia}. Todos os direitos reservados.</p>
       </footer>
     </div>
   );
@@ -182,9 +182,9 @@ export default function Landing() {
 function Field({ label, value, onChange, required, type = 'text' }: { label: string; value: string; onChange: (v: string) => void; required?: boolean; type?: string }) {
   return (
     <div>
-      <label className="text-xs text-gray-400">{label}</label>
+      <label className="text-xs text-slate-500">{label}</label>
       <input value={value} onChange={e => onChange(e.target.value)} required={required} type={type}
-        className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-[#f5c518]" />
+        className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338] focus:outline-none focus:border-[#00B4E5]" />
     </div>
   );
 }
@@ -192,9 +192,9 @@ function Field({ label, value, onChange, required, type = 'text' }: { label: str
 function Select({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (v: string) => void }) {
   return (
     <div>
-      <label className="text-xs text-gray-400">{label}</label>
+      <label className="text-xs text-slate-500">{label}</label>
       <select value={value} onChange={e => onChange(e.target.value)}
-        className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white">
+        className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338]">
         {options.map(o => <option key={o} value={o}>{o}</option>)}
       </select>
     </div>

@@ -28,8 +28,8 @@ export default function BudgetView() {
 
   if (!budget) {
     return (
-      <div className="text-gray-400">
-        Orçamento não encontrado. <Link to="/app/orcamentos" className="text-[#f5c518] hover:underline">Voltar</Link>
+      <div className="text-slate-500">
+        Orçamento não encontrado. <Link to="/app/orcamentos" className="text-[#00B4E5] hover:underline">Voltar</Link>
       </div>
     );
   }
@@ -141,12 +141,12 @@ export default function BudgetView() {
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <Link to="/app/orcamentos" className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-white"><ArrowLeft size={16} /> Voltar</Link>
+      <Link to="/app/orcamentos" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-[#0b2338]"><ArrowLeft size={16} /> Voltar</Link>
 
       <div className="flex flex-wrap items-start justify-between gap-4 ce-fade-up">
         <div>
-          <h1 className="text-2xl font-semibold text-white">{budget.titulo}</h1>
-          <p className="text-sm text-gray-400 mt-1">
+          <h1 className="text-2xl font-semibold text-[#0b2338]">{budget.titulo}</h1>
+          <p className="text-sm text-slate-500 mt-1">
             Orçamento nº {budget.numero} · Cliente: {cliente.nome}
             {!cliente.cadastrado && <span className="ml-2 text-[10px] uppercase text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded px-1.5 py-0.5">sem cadastro</span>}
           </p>
@@ -155,25 +155,25 @@ export default function BudgetView() {
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <Link to={`/app/orcamentos/${budget.id}/editar`} className="flex items-center gap-2 border border-white/10 text-gray-200 px-4 py-2 rounded-lg text-sm hover:bg-white/5">
+        <Link to={`/app/orcamentos/${budget.id}/editar`} className="flex items-center gap-2 border border-slate-200 text-slate-600 px-4 py-2 rounded-lg text-sm hover:bg-slate-100">
           <Pencil size={16} /> Editar
         </Link>
-        <button onClick={handleDownloadPdf} className="ce-btn-glow flex items-center gap-2 bg-[#f5c518] text-[#16181d] font-semibold px-4 py-2 rounded-lg text-sm hover:bg-[#e0b60f]">
+        <button onClick={handleDownloadPdf} className="ce-btn-glow flex items-center gap-2 bg-[#00B4E5] text-[#0b2338] font-semibold px-4 py-2 rounded-lg text-sm hover:bg-[#0069A8]">
           <Download size={16} /> Gerar PDF
         </button>
-        <button onClick={handleDownloadContract} className="flex items-center gap-2 border border-white/10 text-gray-200 px-4 py-2 rounded-lg text-sm hover:bg-white/5">
+        <button onClick={handleDownloadContract} className="flex items-center gap-2 border border-slate-200 text-slate-600 px-4 py-2 rounded-lg text-sm hover:bg-slate-100">
           <FileSignature size={16} /> Gerar contrato
         </button>
-        <button onClick={handleWhatsapp} className="flex items-center gap-2 bg-emerald-600 text-white font-semibold px-4 py-2 rounded-lg text-sm hover:bg-emerald-500">
+        <button onClick={handleWhatsapp} className="flex items-center gap-2 bg-emerald-600 text-[#0b2338] font-semibold px-4 py-2 rounded-lg text-sm hover:bg-emerald-500">
           <MessageCircle size={16} /> Enviar por WhatsApp
         </button>
         {(budget.status === 'aprovado' || budget.status === 'aprovado_parcialmente') && (
-          <button onClick={handleConvert} className="flex items-center gap-2 border border-white/10 text-gray-200 px-4 py-2 rounded-lg text-sm hover:bg-white/5">
+          <button onClick={handleConvert} className="flex items-center gap-2 border border-slate-200 text-slate-600 px-4 py-2 rounded-lg text-sm hover:bg-slate-100">
             <Repeat size={16} /> Converter em ordem de serviço
           </button>
         )}
         <select value={budget.status} onChange={e => handleStatusChange(e.target.value as BudgetStatus)}
-          className="bg-[#16181d] border border-white/10 rounded-lg px-3 py-2 text-sm text-white sm:ml-auto">
+          className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-[#0b2338] sm:ml-auto">
           {budgetStatusOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select>
         <button onClick={handleDelete} className="flex items-center gap-2 border border-red-500/20 text-red-400 px-4 py-2 rounded-lg text-sm hover:bg-red-500/10">
@@ -192,11 +192,11 @@ export default function BudgetView() {
         </div>
       )}
 
-      <div className="bg-[#16181d] border border-white/5 rounded-xl p-5 space-y-4">
-        <h2 className="text-white font-medium text-sm">Itens</h2>
+      <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
+        <h2 className="text-[#0b2338] font-medium text-sm">Itens</h2>
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-gray-400 border-b border-white/5">
+            <tr className="text-left text-slate-500 border-b border-slate-200">
               <th className="py-2 font-medium">Item</th>
               <th className="py-2 font-medium">Tipo</th>
               <th className="py-2 font-medium">Qtd</th>
@@ -207,24 +207,24 @@ export default function BudgetView() {
           </thead>
           <tbody>
             {budget.itens.map(item => (
-              <tr key={item.id} className="border-b border-white/5 last:border-0">
-                <td className="py-2 text-white">{item.nome}</td>
-                <td className="py-2 text-gray-400 capitalize">{item.tipo}</td>
-                <td className="py-2 text-gray-300">{item.quantidade} {item.unidade}</td>
-                <td className="py-2 text-gray-400">{formatMoney(item.custo_unitario)}</td>
-                <td className="py-2 text-gray-300">{formatMoney(item.valor_unitario)}</td>
-                <td className="py-2 text-white text-right">{formatMoney(item.quantidade * item.valor_unitario - item.desconto)}</td>
+              <tr key={item.id} className="border-b border-slate-200 last:border-0">
+                <td className="py-2 text-[#0b2338]">{item.nome}</td>
+                <td className="py-2 text-slate-500 capitalize">{item.tipo}</td>
+                <td className="py-2 text-slate-600">{item.quantidade} {item.unidade}</td>
+                <td className="py-2 text-slate-500">{formatMoney(item.custo_unitario)}</td>
+                <td className="py-2 text-slate-600">{formatMoney(item.valor_unitario)}</td>
+                <td className="py-2 text-[#0b2338] text-right">{formatMoney(item.quantidade * item.valor_unitario - item.desconto)}</td>
               </tr>
             ))}
           </tbody>
         </table>
         {budget.custos_extras.length > 0 && (
           <div className="pt-2">
-            <h3 className="text-xs text-gray-400 mb-2">Custos adicionais</h3>
+            <h3 className="text-xs text-slate-500 mb-2">Custos adicionais</h3>
             {budget.custos_extras.map(c => (
               <div key={c.id} className="flex justify-between text-sm py-1">
-                <span className="text-gray-300">{c.descricao}</span>
-                <span className="text-white">{formatMoney(c.valor)}</span>
+                <span className="text-slate-600">{c.descricao}</span>
+                <span className="text-[#0b2338]">{formatMoney(c.valor)}</span>
               </div>
             ))}
           </div>
@@ -232,15 +232,15 @@ export default function BudgetView() {
       </div>
 
       <div className="grid sm:grid-cols-2 gap-5">
-        <div className="bg-[#16181d] border border-white/5 rounded-xl p-5 space-y-2">
-          <h2 className="text-white font-medium text-sm mb-2">Valores internos</h2>
+        <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-2">
+          <h2 className="text-[#0b2338] font-medium text-sm mb-2">Valores internos</h2>
           <Row label="Custo total" value={formatMoney(totals.totalCusto)} />
           <Row label="Lucro bruto" value={formatMoney(totals.lucroBruto)} />
           <Row label="Margem" value={`${totals.margemPercentual.toFixed(1)}%`} />
-          <p className="text-[11px] text-gray-500 pt-1">Estes dados não são exibidos ao cliente nem no PDF.</p>
+          <p className="text-[11px] text-slate-400 pt-1">Estes dados não são exibidos ao cliente nem no PDF.</p>
         </div>
-        <div className="bg-[#16181d] border border-white/5 rounded-xl p-5 space-y-2">
-          <h2 className="text-white font-medium text-sm mb-2">Condições comerciais</h2>
+        <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-2">
+          <h2 className="text-[#0b2338] font-medium text-sm mb-2">Condições comerciais</h2>
           <Row label="Valor final" value={formatMoney(totals.totalVenda)} />
           <Row label="Entrada" value={formatMoney(totals.valorEntrada)} />
           <Row label="Saldo" value={formatMoney(totals.saldoRestante)} />
@@ -256,16 +256,16 @@ export default function BudgetView() {
         </div>
       )}
 
-      <div className="bg-[#16181d] border border-white/5 rounded-xl p-5 space-y-4">
+      <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-white font-medium text-sm flex items-center gap-1.5"><Wallet size={15} className="text-gray-400" /> Pagamentos</h2>
-          <button onClick={() => setShowPaymentForm(true)} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5">
+          <h2 className="text-[#0b2338] font-medium text-sm flex items-center gap-1.5"><Wallet size={15} className="text-slate-500" /> Pagamentos</h2>
+          <button onClick={() => setShowPaymentForm(true)} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100">
             <Plus size={13} /> Registrar pagamento
           </button>
         </div>
 
         {(budget.status === 'aprovado' || budget.status === 'aprovado_parcialmente') && budgetPayments.length === 0 && (
-          <div className="bg-[#f5c518]/10 border border-[#f5c518]/20 rounded-lg px-4 py-3 text-xs text-amber-300 space-y-2">
+          <div className="bg-[#00B4E5]/10 border border-[#00B4E5]/20 rounded-lg px-4 py-3 text-xs text-[#0069A8] space-y-2">
             <p>Orçamento aprovado — registre o pagamento do sinal combinado na negociação para acompanhar o saldo restante.</p>
             <button
               onClick={async () => {
@@ -276,20 +276,20 @@ export default function BudgetView() {
                 }
                 toast.show('Valor total lançado como a receber.');
               }}
-              className="text-xs underline text-amber-200 hover:text-white">
+              className="text-xs underline text-[#0069A8] hover:text-[#0b2338]">
               Ainda não recebi nada — lançar o valor total como a receber
             </button>
           </div>
         )}
 
         <div className="grid sm:grid-cols-2 gap-3">
-          <div className="bg-[#0f1115] border border-white/5 rounded-lg p-3">
-            <p className="text-[11px] text-gray-500">Valor pago</p>
+          <div className="bg-white border border-slate-200 rounded-lg p-3">
+            <p className="text-[11px] text-slate-400">Valor pago</p>
             <p className="text-lg text-emerald-400 font-semibold">{formatMoney(totalPago)}</p>
           </div>
-          <div className="bg-[#0f1115] border border-white/5 rounded-lg p-3">
-            <p className="text-[11px] text-gray-500">Valor a receber</p>
-            <p className="text-lg text-[#f5c518] font-semibold">{formatMoney(saldoReceber)}</p>
+          <div className="bg-white border border-slate-200 rounded-lg p-3">
+            <p className="text-[11px] text-slate-400">Valor a receber</p>
+            <p className="text-lg text-[#00B4E5] font-semibold">{formatMoney(saldoReceber)}</p>
           </div>
         </div>
 
@@ -298,7 +298,7 @@ export default function BudgetView() {
             {grupoFiltroOptions.map(g => (
               <button key={g.value} onClick={() => setGrupoFiltro(g.value)}
                 className={`px-3 py-1 rounded-full text-[11px] font-medium border transition ${
-                  grupoFiltro === g.value ? 'bg-[#f5c518] text-[#16181d] border-[#f5c518]' : 'border-white/10 text-gray-400 hover:text-white hover:border-white/30'
+                  grupoFiltro === g.value ? 'bg-[#00B4E5] text-[#0b2338] border-[#00B4E5]' : 'border-slate-200 text-slate-500 hover:text-[#0b2338] hover:border-slate-300'
                 }`}>
                 {g.label}
               </button>
@@ -307,20 +307,20 @@ export default function BudgetView() {
         )}
 
         {budgetPayments.length === 0 ? (
-          <p className="text-xs text-gray-500">Nenhum pagamento registrado ainda.</p>
+          <p className="text-xs text-slate-400">Nenhum pagamento registrado ainda.</p>
         ) : budgetPaymentsFiltrados.length === 0 ? (
-          <p className="text-xs text-gray-500">Nenhum pagamento neste filtro.</p>
+          <p className="text-xs text-slate-400">Nenhum pagamento neste filtro.</p>
         ) : (
           <div className="space-y-2">
             {budgetPaymentsFiltrados.map(p => (
-              <div key={p.id} className="flex items-center justify-between bg-[#0f1115] border border-white/5 rounded-lg px-3 py-2.5">
+              <div key={p.id} className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-3 py-2.5">
                 <div>
-                  <p className="text-sm text-white">{formatMoney(p.valor)} <span className="text-xs text-gray-500">— {p.forma_pagamento ? formasPagamento.find(f => f.value === p.forma_pagamento)?.label : '—'}</span></p>
-                  <p className="text-[11px] text-gray-500">{formatDate(p.data_recebimento ?? p.vencimento ?? '')} · {paymentStatusLabels[getEffectivePaymentStatus(p)]}</p>
+                  <p className="text-sm text-[#0b2338]">{formatMoney(p.valor)} <span className="text-xs text-slate-400">— {p.forma_pagamento ? formasPagamento.find(f => f.value === p.forma_pagamento)?.label : '—'}</span></p>
+                  <p className="text-[11px] text-slate-400">{formatDate(p.data_recebimento ?? p.vencimento ?? '')} · {paymentStatusLabels[getEffectivePaymentStatus(p)]}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   {p.status !== 'pago' && p.status !== 'cancelado' && (
-                    <button onClick={() => setMarcarRecebido(p)} title="Marcar como recebido" className="text-gray-500 hover:text-emerald-400">
+                    <button onClick={() => setMarcarRecebido(p)} title="Marcar como recebido" className="text-slate-400 hover:text-emerald-400">
                       <CheckCircle2 size={15} />
                     </button>
                   )}
@@ -328,7 +328,7 @@ export default function BudgetView() {
                     const result = await deletePayment(p.id);
                     if (!result.ok) { toast.show(result.error ?? 'Não foi possível excluir o pagamento.', 'warning'); return; }
                     toast.show('Pagamento excluído.', 'info');
-                  }} className="text-gray-500 hover:text-red-400">
+                  }} className="text-slate-400 hover:text-red-400">
                     <Trash2 size={14} />
                   </button>
                 </div>
@@ -338,13 +338,13 @@ export default function BudgetView() {
         )}
       </div>
 
-      <div className="bg-[#16181d] border border-white/5 rounded-xl p-5">
-        <h2 className="text-white font-medium text-sm mb-3">Histórico de status</h2>
+      <div className="bg-white border border-slate-200 rounded-xl p-5">
+        <h2 className="text-[#0b2338] font-medium text-sm mb-3">Histórico de status</h2>
         <div className="space-y-2">
           {budget.historico_status.map((h, i) => (
             <div key={i} className="flex items-center justify-between text-sm">
               <BudgetStatusBadge status={h.status} />
-              <span className="text-gray-400">{formatDate(h.data)}</span>
+              <span className="text-slate-500">{formatDate(h.data)}</span>
             </div>
           ))}
         </div>
@@ -399,8 +399,8 @@ export default function BudgetView() {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between text-sm">
-      <span className="text-gray-400">{label}</span>
-      <span className="text-white">{value}</span>
+      <span className="text-slate-500">{label}</span>
+      <span className="text-[#0b2338]">{value}</span>
     </div>
   );
 }

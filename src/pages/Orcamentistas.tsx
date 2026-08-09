@@ -36,40 +36,40 @@ export default function Orcamentistas() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 ce-fade-up">
         <div>
-          <h1 className="text-2xl font-semibold text-white">Orçamentistas</h1>
-          <p className="text-sm text-gray-400 mt-1">
+          <h1 className="text-2xl font-semibold text-[#0b2338]">Orçamentistas</h1>
+          <p className="text-sm text-slate-500 mt-1">
             Quem monta os orçamentos na sua empresa. O responsável escolhido aparece no PDF entregue ao cliente.
           </p>
         </div>
-        <button onClick={() => setOpen(true)} className="ce-btn-glow flex items-center gap-2 bg-[#f5c518] text-[#16181d] font-semibold px-4 py-2 rounded-lg text-sm hover:bg-[#e0b60f]">
+        <button onClick={() => setOpen(true)} className="ce-btn-glow flex items-center gap-2 bg-[#00B4E5] text-[#0b2338] font-semibold px-4 py-2 rounded-lg text-sm hover:bg-[#0069A8]">
           <Plus size={16} /> Novo orçamentista
         </button>
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {db.orcamentistas.map((o, i) => (
-          <div key={o.id} className="ce-card-hover ce-fade-up bg-[#16181d] border border-white/5 rounded-xl p-5" style={{ animationDelay: `${i * 40}ms` }}>
+          <div key={o.id} className="ce-card-hover ce-fade-up bg-white border border-slate-200 rounded-xl p-5" style={{ animationDelay: `${i * 40}ms` }}>
             <div className="flex items-start justify-between">
-              <div className="w-11 h-11 rounded-full bg-[#f5c518]/15 flex items-center justify-center">
-                <UserCog className="text-[#f5c518]" size={20} />
+              <div className="w-11 h-11 rounded-full bg-[#00B4E5]/15 flex items-center justify-center">
+                <UserCog className="text-[#00B4E5]" size={20} />
               </div>
               <button onClick={() => toggleStatus(o)}
-                className={`text-xs px-2 py-1 rounded-full ${o.status === 'ativo' ? 'bg-emerald-600/20 text-emerald-400' : 'bg-gray-600/20 text-gray-400'}`}>
+                className={`text-xs px-2 py-1 rounded-full ${o.status === 'ativo' ? 'bg-emerald-600/20 text-emerald-400' : 'bg-gray-600/20 text-slate-500'}`}>
                 {o.status}
               </button>
             </div>
-            <h3 className="text-white font-medium mt-3">{o.nome}</h3>
-            <p className="text-xs text-gray-500">{o.cargo}</p>
-            <div className="mt-3 space-y-1 text-xs text-gray-400">
+            <h3 className="text-[#0b2338] font-medium mt-3">{o.nome}</h3>
+            <p className="text-xs text-slate-400">{o.cargo}</p>
+            <div className="mt-3 space-y-1 text-xs text-slate-500">
               {o.telefone && <p>{o.telefone}</p>}
               {o.email && <p>{o.email}</p>}
             </div>
-            {o.observacoes && <p className="text-xs text-gray-500 mt-3 border-t border-white/5 pt-3">{o.observacoes}</p>}
-            <p className="text-[11px] text-gray-600 mt-3">{o.aparece_no_pdf ? 'Aparece no PDF' : 'Não aparece no PDF'}</p>
+            {o.observacoes && <p className="text-xs text-slate-400 mt-3 border-t border-slate-200 pt-3">{o.observacoes}</p>}
+            <p className="text-[11px] text-slate-400 mt-3">{o.aparece_no_pdf ? 'Aparece no PDF' : 'Não aparece no PDF'}</p>
           </div>
         ))}
         {db.orcamentistas.length === 0 && (
-          <p className="text-sm text-gray-500 col-span-full">Nenhum orçamentista cadastrado ainda.</p>
+          <p className="text-sm text-slate-400 col-span-full">Nenhum orçamentista cadastrado ainda.</p>
         )}
       </div>
 
@@ -77,8 +77,8 @@ export default function Orcamentistas() {
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50" onClick={() => setOpen(false)}>
           <form onClick={e => e.stopPropagation()} onSubmit={submit} className="ce-glass-card ce-pop-in rounded-2xl p-6 w-full max-w-md space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-white font-semibold">Novo orçamentista</h2>
-              <button type="button" onClick={() => setOpen(false)}><X size={18} className="text-gray-400" /></button>
+              <h2 className="text-[#0b2338] font-semibold">Novo orçamentista</h2>
+              <button type="button" onClick={() => setOpen(false)}><X size={18} className="text-slate-500" /></button>
             </div>
             <Field label="Nome completo" value={form.nome} onChange={v => setForm(f => ({ ...f, nome: v }))} required placeholder="Ex: Renata Duarte" />
             <Field label="Cargo / função" value={form.cargo} onChange={v => setForm(f => ({ ...f, cargo: v }))} placeholder="Ex: Orçamentista, Eletricista responsável..." />
@@ -87,15 +87,15 @@ export default function Orcamentistas() {
               <Field label="E-mail" value={form.email} onChange={v => setForm(f => ({ ...f, email: v }))} type="email" />
             </div>
             <div>
-              <label className="text-xs text-gray-400">Observações</label>
+              <label className="text-xs text-slate-500">Observações</label>
               <textarea value={form.observacoes} onChange={e => setForm(f => ({ ...f, observacoes: e.target.value }))} rows={2}
-                className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-[#f5c518]" />
+                className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338] focus:outline-none focus:border-[#00B4E5]" />
             </div>
-            <label className="flex items-center gap-2 text-sm text-gray-300">
-              <input type="checkbox" checked={form.aparece_no_pdf} onChange={e => setForm(f => ({ ...f, aparece_no_pdf: e.target.checked }))} className="accent-[#f5c518]" />
+            <label className="flex items-center gap-2 text-sm text-slate-600">
+              <input type="checkbox" checked={form.aparece_no_pdf} onChange={e => setForm(f => ({ ...f, aparece_no_pdf: e.target.checked }))} className="accent-[#00B4E5]" />
               Exibir nome no PDF do orçamento como responsável
             </label>
-            <button type="submit" className="ce-btn-glow w-full bg-[#f5c518] text-[#16181d] font-semibold rounded-lg py-2.5 text-sm hover:bg-[#e0b60f]">
+            <button type="submit" className="ce-btn-glow w-full bg-[#00B4E5] text-[#0b2338] font-semibold rounded-lg py-2.5 text-sm hover:bg-[#0069A8]">
               Salvar orçamentista
             </button>
           </form>
@@ -110,9 +110,9 @@ function Field({ label, value, onChange, required, type = 'text', placeholder }:
 }) {
   return (
     <div>
-      <label className="text-xs text-gray-400">{label}{required && ' *'}</label>
+      <label className="text-xs text-slate-500">{label}{required && ' *'}</label>
       <input value={value} onChange={e => onChange(e.target.value)} required={required} type={type} placeholder={placeholder}
-        className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-[#f5c518]" />
+        className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338] focus:outline-none focus:border-[#00B4E5]" />
     </div>
   );
 }

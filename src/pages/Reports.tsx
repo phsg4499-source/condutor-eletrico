@@ -41,8 +41,8 @@ export default function Reports() {
   return (
     <div className="space-y-6">
       <div className="ce-fade-up">
-        <h1 className="text-2xl font-semibold text-white">Relatórios</h1>
-        <p className="text-sm text-gray-400 mt-1">Visão consolidada de orçamentos, serviços e financeiro.</p>
+        <h1 className="text-2xl font-semibold text-[#0b2338]">Relatórios</h1>
+        <p className="text-sm text-slate-500 mt-1">Visão consolidada de orçamentos, serviços e financeiro.</p>
       </div>
 
       <div className="grid sm:grid-cols-3 gap-4">
@@ -55,19 +55,19 @@ export default function Reports() {
       </div>
 
       <div className="grid sm:grid-cols-2 gap-5">
-        <div className="bg-[#16181d] border border-white/5 rounded-xl p-5">
-          <h2 className="text-white font-medium text-sm mb-3">Serviços mais orçados</h2>
+        <div className="bg-white border border-slate-200 rounded-xl p-5">
+          <h2 className="text-[#0b2338] font-medium text-sm mb-3">Serviços mais orçados</h2>
           {data.servicos.map(([nome, qtd]) => (
-            <div key={nome} className="flex justify-between text-sm py-1.5 border-b border-white/5 last:border-0">
-              <span className="text-gray-300">{nome}</span><span className="text-white">{qtd}</span>
+            <div key={nome} className="flex justify-between text-sm py-1.5 border-b border-slate-200 last:border-0">
+              <span className="text-slate-600">{nome}</span><span className="text-[#0b2338]">{qtd}</span>
             </div>
           ))}
         </div>
-        <div className="bg-[#16181d] border border-white/5 rounded-xl p-5">
-          <h2 className="text-white font-medium text-sm mb-3">Materiais mais utilizados</h2>
+        <div className="bg-white border border-slate-200 rounded-xl p-5">
+          <h2 className="text-[#0b2338] font-medium text-sm mb-3">Materiais mais utilizados</h2>
           {data.materiais.map(([nome, qtd]) => (
-            <div key={nome} className="flex justify-between text-sm py-1.5 border-b border-white/5 last:border-0">
-              <span className="text-gray-300">{nome}</span><span className="text-white">{qtd}</span>
+            <div key={nome} className="flex justify-between text-sm py-1.5 border-b border-slate-200 last:border-0">
+              <span className="text-slate-600">{nome}</span><span className="text-[#0b2338]">{qtd}</span>
             </div>
           ))}
         </div>
@@ -78,9 +78,9 @@ export default function Reports() {
 
 function Card({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-[#16181d] border border-white/5 rounded-xl p-4">
-      <div className="text-xs text-gray-400">{label}</div>
-      <div className="text-lg font-semibold text-white mt-1">{value}</div>
+    <div className="bg-white border border-slate-200 rounded-xl p-4">
+      <div className="text-xs text-slate-500">{label}</div>
+      <div className="text-lg font-semibold text-[#0b2338] mt-1">{value}</div>
     </div>
   );
 }

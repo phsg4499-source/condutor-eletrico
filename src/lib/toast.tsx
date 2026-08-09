@@ -14,9 +14,9 @@ const icons: Record<ToastKind, React.ComponentType<{ size?: number; className?: 
   success: CheckCircle2, info: Info, warning: AlertTriangle,
 };
 const colors: Record<ToastKind, string> = {
-  success: 'border-emerald-500/40 text-emerald-300',
-  info: 'border-blue-500/40 text-blue-300',
-  warning: 'border-amber-500/40 text-amber-300',
+  success: 'border-emerald-300 text-emerald-600',
+  info: 'border-sky-300 text-sky-600',
+  warning: 'border-amber-300 text-amber-600',
 };
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
@@ -35,10 +35,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         {toasts.map(t => {
           const Icon = icons[t.kind];
           return (
-            <div key={t.id} className={`ce-toast-in flex items-start gap-2 bg-[#16181d] border ${colors[t.kind]} rounded-lg px-4 py-3 shadow-xl`}>
+            <div key={t.id} className={`ce-toast-in flex items-start gap-2 bg-white border ${colors[t.kind]} rounded-lg px-4 py-3 shadow-xl`}>
               <Icon size={18} className="shrink-0 mt-0.5" />
-              <span className="text-sm text-gray-100 flex-1">{t.message}</span>
-              <button onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))} className="text-gray-500 hover:text-gray-300">
+              <span className="text-sm text-slate-700 flex-1">{t.message}</span>
+              <button onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))} className="text-slate-400 hover:text-slate-600">
                 <X size={14} />
               </button>
             </div>

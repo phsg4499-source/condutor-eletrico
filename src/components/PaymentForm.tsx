@@ -155,18 +155,18 @@ export function PaymentForm({ budgets, clients, payments, lockedBudget, onClose,
   return (
     <div className="fixed inset-0 z-40 bg-black/60 flex items-center justify-center p-4" onClick={onClose}>
       <form onSubmit={submit} onClick={e => e.stopPropagation()}
-        className="ce-pop-in bg-[#16181d] border border-white/10 rounded-xl p-5 w-full max-w-md space-y-4 max-h-[85vh] overflow-y-auto">
-        <h2 className="text-white font-medium flex items-center gap-2"><Wallet size={17} /> Registrar pagamento</h2>
+        className="ce-pop-in bg-white border border-slate-200 rounded-xl p-5 w-full max-w-md space-y-4 max-h-[85vh] overflow-y-auto">
+        <h2 className="text-[#0b2338] font-medium flex items-center gap-2"><Wallet size={17} /> Registrar pagamento</h2>
 
         {lockedBudget ? (
-          <div className="text-xs text-gray-400 bg-[#0f1115] border border-white/5 rounded-lg px-3 py-2">
-            Vinculado ao orçamento <span className="text-white">{lockedBudget.numero}</span>
+          <div className="text-xs text-slate-500 bg-white border border-slate-200 rounded-lg px-3 py-2">
+            Vinculado ao orçamento <span className="text-[#0b2338]">{lockedBudget.numero}</span>
           </div>
         ) : (
           <div>
-            <label className="text-xs text-gray-400">Orçamento vinculado (opcional)</label>
+            <label className="text-xs text-slate-500">Orçamento vinculado (opcional)</label>
             <select value={budgetId} onChange={e => setBudgetId(e.target.value)}
-              className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white">
+              className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338]">
               <option value="">Nenhum — pagamento avulso</option>
               {budgets.map(b => <option key={b.id} value={b.id}>{b.numero} — {b.titulo}</option>)}
             </select>
@@ -175,9 +175,9 @@ export function PaymentForm({ budgets, clients, payments, lockedBudget, onClose,
 
         {!budgetSelecionado && (
           <div>
-            <label className="text-xs text-gray-400">Cliente (opcional)</label>
+            <label className="text-xs text-slate-500">Cliente (opcional)</label>
             <select value={clientId} onChange={e => setClientId(e.target.value)}
-              className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white">
+              className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338]">
               <option value="">—</option>
               {clients.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
             </select>
@@ -185,36 +185,36 @@ export function PaymentForm({ budgets, clients, payments, lockedBudget, onClose,
         )}
 
         <div>
-          <label className="text-xs text-gray-400">Descrição</label>
+          <label className="text-xs text-slate-500">Descrição</label>
           <input value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Ex: Sinal combinado na negociação"
-            className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white" />
+            className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338]" />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-gray-400">Valor (R$) *</label>
+            <label className="text-xs text-slate-500">Valor (R$) *</label>
             <input type="number" step="0.01" value={valor || ''} onChange={e => setValor(Number(e.target.value))}
-              className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white" />
+              className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338]" />
           </div>
           <div>
-            <label className="text-xs text-gray-400">Data</label>
+            <label className="text-xs text-slate-500">Data</label>
             <input type="date" value={data} onChange={e => setData(e.target.value)}
-              className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white" />
+              className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338]" />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-gray-400">Método de pagamento</label>
+            <label className="text-xs text-slate-500">Método de pagamento</label>
             <select value={formaPagamento} onChange={e => setFormaPagamento(e.target.value as FormaPagamento)}
-              className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white">
+              className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338]">
               {formasPagamento.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
             </select>
           </div>
           <div>
-            <label className="text-xs text-gray-400">Status</label>
+            <label className="text-xs text-slate-500">Status</label>
             <select value={status} onChange={e => setStatus(e.target.value as PaymentStatus)}
-              className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white">
+              className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338]">
               <option value="pago">Pago</option>
               <option value="pendente">Pendente (a receber)</option>
               <option value="parcial">Parcial</option>
@@ -224,33 +224,33 @@ export function PaymentForm({ budgets, clients, payments, lockedBudget, onClose,
         </div>
 
         {mostrarSaldo && (
-          <div className="rounded-lg border border-[#f5c518]/30 bg-[#f5c518]/5 p-3 space-y-3">
+          <div className="rounded-lg border border-[#00B4E5]/30 bg-[#00B4E5]/5 p-3 space-y-3">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-400">Valor total do orçamento</span>
-              <span className="text-white">{formatMoney(totalVendaBudget)}</span>
+              <span className="text-slate-500">Valor total do orçamento</span>
+              <span className="text-[#0b2338]">{formatMoney(totalVendaBudget)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-400">Valor a receber (saldo)</span>
-              <span className="font-semibold text-[#f5c518]">{formatMoney(saldoAposEste)}</span>
+              <span className="text-slate-500">Valor a receber (saldo)</span>
+              <span className="font-semibold text-[#00B4E5]">{formatMoney(saldoAposEste)}</span>
             </div>
-            <p className="text-[11px] text-gray-500">
+            <p className="text-[11px] text-slate-400">
               {saldoAposEste > 0
                 ? 'O saldo é atualizado automaticamente no módulo Pagamentos.'
                 : 'Este pagamento quita o orçamento — o saldo será zerado.'}
             </p>
             {saldoAposEste > 0 && (
               <div>
-                <label className="text-xs text-gray-400">Data prevista para recebimento do saldo (opcional)</label>
+                <label className="text-xs text-slate-500">Data prevista para recebimento do saldo (opcional)</label>
                 <input type="date" value={dataPrevistaSaldo} onChange={e => setDataPrevistaSaldo(e.target.value)}
-                  className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white" />
+                  className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338]" />
               </div>
             )}
           </div>
         )}
 
         <div className="flex gap-3 pt-2">
-          <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-lg border border-white/10 text-gray-300 text-sm hover:bg-white/5">Cancelar</button>
-          <button type="submit" disabled={salvando} className="ce-btn-glow flex-1 py-2.5 rounded-lg bg-[#f5c518] text-[#16181d] font-semibold text-sm hover:bg-[#e0b60f] disabled:opacity-60 disabled:cursor-not-allowed">{salvando ? 'Salvando...' : 'Salvar'}</button>
+          <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-lg border border-slate-200 text-slate-600 text-sm hover:bg-slate-100">Cancelar</button>
+          <button type="submit" disabled={salvando} className="ce-btn-glow flex-1 py-2.5 rounded-lg bg-[#00B4E5] text-[#0b2338] font-semibold text-sm hover:bg-[#0069A8] disabled:opacity-60 disabled:cursor-not-allowed">{salvando ? 'Salvando...' : 'Salvar'}</button>
         </div>
       </form>
     </div>
@@ -265,17 +265,17 @@ export function MarcarRecebidoModal({ payment, onClose, onConfirm }: {
   const [data, setData] = useState(todayISO());
   return (
     <div className="fixed inset-0 z-40 bg-black/60 flex items-center justify-center p-4" onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} className="ce-pop-in bg-[#16181d] border border-white/10 rounded-xl p-5 w-full max-w-sm space-y-4">
-        <h2 className="text-white font-medium flex items-center gap-2"><CheckCircle2 size={17} className="text-emerald-400" /> Marcar como recebido</h2>
-        <p className="text-sm text-gray-400">{payment.descricao} — {formatMoney(payment.valor)}</p>
+      <div onClick={e => e.stopPropagation()} className="ce-pop-in bg-white border border-slate-200 rounded-xl p-5 w-full max-w-sm space-y-4">
+        <h2 className="text-[#0b2338] font-medium flex items-center gap-2"><CheckCircle2 size={17} className="text-emerald-400" /> Marcar como recebido</h2>
+        <p className="text-sm text-slate-500">{payment.descricao} — {formatMoney(payment.valor)}</p>
         <div>
-          <label className="text-xs text-gray-400">Data do recebimento</label>
+          <label className="text-xs text-slate-500">Data do recebimento</label>
           <input type="date" value={data} onChange={e => setData(e.target.value)}
-            className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white" />
+            className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338]" />
         </div>
         <div className="flex gap-3 pt-1">
-          <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-lg border border-white/10 text-gray-300 text-sm hover:bg-white/5">Cancelar</button>
-          <button type="button" onClick={() => onConfirm(data)} className="ce-btn-glow flex-1 py-2.5 rounded-lg bg-[#f5c518] text-[#16181d] font-semibold text-sm hover:bg-[#e0b60f]">Confirmar</button>
+          <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-lg border border-slate-200 text-slate-600 text-sm hover:bg-slate-100">Cancelar</button>
+          <button type="button" onClick={() => onConfirm(data)} className="ce-btn-glow flex-1 py-2.5 rounded-lg bg-[#00B4E5] text-[#0b2338] font-semibold text-sm hover:bg-[#0069A8]">Confirmar</button>
         </div>
       </div>
     </div>

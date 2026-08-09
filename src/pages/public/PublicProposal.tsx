@@ -92,7 +92,7 @@ export default function PublicProposal() {
           id: '', razao_social: data.org_razao_social ?? data.org_nome_fantasia, nome_fantasia: data.org_nome_fantasia,
           documento: '', telefone: data.org_telefone, whatsapp: data.org_whatsapp, email: data.org_email,
           endereco: '', cidade: '', estado: '', cep: '', logo_url: data.org_logo_url ?? undefined,
-          cor_principal: data.org_cor_principal ?? '#16181d', cor_secundaria: data.org_cor_secundaria ?? '#f5c518',
+          cor_principal: data.org_cor_principal ?? '#0069A8', cor_secundaria: data.org_cor_secundaria ?? '#00B4E5',
           instagram: data.org_instagram, condicoes_padrao: '', prazo_validade_padrao_dias: 10,
           garantia_padrao: '', modo_calculo_margem: 'markup_sobre_custo', margem_minima_percentual: 15,
           impostos_estimados_percentual: 0, responsavel: data.org_responsavel ?? '', experiencia: data.org_experiencia ?? '',
@@ -151,17 +151,17 @@ export default function PublicProposal() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0f1115] flex items-center justify-center">
-        <p className="text-gray-400 text-sm">Carregando orçamento...</p>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <p className="text-slate-500 text-sm">Carregando orçamento...</p>
       </div>
     );
   }
 
   if (error || !vm || !totals) {
     return (
-      <div className="min-h-screen bg-[#0f1115] flex flex-col items-center justify-center gap-3 px-4 text-center">
-        <Logo theme="dark" />
-        <p className="text-gray-300 mt-4">{error || 'Não foi possível carregar este orçamento.'}</p>
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-3 px-4 text-center">
+        <Logo theme="light" />
+        <p className="text-slate-600 mt-4">{error || 'Não foi possível carregar este orçamento.'}</p>
       </div>
     );
   }
@@ -172,30 +172,30 @@ export default function PublicProposal() {
   const materiais = budget.itens.filter(i => i.tipo === 'material');
 
   return (
-    <div className="min-h-screen bg-[#0f1115] text-gray-200">
+    <div className="min-h-screen bg-white text-slate-700">
       <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
         <div className="flex items-center justify-between">
-          <Logo theme="dark" />
-          <span className="text-xs text-gray-500">Orçamento nº {budget.numero}</span>
+          <Logo theme="light" />
+          <span className="text-xs text-slate-400">Orçamento nº {budget.numero}</span>
         </div>
 
-        <div className="bg-[#16181d] border border-white/5 rounded-xl p-5 space-y-1">
-          <h1 className="text-xl font-semibold text-white">{budget.titulo}</h1>
-          <p className="text-sm text-gray-400">Para: {cliente.nome}</p>
-          <p className="text-xs text-gray-500">
+        <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-1">
+          <h1 className="text-xl font-semibold text-[#0b2338]">{budget.titulo}</h1>
+          <p className="text-sm text-slate-500">Para: {cliente.nome}</p>
+          <p className="text-xs text-slate-400">
             Emitido em {formatDate(budget.data_emissao)} · Válido até {formatDate(addDays(budget.data_emissao, budget.validade_dias))}
           </p>
-          {budget.local_servico && <p className="text-xs text-gray-500">Local: {budget.local_servico}</p>}
+          {budget.local_servico && <p className="text-xs text-slate-400">Local: {budget.local_servico}</p>}
         </div>
 
         {servicos.length > 0 && (
-          <div className="bg-[#16181d] border border-white/5 rounded-xl p-5">
-            <h2 className="text-sm font-medium text-white mb-3">Serviços</h2>
+          <div className="bg-white border border-slate-200 rounded-xl p-5">
+            <h2 className="text-sm font-medium text-[#0b2338] mb-3">Serviços</h2>
             <div className="space-y-2">
               {servicos.map((i, idx) => (
                 <div key={idx} className="flex justify-between text-sm">
-                  <span className="text-gray-300">{i.nome} <span className="text-gray-500">x{i.quantidade}</span></span>
-                  <span className="text-white">{formatMoney(i.quantidade * i.valor_unitario - i.desconto)}</span>
+                  <span className="text-slate-600">{i.nome} <span className="text-slate-400">x{i.quantidade}</span></span>
+                  <span className="text-[#0b2338]">{formatMoney(i.quantidade * i.valor_unitario - i.desconto)}</span>
                 </div>
               ))}
             </div>
@@ -203,44 +203,44 @@ export default function PublicProposal() {
         )}
 
         {materiais.length > 0 && (
-          <div className="bg-[#16181d] border border-white/5 rounded-xl p-5">
-            <h2 className="text-sm font-medium text-white mb-3">Materiais</h2>
+          <div className="bg-white border border-slate-200 rounded-xl p-5">
+            <h2 className="text-sm font-medium text-[#0b2338] mb-3">Materiais</h2>
             <div className="space-y-2">
               {materiais.map((i, idx) => (
                 <div key={idx} className="flex justify-between text-sm">
-                  <span className="text-gray-300">{i.nome} <span className="text-gray-500">x{i.quantidade}</span></span>
-                  <span className="text-white">{formatMoney(i.quantidade * i.valor_unitario - i.desconto)}</span>
+                  <span className="text-slate-600">{i.nome} <span className="text-slate-400">x{i.quantidade}</span></span>
+                  <span className="text-[#0b2338]">{formatMoney(i.quantidade * i.valor_unitario - i.desconto)}</span>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        <div className="bg-[#f5c518] rounded-xl p-5 flex items-center justify-between">
+        <div className="bg-[#00B4E5] rounded-xl p-5 flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-[#16181d]/70 uppercase">Valor total</p>
-            <p className="text-2xl font-bold text-[#16181d]">{formatMoney(totals.totalVenda)}</p>
+            <p className="text-xs font-semibold text-[#0b2338]/70 uppercase">Valor total</p>
+            <p className="text-2xl font-bold text-[#0b2338]">{formatMoney(totals.totalVenda)}</p>
           </div>
           {budget.parcelas > 1 && (
-            <p className="text-sm text-[#16181d]/80 text-right">{budget.parcelas}x de {formatMoney(totals.valorParcela)}</p>
+            <p className="text-sm text-[#0b2338]/80 text-right">{budget.parcelas}x de {formatMoney(totals.valorParcela)}</p>
           )}
         </div>
 
-        <div className="bg-[#16181d] border border-white/5 rounded-xl p-5 space-y-2 text-sm">
-          <div className="flex justify-between"><span className="text-gray-400">Forma de pagamento</span><span className="text-white">{formasPagamentoLabel[budget.forma_pagamento] ?? budget.forma_pagamento}</span></div>
-          <div className="flex justify-between"><span className="text-gray-400">Garantia</span><span className="text-white">{budget.garantia || '—'}</span></div>
-          <div className="flex justify-between"><span className="text-gray-400">Prazo estimado</span><span className="text-white">{budget.prazo_estimado || 'A combinar'}</span></div>
+        <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-2 text-sm">
+          <div className="flex justify-between"><span className="text-slate-500">Forma de pagamento</span><span className="text-[#0b2338]">{formasPagamentoLabel[budget.forma_pagamento] ?? budget.forma_pagamento}</span></div>
+          <div className="flex justify-between"><span className="text-slate-500">Garantia</span><span className="text-[#0b2338]">{budget.garantia || '—'}</span></div>
+          <div className="flex justify-between"><span className="text-slate-500">Prazo estimado</span><span className="text-[#0b2338]">{budget.prazo_estimado || 'A combinar'}</span></div>
         </div>
 
         {budget.observacoes_cliente && (
-          <div className="bg-[#16181d] border border-white/5 rounded-xl p-5">
-            <h2 className="text-sm font-medium text-white mb-2">Observações</h2>
-            <p className="text-sm text-gray-400">{budget.observacoes_cliente}</p>
+          <div className="bg-white border border-slate-200 rounded-xl p-5">
+            <h2 className="text-sm font-medium text-[#0b2338] mb-2">Observações</h2>
+            <p className="text-sm text-slate-500">{budget.observacoes_cliente}</p>
           </div>
         )}
 
         <div className="flex gap-3">
-          <button onClick={handleDownloadPdf} className="flex-1 flex items-center justify-center gap-2 bg-[#f5c518] text-[#16181d] font-semibold px-4 py-2.5 rounded-lg text-sm hover:bg-[#e0b60f]">
+          <button onClick={handleDownloadPdf} className="flex-1 flex items-center justify-center gap-2 bg-[#00B4E5] text-[#0b2338] font-semibold px-4 py-2.5 rounded-lg text-sm hover:bg-[#0069A8]">
             <Download size={16} /> Baixar PDF
           </button>
           {cliente.whatsapp && (
@@ -251,32 +251,32 @@ export default function PublicProposal() {
         </div>
 
         {jaRespondido ? (
-          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-5 text-center">
-            <p className="text-emerald-300 text-sm">
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 text-center">
+            <p className="text-emerald-700 text-sm">
               {budget.status === 'recusado'
                 ? 'Recebemos sua resposta. Obrigado pelo retorno!'
                 : 'Orçamento aprovado com sucesso. A equipe da ' + org.nome_fantasia + ' entrará em contato para confirmar o agendamento.'}
             </p>
           </div>
         ) : respondendo ? (
-          <div className="bg-[#16181d] border border-white/5 rounded-xl p-5 space-y-3">
-            <h2 className="text-sm font-medium text-white">
+          <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
+            <h2 className="text-sm font-medium text-[#0b2338]">
               {respondendo === 'aprovado' ? 'Confirmar aprovação' : respondendo === 'recusado' ? 'Confirmar recusa' : 'Solicitar alteração'}
             </h2>
             <div>
-              <label className="text-xs text-gray-400">Seu nome *</label>
+              <label className="text-xs text-slate-500">Seu nome *</label>
               <input value={nome} onChange={e => setNome(e.target.value)}
-                className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white" />
+                className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338]" />
             </div>
             <div>
-              <label className="text-xs text-gray-400">Comentário (opcional)</label>
+              <label className="text-xs text-slate-500">Comentário (opcional)</label>
               <textarea value={comentario} onChange={e => setComentario(e.target.value)} rows={2}
-                className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white" />
+                className="mt-1 w-full rounded-lg bg-white border border-slate-200 px-3 py-2 text-sm text-[#0b2338]" />
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setRespondendo(null)} className="flex-1 py-2.5 rounded-lg border border-white/10 text-gray-300 text-sm hover:bg-white/5">Cancelar</button>
+              <button onClick={() => setRespondendo(null)} className="flex-1 py-2.5 rounded-lg border border-slate-200 text-slate-600 text-sm hover:bg-slate-100">Cancelar</button>
               <button onClick={confirmarResposta} disabled={!nome.trim() || enviando}
-                className="flex-1 py-2.5 rounded-lg bg-[#f5c518] text-[#16181d] font-semibold text-sm hover:bg-[#e0b60f] disabled:opacity-50">
+                className="flex-1 py-2.5 rounded-lg bg-[#00B4E5] text-[#0b2338] font-semibold text-sm hover:bg-[#0069A8] disabled:opacity-50">
                 {enviando ? 'Enviando...' : 'Confirmar'}
               </button>
             </div>
@@ -286,16 +286,16 @@ export default function PublicProposal() {
             <button onClick={() => setRespondendo('aprovado')} className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 text-white font-semibold px-4 py-2.5 rounded-lg text-sm hover:bg-emerald-500">
               <CheckCircle2 size={16} /> Aprovar orçamento
             </button>
-            <button onClick={() => setRespondendo('solicitou_alteracao')} className="flex-1 flex items-center justify-center gap-2 border border-white/10 text-gray-200 px-4 py-2.5 rounded-lg text-sm hover:bg-white/5">
+            <button onClick={() => setRespondendo('solicitou_alteracao')} className="flex-1 flex items-center justify-center gap-2 border border-slate-200 text-slate-600 px-4 py-2.5 rounded-lg text-sm hover:bg-slate-100">
               <Edit3 size={16} /> Solicitar alteração
             </button>
-            <button onClick={() => setRespondendo('recusado')} className="flex-1 flex items-center justify-center gap-2 border border-red-500/20 text-red-400 px-4 py-2.5 rounded-lg text-sm hover:bg-red-500/10">
+            <button onClick={() => setRespondendo('recusado')} className="flex-1 flex items-center justify-center gap-2 border border-red-200 text-red-600 px-4 py-2.5 rounded-lg text-sm hover:bg-red-50">
               <XCircle size={16} /> Recusar
             </button>
           </div>
         )}
 
-        <p className="text-center text-[11px] text-gray-600 pt-2">{org.nome_fantasia} — Desenvolvido por Simplifica Seguros</p>
+        <p className="text-center text-[11px] text-slate-400 pt-2">{org.nome_fantasia} — Desenvolvido por Simplifica Seguros</p>
       </div>
     </div>
   );
