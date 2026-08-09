@@ -373,6 +373,21 @@ function CompromissoForm({ compromisso, prefill, defaultDate, orcamentistasAtivo
       }
     }
 
+    if (orcamentistaId && status !== 'cancelado') {
+      const conflitante = compromissos.find(c =>
+        c.id !== compromisso?.id
+        && c.orcamentista_id === orcamentistaId
+        && c.data === data
+        && c.status !== 'cancelado'
+        && (c.hora || '') === (hora || ''),
+      );
+      if (conflitante) {
+        const nomeOrcamentista = orcamentistasAtivos.find(o => o.id === orcamentistaId)?.nome ?? 'Este profissional';
+        setConflito(`${nomeOrcamentista} já possui um compromisso neste horário ("${conflitante.titulo}"). Escolha outro horário ou outro responsável.`);
+        return;
+      }
+    }
+
     const clientFields: Partial<Compromisso> = clienteMode === 'existing'
       ? { client_id: clientId || null, cliente_nome_avulso: null, cliente_telefone_avulso: null }
       : clienteMode === 'avulso'
