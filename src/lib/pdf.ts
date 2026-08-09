@@ -6,18 +6,27 @@ import { formatMoney, formatDate, addDays } from './format';
 
 // Gera o PDF profissional do orçamento para o CLIENTE.
 // Nunca inclui custo, margem, lucro ou observações internas.
-// Identidade visual: grafite profundo + amarelo elétrico, tipografia forte, blocos editoriais.
+// Identidade visual: azul profundo + ciano elétrico (Condutor Elétrico Brasil), tipografia forte,
+// blocos editoriais.
 
-const GRAPHITE: [number, number, number] = [16, 18, 21];
-const GRAPHITE_SOFT: [number, number, number] = [33, 36, 43];
-const ACCENT: [number, number, number] = [245, 197, 24];
-const ACCENT_DEEP: [number, number, number] = [201, 152, 5];
+const GRAPHITE: [number, number, number] = [0, 45, 74]; // azul profundo — antes grafite quase preto
+const GRAPHITE_SOFT: [number, number, number] = [0, 105, 168]; // azul intermediário — antes cinza-grafite
+const ACCENT: [number, number, number] = [0, 180, 229]; // ciano elétrico — antes amarelo
+const ACCENT_DEEP: [number, number, number] = [0, 154, 209]; // azul intermediário — antes amarelo escuro
 const INK: [number, number, number] = [24, 26, 31];
 const MUTED: [number, number, number] = [110, 116, 128];
 const CARD_BG: [number, number, number] = [245, 246, 248];
 const WHITE: [number, number, number] = [255, 255, 255];
 
 const SLOGAN = 'Você chama, a Condutor resolve.';
+
+// Textos institucionais obrigatórios (conformidade NBR 5410) — o nome do cliente é preenchido
+// dinamicamente, nunca fixo.
+function textoAberturaAbnt(nomeCliente: string): string {
+  return `Prezado(a) ${nomeCliente},\n\nÉ com grande satisfação que apresentamos nossa proposta de mão de obra em conformidade com a ABNT NBR 5410, norma que estabelece os requisitos para instalações elétricas de baixa tensão, garantindo segurança, confiabilidade e desempenho das instalações elétricas.\n\nNossa equipe é formada por profissionais qualificados e comprometidos em executar os serviços com qualidade, segurança e dentro dos prazos estabelecidos.`;
+}
+
+const TEXTO_FECHAMENTO_ABNT = `Agradecemos pela oportunidade de apresentar nossa proposta de mão de obra em conformidade com a norma NBR 5410.\n\nEstamos à disposição para discutir detalhes ou esclarecer quaisquer dúvidas que possam surgir. Podemos assegurar que nossos serviços seguirão rigorosamente os requisitos dessa norma, garantindo a segurança e a qualidade das instalações elétricas.\n\nAguardamos sua resposta positiva e permanecemos à disposição para quaisquer esclarecimentos.\n\nA lista de materiais será apresentada separadamente após a aprovação desta proposta.`;
 
 export function generateBudgetPdf(budget: Budget, client: { nome: string }, org: Organization): jsPDF {
   const doc = new jsPDF();
@@ -41,16 +50,14 @@ export function generateBudgetPdf(budget: Budget, client: { nome: string }, org:
   y = drawInfoCard(y);
   y += 6;
 
-  // Apresentação
-  doc.setFont('helvetica', 'italic');
+  // Texto institucional obrigatório (conformidade ABNT NBR 5410), com o nome do cliente
+  // preenchido dinamicamente — sempre entre a identificação do cliente e a descrição dos serviços.
+  doc.setFont('helvetica', 'normal');
   doc.setFontSize(9.5);
-  doc.setTextColor(...MUTED);
-  const apresentacao = doc.splitTextToSize(
-    `Agradecemos a oportunidade de apresentar esta proposta. A ${org.nome_fantasia} atua há mais de 10 anos oferecendo soluções elétricas com segurança, organização e qualidade técnica.`,
-    contentWidth,
-  );
-  doc.text(apresentacao, margin, y);
-  y += apresentacao.length * 4.6 + 6;
+  doc.setTextColor(...INK);
+  const abertura = doc.splitTextToSize(textoAberturaAbnt(client.nome), contentWidth);
+  doc.text(abertura, margin, y);
+  y += abertura.length * 4.6 + 6;
 
   const servicos = budget.itens.filter(i => i.tipo === 'servico');
   const materiais = budget.itens.filter(i => i.tipo === 'material');
@@ -117,6 +124,16 @@ export function generateBudgetPdf(budget: Budget, client: { nome: string }, org:
     y += obs.length * 4.5 + 6;
   }
 
+  // Texto institucional obrigatório de fechamento (conformidade NBR 5410) — sempre antes da
+  // assinatura.
+  y = checkPageBreak(y, 30);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(...MUTED);
+  const fechamento = doc.splitTextToSize(TEXTO_FECHAMENTO_ABNT, contentWidth);
+  doc.text(fechamento, margin, y);
+  y += fechamento.length * 4.4 + 6;
+
   y = checkPageBreak(y, 14);
   y = drawSloganBar(y);
   y += 8;
@@ -124,14 +141,21 @@ export function generateBudgetPdf(budget: Budget, client: { nome: string }, org:
   y = checkPageBreak(y, 40);
   y = drawSignatureBlock(y);
 
-  drawFooter();
+  // Rodapé discreto e padronizado em TODAS as páginas, não só na última — orçamentos com
+  // múltiplas páginas (muitos itens) antes ficavam sem identificação da empresa nas páginas
+  // anteriores à final.
+  const totalPaginas = doc.getNumberOfPages();
+  for (let pagina = 1; pagina <= totalPaginas; pagina++) {
+    doc.setPage(pagina);
+    drawFooter();
+  }
 
   return doc;
 
   // ----- Blocos auxiliares -----
 
   function checkPageBreak(cursor: number, needed: number): number {
-    if (cursor + needed > pageHeight - 22) {
+    if (cursor + needed > pageHeight - 26) {
       doc.addPage();
       return 20;
     }
@@ -158,12 +182,15 @@ export function generateBudgetPdf(budget: Budget, client: { nome: string }, org:
 
     const nameX = margin + 24;
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(15);
+    doc.setFontSize(14);
     doc.setTextColor(...WHITE);
     doc.text('CONDUTOR', nameX, 15);
     const w1 = doc.getTextWidth('CONDUTOR ');
     doc.setTextColor(...ACCENT);
     doc.text('ELÉTRICO', nameX + w1, 15);
+    const w2 = doc.getTextWidth('ELÉTRICO ');
+    doc.setTextColor(...WHITE);
+    doc.text('BRASIL', nameX + w1 + w2, 15);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(190, 194, 202);
@@ -330,7 +357,12 @@ export function generateBudgetPdf(budget: Budget, client: { nome: string }, org:
   }
 
   function drawFooter() {
-    const footerHeight = 20;
+    // Endereço completo, montado a partir dos campos da organização (nunca fixo no código) —
+    // some silenciosamente as partes que ainda não foram preenchidas em Configurações.
+    const enderecoCompleto = [org.endereco, org.cidade && org.estado ? `${org.cidade} - ${org.estado}` : (org.cidade || org.estado)]
+      .filter(Boolean).join(' • ');
+
+    const footerHeight = enderecoCompleto ? 24 : 20;
     const footerY = pageHeight - footerHeight;
     doc.setFillColor(...GRAPHITE);
     doc.rect(0, footerY, pageWidth, footerHeight, 'F');
@@ -340,20 +372,25 @@ export function generateBudgetPdf(budget: Budget, client: { nome: string }, org:
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
     doc.setTextColor(...WHITE);
-    doc.text(org.responsavel || 'Condutor Elétrico', margin, footerY + 8);
+    doc.text(org.responsavel || 'Condutor Elétrico Brasil', margin, footerY + 8);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(190, 194, 202);
-    doc.text(`${org.telefone}  •  Instagram ${org.instagram}  •  ${org.email}`, margin, footerY + 13.5);
+    doc.text(`Contato: ${org.telefone || '—'}${org.email ? `  •  ${org.email}` : ''}`, margin, footerY + 13.5);
+    if (enderecoCompleto) {
+      doc.setFontSize(7.5);
+      doc.setTextColor(160, 165, 175);
+      doc.text(enderecoCompleto, margin, footerY + 19);
+    }
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
     doc.setTextColor(...ACCENT);
-    doc.text((org.nome_fantasia || 'Condutor Elétrico').toUpperCase(), pageWidth - margin, footerY + 8, { align: 'right' });
+    doc.text((org.nome_fantasia || 'Condutor Elétrico Brasil').toUpperCase(), pageWidth - margin, footerY + 8, { align: 'right' });
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(160, 165, 175);
-    doc.text('Energia com padrão profissional.', pageWidth - margin, footerY + 13.5, { align: 'right' });
+    doc.text(org.documento ? `CNPJ ${org.documento}` : 'Energia com padrão profissional.', pageWidth - margin, footerY + 13.5, { align: 'right' });
   }
 }
 

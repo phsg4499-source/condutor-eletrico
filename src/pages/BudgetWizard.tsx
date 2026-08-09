@@ -52,6 +52,7 @@ export default function BudgetWizard() {
   const [entrada, setEntrada] = useState(existingBudget?.entrada ?? 0);
   const [parcelas, setParcelas] = useState(existingBudget?.parcelas ?? 1);
   const [garantia, setGarantia] = useState(existingBudget?.garantia ?? '90 dias');
+  const [validadeDias, setValidadeDias] = useState(existingBudget?.validade_dias ?? db.organization.prazo_validade_padrao_dias ?? 10);
   const [obsInternas, setObsInternas] = useState(existingBudget?.observacoes_internas ?? '');
   const [obsCliente, setObsCliente] = useState(existingBudget?.observacoes_cliente ?? '');
   const [salvando, setSalvando] = useState(false);
@@ -122,7 +123,7 @@ export default function BudgetWizard() {
           ...clientFields, titulo, tipo_servico: tipoServico,
           local_servico: localServico, prazo_estimado: prazo,
           responsavel: responsavelSelecionado?.nome ?? existingBudget.responsavel, orcamentista_id: orcamentistaId || undefined,
-          itens, custos_extras: custosExtras,
+          itens, custos_extras: custosExtras, validade_dias: validadeDias,
           desconto_percentual: descontoPercentual, desconto_valor: descontoValor, forma_pagamento: formaPagamento,
           entrada, parcelas, garantia, observacoes_internas: obsInternas, observacoes_cliente: obsCliente,
         });
@@ -145,7 +146,7 @@ export default function BudgetWizard() {
         // novo, indefinidamente. Deixando o addBudget gerar o número internamente, ele tenta
         // números novos automaticamente contra o Supabase (fonte real) até achar um livre.
         ...clientFields, titulo, tipo_servico: tipoServico,
-        local_servico: localServico, data_emissao: todayISO(), validade_dias: 10, prazo_estimado: prazo,
+        local_servico: localServico, data_emissao: todayISO(), validade_dias: validadeDias, prazo_estimado: prazo,
         responsavel: responsavelSelecionado?.nome ?? db.organization.responsavel, orcamentista_id: orcamentistaId || undefined,
         status, itens, custos_extras: custosExtras,
         desconto_percentual: descontoPercentual, desconto_valor: descontoValor, forma_pagamento: formaPagamento,
@@ -339,6 +340,10 @@ export default function BudgetWizard() {
           <div>
             <Field label="Garantia" value={garantia} onChange={setGarantia} placeholder="Ex: 90 dias" />
             <p className="text-[11px] text-gray-500 mt-1">Prazo de garantia do serviço executado, mostrado no PDF.</p>
+          </div>
+          <div>
+            <NumField label="Validade da proposta (dias)" value={validadeDias} onChange={setValidadeDias} />
+            <p className="text-[11px] text-gray-500 mt-1">Por quantos dias a partir da emissão este orçamento vale, mostrado no PDF.</p>
           </div>
           <div>
             <NumField label="Desconto (%)" value={descontoPercentual} onChange={setDescontoPercentual} />

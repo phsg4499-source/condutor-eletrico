@@ -36,6 +36,15 @@ export default function Settings() {
           <Field label="Garantia padrão" value={form.garantia_padrao ?? ''} onChange={v => setForm(f => ({ ...f, garantia_padrao: v }))} />
         </div>
         <div>
+          <p className="text-xs text-gray-400 pt-1">Endereço (aparece no rodapé do PDF do orçamento e do recibo)</p>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field label="Endereço (rua e número)" value={form.endereco ?? ''} onChange={v => setForm(f => ({ ...f, endereco: v }))} placeholder="Ex: Rua Conde Ribeiro do Vale, 210 - Sagrada Família" />
+          <Field label="Cidade" value={form.cidade ?? ''} onChange={v => setForm(f => ({ ...f, cidade: v }))} placeholder="Ex: Belo Horizonte" />
+          <Field label="Estado (UF)" value={form.estado ?? ''} onChange={v => setForm(f => ({ ...f, estado: v }))} placeholder="Ex: MG" />
+          <Field label="CEP" value={form.cep ?? ''} onChange={v => setForm(f => ({ ...f, cep: v }))} />
+        </div>
+        <div>
           <label className="text-xs text-gray-400">Frase de experiência (aparece no cabeçalho do PDF)</label>
           <input value={form.experiencia ?? ''} onChange={e => setForm(f => ({ ...f, experiencia: e.target.value }))}
             placeholder="Ex: Mais de 10 anos de atuação em instalações elétricas."
@@ -84,11 +93,11 @@ export default function Settings() {
   );
 }
 
-function Field({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function Field({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
     <div>
       <label className="text-xs text-gray-400">{label}</label>
-      <input value={value} onChange={e => onChange(e.target.value)}
+      <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
         className="mt-1 w-full rounded-lg bg-[#0f1115] border border-white/10 px-3 py-2 text-sm text-white focus:outline-none focus:border-[#f5c518]" />
     </div>
   );
