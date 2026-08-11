@@ -242,6 +242,30 @@ export interface Payment {
   updated_at?: string;
 }
 
+export type ReceiptStatus = 'emitido' | 'cancelado';
+
+export interface Receipt {
+  id: string;
+  organization_id: string;
+  numero: string;
+  budget_id?: string | null;
+  service_order_id?: string | null;
+  client_id?: string | null;
+  cliente_nome: string;
+  cliente_documento?: string;
+  cliente_telefone?: string;
+  cliente_endereco?: string;
+  descricao: string;
+  valor: number;
+  valor_recebido: number;
+  forma_pagamento?: FormaPagamento;
+  data: string;
+  responsavel?: string;
+  status: ReceiptStatus;
+  created_at: string;
+  updated_at: string;
+}
+
 export type CompromissoTipo = 'visita_orcamento' | 'execucao_servico' | 'reuniao' | 'outro';
 export type CompromissoStatus = 'agendado' | 'concluido' | 'cancelado';
 

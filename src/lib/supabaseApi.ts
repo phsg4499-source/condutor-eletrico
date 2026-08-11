@@ -5,7 +5,7 @@
 import { supabase } from './supabaseClient';
 import type {
   Organization, Client, Material, ServiceItem, Budget, ServiceOrder, Payment, QuoteRequest,
-  BudgetLineItem, ExtraCost, ClienteEndereco, Orcamentista, Compromisso,
+  BudgetLineItem, ExtraCost, ClienteEndereco, Orcamentista, Compromisso, Receipt, ReceiptStatus,
 } from '../types';
 
 
@@ -70,12 +70,13 @@ export interface RemoteDB {
   quoteRequests: QuoteRequest[];
   orcamentistas: Orcamentista[];
   compromissos: Compromisso[];
+  receipts: Receipt[];
 }
 
 export async function fetchOrganizationData(organizationId: string): Promise<RemoteDB> {
   const db = must();
 
-  const [orgRes, clientsRes, materialsRes, servicesRes, budgetsRes, ordersRes, paymentsRes, quotesRes, orcamentistasRes, compromissosRes] = await Promise.all([
+  const [orgRes, clientsRes, materialsRes, servicesRes, budgetsRes, ordersRes, paymentsRes, quotesRes, orcamentistasRes, compromissosRes, receiptsRes] = await Promise.all([
     db.from('organizations').select('*').eq('id', organizationId).single(),
     db.from('clients').select('*, client_addresses(*)').eq('organization_id', organizationId).order('created_at', { ascending: false }),
     db.from('materials').select('*').eq('organization_id', organizationId).order('nome'),
@@ -86,6 +87,7 @@ export async function fetchOrganizationData(organizationId: string): Promise<Rem
     db.from('quote_requests').select('*').eq('organization_id', organizationId).order('created_at', { ascending: false }),
     db.from('orcamentistas').select('*').eq('organization_id', organizationId).order('nome'),
     db.from('compromissos').select('*').eq('organization_id', organizationId).order('data', { ascending: true }),
+    db.from('receipts').select('*').eq('organization_id', organizationId).order('created_at', { ascending: false }),
   ]);
 
   if (orgRes.error) throw orgRes.error;
@@ -101,6 +103,9 @@ export async function fetchOrganizationData(organizationId: string): Promise<Rem
     quoteRequests: (quotesRes.data ?? []) as QuoteRequest[],
     orcamentistas: (orcamentistasRes.data ?? []) as Orcamentista[],
     compromissos: (compromissosRes.data ?? []) as Compromisso[],
+    // Se a migration 0009 ainda não foi rodada no banco, a tabela "receipts" não existe e essa
+    // consulta falha — não deixamos isso quebrar o carregamento do restante do sistema.
+    receipts: receiptsRes.error ? [] : (receiptsRes.data ?? []) as Receipt[],
   };
 }
 
@@ -167,6 +172,33 @@ export async function remoteMaxBudgetNumero(organizationId: string, prefix: stri
   if (!numero) return 0;
   const seq = parseInt(numero.slice(prefix.length), 10);
   return Number.isFinite(seq) ? seq : 0;
+}
+
+// Mesma lógica de remoteMaxBudgetNumero, aplicada aos recibos (prefixo "REC-2026-", por exemplo).
+export async function remoteMaxReceiptNumero(organizationId: string, prefix: string): Promise<number> {
+  const db = must();
+  const { data, error } = await db
+    .from('receipts')
+    .select('numero')
+    .eq('organization_id', organizationId)
+    .like('numero', `${prefix}%`)
+    .order('numero', { ascending: false })
+    .limit(1);
+  if (error) throw error;
+  const numero = data?.[0]?.numero as string | undefined;
+  if (!numero) return 0;
+  const seq = parseInt(numero.slice(prefix.length), 10);
+  return Number.isFinite(seq) ? seq : 0;
+}
+
+export async function remoteInsertReceipt(receipt: Receipt) {
+  const { error } = await must().from('receipts').insert(receipt);
+  if (error) throw error;
+}
+
+export async function remoteSetReceiptStatus(id: string, status: ReceiptStatus) {
+  const { error } = await must().from('receipts').update({ status }).eq('id', id);
+  if (error) throw error;
 }
 
 export async function remoteInsertBudget(budget: Budget) {

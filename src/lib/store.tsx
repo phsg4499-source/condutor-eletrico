@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import type {
-  Organization, Client, Material, ServiceItem, Budget, ServiceOrder, Payment, QuoteRequest, BudgetStatus, ServiceOrderStatus, Orcamentista, Compromisso,
+  Organization, Client, Material, ServiceItem, Budget, ServiceOrder, Payment, QuoteRequest, BudgetStatus, ServiceOrderStatus, Orcamentista, Compromisso, Receipt, ReceiptStatus,
 } from '../types';
 import {
-  demoOrganization, demoClients, demoMaterials, demoServices, demoBudgets, demoServiceOrders, demoPayments, demoOrcamentistas, demoCompromissos,
+  demoOrganization, demoClients, demoMaterials, demoServices, demoBudgets, demoServiceOrders, demoPayments, demoOrcamentistas, demoCompromissos, demoReceipts,
 } from '../data/demoData';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import {
@@ -13,6 +13,7 @@ import {
   remoteInsertQuoteRequest, remoteInsertOrcamentista, remoteUpdateOrcamentista,
   remoteInsertCompromisso, remoteUpdateCompromisso, remoteDeleteCompromisso,
   remoteInsertPayment, remoteUpdatePayment, remoteDeletePayment,
+  remoteMaxReceiptNumero, remoteInsertReceipt, remoteSetReceiptStatus,
 } from './supabaseApi';
 import { todayISO } from './format';
 import { useToast } from './toast';
@@ -42,6 +43,7 @@ interface DB {
   quoteRequests: QuoteRequest[];
   orcamentistas: Orcamentista[];
   compromissos: Compromisso[];
+  receipts: Receipt[];
 }
 
 function seedDB(): DB {
@@ -56,13 +58,14 @@ function seedDB(): DB {
     quoteRequests: [],
     orcamentistas: demoOrcamentistas,
     compromissos: demoCompromissos,
+    receipts: demoReceipts,
   };
 }
 
 function emptyDB(): DB {
   return {
     organization: demoOrganization,
-    clients: [], materials: [], services: [], budgets: [], serviceOrders: [], payments: [], quoteRequests: [], orcamentistas: [], compromissos: [],
+    clients: [], materials: [], services: [], budgets: [], serviceOrders: [], payments: [], quoteRequests: [], orcamentistas: [], compromissos: [], receipts: [],
   };
 }
 
@@ -159,6 +162,11 @@ interface StoreContextValue {
   updatePayment: (id: string, data: Partial<Payment>) => Promise<{ ok: boolean; error?: string }>;
   deletePayment: (id: string) => Promise<{ ok: boolean; error?: string }>;
   nextBudgetNumber: () => string;
+  // Recibo: numeração sequencial por ano (prefixo "REC-AAAA-"), com o mesmo mecanismo de
+  // retry-contra-colisão consultando o maior número real no Supabase usado no orçamento.
+  addReceipt: (data: Partial<Receipt>) => Promise<{ receipt: Receipt; ok: boolean; error?: string }>;
+  cancelReceipt: (id: string) => Promise<{ ok: boolean; error?: string }>;
+  nextReceiptNumber: () => string;
 }
 
 const StoreContext = createContext<StoreContextValue | null>(null);
@@ -660,6 +668,87 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const nextReceiptNumber = useCallback(() => {
+    // Mesma lógica de nextBudgetNumber: baseado no maior número já usado no ano, não na
+    // quantidade de recibos existentes (evita colisão se um recibo for cancelado no meio do caminho).
+    const year = new Date().getFullYear();
+    const prefix = `REC-${year}-`;
+    const numerosExistentes = new Set(db.receipts.map(r => r.numero));
+    const maiorSequencia = db.receipts.reduce((max, r) => {
+      if (!r.numero.startsWith(prefix)) return max;
+      const seq = parseInt(r.numero.slice(prefix.length), 10);
+      return Number.isFinite(seq) && seq > max ? seq : max;
+    }, 0);
+    let seq = maiorSequencia + 1;
+    let numero = `${prefix}${String(seq).padStart(6, '0')}`;
+    while (numerosExistentes.has(numero)) {
+      seq += 1;
+      numero = `${prefix}${String(seq).padStart(6, '0')}`;
+    }
+    return numero;
+  }, [db.receipts]);
+
+  const addReceipt: StoreContextValue['addReceipt'] = useCallback(async (data) => {
+    let receipt: Receipt = {
+      id: newId(), organization_id: orgId, numero: data.numero || nextReceiptNumber(),
+      budget_id: null, service_order_id: null, client_id: null,
+      cliente_nome: '', descricao: '', valor: 0, valor_recebido: 0, data: todayISO(),
+      status: 'emitido', created_at: todayISO(), updated_at: todayISO(), ...data,
+    };
+    setDb(prev => ({ ...prev, receipts: [receipt, ...prev.receipts] }));
+    if (!isSupabaseConfigured) return { receipt, ok: true as const };
+
+    const idOtimista = receipt.id;
+    const MAX_TENTATIVAS = 6;
+    const ano = new Date().getFullYear();
+    const prefixo = `REC-${ano}-`;
+    for (let tentativa = 1; tentativa <= MAX_TENTATIVAS; tentativa++) {
+      try {
+        await remoteInsertReceipt(receipt);
+        return { receipt, ok: true as const };
+      } catch (err) {
+        const codigo = (err as { code?: string } | null)?.code;
+        const ehColisaoDeNumero = codigo === '23505';
+        if (ehColisaoDeNumero && tentativa < MAX_TENTATIVAS) {
+          let proximaSeq: number;
+          try {
+            proximaSeq = (await remoteMaxReceiptNumero(orgId, prefixo)) + 1;
+          } catch {
+            const seqAtual = receipt.numero.startsWith(prefixo) ? parseInt(receipt.numero.slice(prefixo.length), 10) : 0;
+            proximaSeq = (Number.isFinite(seqAtual) ? seqAtual : 0) + 1;
+          }
+          const proximoNumero = `${prefixo}${String(proximaSeq).padStart(6, '0')}`;
+          receipt = { ...receipt, numero: proximoNumero };
+          setDb(prev => ({ ...prev, receipts: prev.receipts.map(r => r.id === idOtimista ? receipt : r) }));
+          continue;
+        }
+        setDb(prev => ({ ...prev, receipts: prev.receipts.filter(r => r.id !== idOtimista) }));
+        return { receipt, ok: false as const, error: describeSupabaseError(err, 'o recibo', 'salvar') };
+      }
+    }
+    setDb(prev => ({ ...prev, receipts: prev.receipts.filter(r => r.id !== idOtimista) }));
+    return { receipt, ok: false as const, error: 'Não foi possível encontrar um número livre para o recibo. Tente novamente em instantes.' };
+  }, [nextReceiptNumber, orgId]);
+
+  // Cancelamento é sempre "soft": nunca exclui o registro financeiro, apenas marca
+  // STATUS: CANCELADO — o recibo continua no histórico para fins de auditoria/rastreabilidade.
+  const cancelReceipt: StoreContextValue['cancelReceipt'] = useCallback(async (id) => {
+    let previous: Receipt | undefined;
+    const novoStatus: ReceiptStatus = 'cancelado';
+    setDb(prev => {
+      previous = prev.receipts.find(r => r.id === id);
+      return { ...prev, receipts: prev.receipts.map(r => r.id === id ? { ...r, status: novoStatus, updated_at: todayISO() } : r) };
+    });
+    if (!isSupabaseConfigured) return { ok: true as const };
+    try {
+      await remoteSetReceiptStatus(id, novoStatus);
+      return { ok: true as const };
+    } catch (err) {
+      setDb(prev => ({ ...prev, receipts: prev.receipts.map(r => (r.id === id && previous) ? previous! : r) }));
+      return { ok: false as const, error: describeSupabaseError(err, 'o recibo', 'atualizar') };
+    }
+  }, []);
+
   // Fluxo de aprovação, na ordem que o usuário espera: 1) salva o status e SÓ SEGUE depois de
   // confirmar a gravação real no Supabase; 2) lança o pagamento "a receber" automaticamente, se
   // ainda não houver nenhum; 3) garante a Ordem de Serviço. As etapas 2 e 3 são automações que
@@ -732,10 +821,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     addClient, updateClient, addMaterial, updateMaterial, addService, updateService,
     addBudget, updateBudget, deleteBudget, setBudgetStatus, convertBudgetToServiceOrder, setServiceOrderStatus, toggleChecklistItem, addQuoteRequest, addOrcamentista, updateOrcamentista,
     addCompromisso, updateCompromisso, deleteCompromisso, addPayment, updatePayment, deletePayment, nextBudgetNumber,
+    addReceipt, cancelReceipt, nextReceiptNumber,
   }), [authLoading, db, user, login, logout, updateOrganization, addClient, updateClient, addMaterial, updateMaterial,
       addService, updateService, addBudget, updateBudget, deleteBudget, setBudgetStatus, convertBudgetToServiceOrder,
       setServiceOrderStatus, toggleChecklistItem, addQuoteRequest, addOrcamentista, updateOrcamentista,
-      addCompromisso, updateCompromisso, deleteCompromisso, addPayment, updatePayment, deletePayment, nextBudgetNumber]);
+      addCompromisso, updateCompromisso, deleteCompromisso, addPayment, updatePayment, deletePayment, nextBudgetNumber,
+      addReceipt, cancelReceipt, nextReceiptNumber]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }

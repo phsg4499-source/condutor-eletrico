@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Plus, Trash2, MapPin, Clock, Wrench, CalendarRange } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Trash2, MapPin, Clock, Wrench, CalendarRange, MessageCircle } from 'lucide-react';
 import { useStore } from '../lib/store';
 import { useToast } from '../lib/toast';
 import { resolveClienteInfo } from '../lib/clientInfo';
 import { CompromissoStatusBadge, compromissoStatusOptions } from '../components/StatusBadge';
+import { whatsappLink, compromissoConfirmationMessage, resumoDiarioMessage } from '../lib/whatsapp';
 import type { Compromisso, CompromissoTipo } from '../types';
 
 const tipoLabels: Record<CompromissoTipo, string> = {
@@ -17,8 +18,8 @@ const tipoLabels: Record<CompromissoTipo, string> = {
 const tipoColors: Record<CompromissoTipo, string> = {
   visita_orcamento: 'bg-blue-100 text-blue-700',
   execucao_servico: 'bg-purple-100 text-purple-700',
-  reuniao: 'bg-teal-600/30 text-teal-300',
-  outro: 'bg-gray-600/30 text-slate-600',
+  reuniao: 'bg-teal-100 text-teal-700',
+  outro: 'bg-slate-100 text-slate-600',
 };
 
 function pad(n: number) { return String(n).padStart(2, '0'); }
@@ -148,6 +149,38 @@ export default function Agenda() {
     if (!result.ok) toast.show(result.error ?? 'Não foi possível atualizar o compromisso.', 'warning');
   }
 
+  // Abre o WhatsApp com a confirmação do agendamento pronta para enviar (um clique) — sem API
+  // paga conectada, o envio automático de verdade não é possível, então este botão prepara a
+  // mensagem (dados reais do compromisso) e deixa só apertar "enviar" no WhatsApp Web/app.
+  function handleConfirmarWhatsapp(c: Compromisso) {
+    if (!db.organization.whatsapp) {
+      toast.show('Cadastre o WhatsApp da empresa em Configurações para usar esta confirmação.', 'warning');
+      return;
+    }
+    const cliente = (c.client_id || c.cliente_nome_avulso) ? resolveClienteInfo(c, db.clients).nome : undefined;
+    const orcamentista = db.orcamentistas.find(o => o.id === c.orcamentista_id);
+    const mensagem = compromissoConfirmationMessage(c, { responsavel: orcamentista?.nome, cliente });
+    window.open(whatsappLink(db.organization.whatsapp, mensagem), '_blank');
+  }
+
+  // Resumo do dia selecionado, pronto para enviar por WhatsApp com um clique — mesma ideia do
+  // "resumo automático das 7h" pedido, mas sem API paga: o sistema monta o texto, o usuário só
+  // confirma o envio.
+  function handleEnviarResumoDia() {
+    if (!db.organization.whatsapp) {
+      toast.show('Cadastre o WhatsApp da empresa em Configurações para usar o resumo.', 'warning');
+      return;
+    }
+    const itens = selectedCompromissos
+      .filter(c => c.status !== 'cancelado')
+      .map(c => ({
+        tipo: c.tipo, hora: c.hora, local: c.local,
+        clienteNome: (c.client_id || c.cliente_nome_avulso) ? resolveClienteInfo(c, db.clients).nome : undefined,
+      }));
+    const mensagem = resumoDiarioMessage(itens, selectedDate);
+    window.open(whatsappLink(db.organization.whatsapp, mensagem), '_blank');
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 ce-fade-up">
@@ -171,7 +204,7 @@ export default function Agenda() {
       {verServicosSemana && (
         <div className="ce-card-hover bg-white border border-slate-200 rounded-xl p-4 ce-fade-up space-y-3">
           <h2 className="text-[#0b2338] font-medium text-sm flex items-center gap-2">
-            <Wrench size={15} className="text-purple-300" /> Serviços desta semana
+            <Wrench size={15} className="text-purple-600" /> Serviços desta semana
           </h2>
           {servicosCompromissosSemana.length === 0 && servicosOrdensSemana.length === 0 && (
             <p className="text-xs text-slate-400">Nenhum serviço agendado para esta semana.</p>
@@ -180,7 +213,7 @@ export default function Agenda() {
             {servicosOrdensSemana.map(o => (
               <Link key={o.id} to={`/app/ordens-servico/${o.id}`}
                 className="block bg-white border border-slate-200 rounded-lg p-3 hover:border-[#00B4E5]/30">
-                <div className="flex items-center gap-2 text-[10px] uppercase text-teal-300"><Wrench size={11} /> Ordem de serviço</div>
+                <div className="flex items-center gap-2 text-[10px] uppercase text-teal-600"><Wrench size={11} /> Ordem de serviço</div>
                 <p className="text-sm text-[#0b2338] mt-1">{o.numero}</p>
                 <p className="text-xs text-slate-500">{resolveClienteInfo(o, db.clients).nome}</p>
                 <p className="text-xs text-slate-400 mt-1">{new Date(o.data_prevista + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })}</p>
@@ -239,14 +272,22 @@ export default function Agenda() {
         </div>
 
         <div className="ce-card-hover bg-white border border-slate-200 rounded-xl p-4 ce-fade-up ce-fade-up-2 space-y-3">
-          <h2 className="text-[#0b2338] font-medium text-sm">
-            {new Date(selectedDate + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
-          </h2>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-[#0b2338] font-medium text-sm">
+              {new Date(selectedDate + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
+            </h2>
+            {(selectedCompromissos.length > 0 || selectedOrdens.length > 0) && (
+              <button onClick={handleEnviarResumoDia} title="Preparar resumo do dia para enviar por WhatsApp"
+                className="flex items-center gap-1.5 text-xs text-emerald-600 hover:underline shrink-0">
+                <MessageCircle size={13} /> Resumo do dia
+              </button>
+            )}
+          </div>
 
           {selectedOrdens.map(o => (
             <Link key={o.id} to={`/app/ordens-servico/${o.id}`}
               className="block bg-white border border-slate-200 rounded-lg p-3 hover:border-[#00B4E5]/30">
-              <div className="flex items-center gap-2 text-[10px] uppercase text-teal-300"><Wrench size={11} /> Ordem de serviço</div>
+              <div className="flex items-center gap-2 text-[10px] uppercase text-teal-600"><Wrench size={11} /> Ordem de serviço</div>
               <p className="text-sm text-[#0b2338] mt-1">{o.numero}</p>
               <p className="text-xs text-slate-500">{resolveClienteInfo(o, db.clients).nome}</p>
             </Link>
@@ -275,12 +316,16 @@ export default function Agenda() {
                 {(c.client_id || c.cliente_nome_avulso) && <p className="text-xs text-slate-500">Cliente: {cliente.nome}</p>}
                 {orcamentista && <p className="text-xs text-slate-400">Responsável: {orcamentista.nome}</p>}
                 {c.observacoes && <p className="text-xs text-slate-400">{c.observacoes}</p>}
-                <div className="flex gap-3 pt-1">
-                  <button onClick={() => handleToggleConcluido(c)} className="text-xs text-emerald-400 hover:underline">
+                <div className="flex flex-wrap gap-3 pt-1">
+                  <button onClick={() => handleToggleConcluido(c)} className="text-xs text-emerald-600 hover:underline">
                     {c.status === 'concluido' ? 'Reabrir' : 'Marcar concluído'}
                   </button>
-                  <button onClick={() => openEditForm(c.id)} className="text-xs text-[#00B4E5] hover:underline">Editar</button>
-                  <button onClick={() => handleDelete(c.id, c.titulo)} className="text-xs text-red-400 hover:underline ml-auto flex items-center gap-1">
+                  <button onClick={() => openEditForm(c.id)} className="text-xs text-[#0069A8] hover:underline">Editar</button>
+                  <button onClick={() => handleConfirmarWhatsapp(c)} title="Abrir confirmação pronta no WhatsApp"
+                    className="text-xs text-emerald-600 hover:underline flex items-center gap-1">
+                    <MessageCircle size={12} /> Confirmar por WhatsApp
+                  </button>
+                  <button onClick={() => handleDelete(c.id, c.titulo)} className="text-xs text-red-600 hover:underline ml-auto flex items-center gap-1">
                     <Trash2 size={12} /> Excluir
                   </button>
                 </div>

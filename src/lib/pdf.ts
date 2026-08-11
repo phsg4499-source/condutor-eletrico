@@ -1,8 +1,8 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import type { Budget, Organization } from '../types';
+import type { Budget, Organization, Receipt } from '../types';
 import { calculateBudget } from './calculations';
-import { formatMoney, formatDate, addDays } from './format';
+import { formatMoney, formatDate, addDays, valorPorExtenso } from './format';
 
 // Gera o PDF profissional do orçamento para o CLIENTE.
 // Nunca inclui custo, margem, lucro ou observações internas.
@@ -400,4 +400,230 @@ function formaPagamentoLabel(fp: Budget['forma_pagamento']): string {
     debito: 'Cartão de débito', credito: 'Cartão de crédito', entrada_parcelas: 'Entrada + parcelas', a_combinar: 'A combinar',
   };
   return map[fp];
+}
+
+// Gera o PDF profissional do RECIBO — emitido ao finalizar um serviço (ORÇAMENTO -> APROVADO ->
+// AGENDADO -> EXECUÇÃO -> FINALIZADO -> EMITIR RECIBO). Reaproveita a mesma identidade visual
+// azul/ciano do orçamento (mesma paleta, mesmo estilo de cabeçalho/rodapé) para consistência.
+export function generateReceiptPdf(receipt: Receipt, org: Organization): jsPDF {
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 14;
+  const contentWidth = pageWidth - margin * 2;
+
+  drawHeader();
+  let y = 66;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.setTextColor(...INK);
+  doc.text('RECIBO DE PAGAMENTO', margin, y);
+  y += 10;
+
+  // Caixa de destaque com o valor recebido — mesmo estilo do "valor total" do orçamento.
+  const boxHeight = 22;
+  doc.setFillColor(...ACCENT);
+  doc.roundedRect(margin, y, contentWidth, boxHeight, 2.5, 2.5, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(...GRAPHITE);
+  doc.text('VALOR RECEBIDO', margin + 7, y + 9);
+  doc.setFontSize(17);
+  doc.text(formatMoney(receipt.valor_recebido), margin + 7, y + 17.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.text(`Data: ${formatDate(receipt.data)}`, margin + contentWidth - 7, y + 9, { align: 'right' });
+  if (receipt.forma_pagamento) {
+    doc.text(formaPagamentoLabel(receipt.forma_pagamento), margin + contentWidth - 7, y + 14.5, { align: 'right' });
+  }
+  y += boxHeight + 10;
+
+  // Parágrafo obrigatório: "Recebemos de ..., a importância de R$ X (X por extenso), referente a ...".
+  const documentoTexto = receipt.cliente_documento ? `, CPF/CNPJ ${receipt.cliente_documento}` : '';
+  const enderecoTexto = receipt.cliente_endereco ? `, residente/estabelecido em ${receipt.cliente_endereco}` : '';
+  const paragrafo = `Recebemos de ${receipt.cliente_nome}${documentoTexto}${enderecoTexto}, a importância de `
+    + `${formatMoney(receipt.valor_recebido)} (${valorPorExtenso(receipt.valor_recebido)}), referente a: ${receipt.descricao}.`;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10.5);
+  doc.setTextColor(...INK);
+  const linhasParagrafo = doc.splitTextToSize(paragrafo, contentWidth);
+  doc.text(linhasParagrafo, margin, y);
+  y += linhasParagrafo.length * 5.6 + 10;
+
+  y = drawDetailsCard(y);
+  y += 12;
+
+  y = checkPageBreak(y, 40);
+  y = drawSignatureBlock(y);
+
+  const totalPaginas = doc.getNumberOfPages();
+  for (let pagina = 1; pagina <= totalPaginas; pagina++) {
+    doc.setPage(pagina);
+    drawFooter();
+  }
+
+  return doc;
+
+  // ----- Blocos auxiliares (mesmo padrão visual do orçamento) -----
+
+  function checkPageBreak(cursor: number, needed: number): number {
+    if (cursor + needed > pageHeight - 26) {
+      doc.addPage();
+      return 20;
+    }
+    return cursor;
+  }
+
+  function drawHeader() {
+    doc.setFillColor(...GRAPHITE);
+    doc.rect(0, 0, pageWidth, 52, 'F');
+
+    const badgeX = margin + 9;
+    const badgeY = 17;
+    doc.setDrawColor(...ACCENT);
+    doc.setLineWidth(1.1);
+    doc.circle(badgeX, badgeY, 9, 'S');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(...WHITE);
+    doc.text('C', badgeX, badgeY + 4.3, { align: 'center' });
+    doc.setDrawColor(...ACCENT);
+    doc.setLineWidth(1.4);
+    doc.line(badgeX - 4, badgeY + 2, badgeX + 4, badgeY - 5);
+
+    const nameX = margin + 24;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor(...WHITE);
+    doc.text('CONDUTOR', nameX, 15);
+    const w1 = doc.getTextWidth('CONDUTOR ');
+    doc.setTextColor(...ACCENT);
+    doc.text('ELÉTRICO', nameX + w1, 15);
+    const w2 = doc.getTextWidth('ELÉTRICO ');
+    doc.setTextColor(...WHITE);
+    doc.text('BRASIL', nameX + w1 + w2, 15);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(190, 194, 202);
+    doc.text(org.experiencia || 'Soluções elétricas com segurança e qualidade técnica.', nameX, 21, { maxWidth: 110 });
+
+    const pillW = 62;
+    const pillX = pageWidth - margin - pillW;
+    doc.setFillColor(...ACCENT);
+    doc.roundedRect(pillX, 9, pillW, 9, 2, 2, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...GRAPHITE);
+    doc.text(`RECIBO Nº ${receipt.numero}`, pillX + pillW / 2, 15, { align: 'center' });
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(190, 194, 202);
+    doc.text(`Emitido em ${formatDate(receipt.data)}`, pageWidth - margin, 25, { align: 'right' });
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...ACCENT);
+    doc.text(SLOGAN, pageWidth - margin, 42, { align: 'right' });
+
+    doc.setFillColor(...ACCENT);
+    doc.rect(0, 52, pageWidth, 2, 'F');
+  }
+
+  function drawDetailsCard(startY: number): number {
+    const cardPad = 6;
+    const rows: [string, string][] = [
+      ['Cliente', receipt.cliente_nome],
+      ...(receipt.cliente_documento ? [['CPF/CNPJ', receipt.cliente_documento] as [string, string]] : []),
+      ...(receipt.cliente_telefone ? [['Telefone', receipt.cliente_telefone] as [string, string]] : []),
+      ['Forma de pagamento', receipt.forma_pagamento ? formaPagamentoLabel(receipt.forma_pagamento) : 'A combinar'],
+      ['Responsável', receipt.responsavel || org.responsavel || '—'],
+    ];
+    const lineHeight = 5.6;
+    const cardHeight = rows.length * lineHeight + cardPad * 2 - 2;
+
+    doc.setFillColor(...CARD_BG);
+    doc.roundedRect(margin, startY, contentWidth, cardHeight, 2.5, 2.5, 'F');
+    doc.setDrawColor(...ACCENT);
+    doc.setLineWidth(1);
+    doc.line(margin, startY, margin, startY + cardHeight);
+
+    let ry = startY + cardPad + 2;
+    rows.forEach(([label, value]) => {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(...MUTED);
+      doc.text(String(label).toUpperCase(), margin + cardPad, ry);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9.5);
+      doc.setTextColor(...INK);
+      doc.text(String(value), margin + 52, ry);
+      ry += lineHeight;
+    });
+
+    return startY + cardHeight;
+  }
+
+  function drawSignatureBlock(startY: number): number {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(...INK);
+    doc.text('Assinatura', margin, startY);
+    startY += 4;
+    doc.setDrawColor(...ACCENT_DEEP);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(margin, startY, contentWidth, 30, 2.5, 2.5, 'S');
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...MUTED);
+    doc.text(
+      'Este recibo confirma o recebimento do valor acima descrito, dando plena quitação referente ao serviço prestado.',
+      margin + 6, startY + 7, { maxWidth: contentWidth - 12 },
+    );
+
+    doc.setTextColor(...INK);
+    doc.setFontSize(9);
+    doc.text(`Recibo emitido por: ${receipt.responsavel || org.responsavel || '______________________'}`, margin + 6, startY + 17);
+    doc.text('Assinatura: ___________________________', margin + 6, startY + 24);
+    doc.text('Data: ____/____/______', margin + contentWidth - 60, startY + 17);
+
+    return startY + 30;
+  }
+
+  function drawFooter() {
+    const enderecoCompleto = [org.endereco, org.cidade && org.estado ? `${org.cidade} - ${org.estado}` : (org.cidade || org.estado)]
+      .filter(Boolean).join(' • ');
+
+    const footerHeight = enderecoCompleto ? 24 : 20;
+    const footerY = pageHeight - footerHeight;
+    doc.setFillColor(...GRAPHITE);
+    doc.rect(0, footerY, pageWidth, footerHeight, 'F');
+    doc.setFillColor(...ACCENT);
+    doc.rect(0, footerY, pageWidth, 1, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...WHITE);
+    doc.text(org.responsavel || 'Condutor Elétrico Brasil', margin, footerY + 8);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(190, 194, 202);
+    doc.text(`Contato: ${org.telefone || '—'}${org.email ? `  •  ${org.email}` : ''}`, margin, footerY + 13.5);
+    if (enderecoCompleto) {
+      doc.setFontSize(7.5);
+      doc.setTextColor(160, 165, 175);
+      doc.text(enderecoCompleto, margin, footerY + 19);
+    }
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(...ACCENT);
+    doc.text((org.nome_fantasia || 'Condutor Elétrico Brasil').toUpperCase(), pageWidth - margin, footerY + 8, { align: 'right' });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(160, 165, 175);
+    doc.text(org.documento ? `CNPJ ${org.documento}` : 'Energia com padrão profissional.', pageWidth - margin, footerY + 13.5, { align: 'right' });
+  }
 }

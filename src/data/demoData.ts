@@ -1,6 +1,6 @@
 // Dados de demonstração — CLARAMENTE FICTÍCIOS.
 // Não representam preços oficiais de mercado nem documentos reais de pessoas.
-import type { Organization, Client, Material, ServiceItem, Budget, ServiceOrder, Payment, Orcamentista, Compromisso } from '../types';
+import type { Organization, Client, Material, ServiceItem, Budget, ServiceOrder, Payment, Orcamentista, Compromisso, Receipt } from '../types';
 import { todayISO, addDays } from '../lib/format';
 
 export const ORG_ID = 'org-condutor-eletrico';
@@ -284,5 +284,15 @@ export const demoCompromissos: Compromisso[] = [
     id: 'cp-3', organization_id: ORG_ID, titulo: 'Reunião com construtora sobre etapa 2 da obra', tipo: 'reuniao',
     data: addDays(todayISO(), 4), hora: '10:00', client_id: 'cli-4', orcamentista_id: 'orcm-1', status: 'agendado',
     created_at: todayISO(), updated_at: todayISO(),
+  },
+];
+
+export const demoReceipts: Receipt[] = [
+  {
+    id: 'rec-1', organization_id: ORG_ID, numero: `REC-${new Date().getFullYear()}-000001`,
+    budget_id: 'orc-5', service_order_id: 'os-5', client_id: 'cli-5',
+    cliente_nome: 'Cliente demonstrativo', descricao: 'Atendimento emergencial elétrico (dado demonstrativo)',
+    valor: 470, valor_recebido: 470, forma_pagamento: 'pix', data: addDays(todayISO(), -6),
+    responsavel: 'Sansão', status: 'emitido', created_at: addDays(todayISO(), -6), updated_at: addDays(todayISO(), -6),
   },
 ];
