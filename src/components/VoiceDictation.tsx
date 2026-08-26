@@ -84,16 +84,26 @@ export default function VoiceDictation({ onApply }: VoiceDictationProps) {
     recognition.lang = 'pt-BR';
     recognition.continuous = true;
     recognition.interimResults = true;
-    let acumulado = transcript ? `${transcript} ` : '';
+    // Texto de uma gravação anterior (se o usuário pausou e retomou) — nunca é reprocessado,
+    // só fica na frente do texto novo.
+    const prefixoAnterior = transcript ? `${transcript} ` : '';
+    let textoFinalDaSessao = '';
 
+    // Reconstrói o texto final inteiro a partir do zero em CADA evento (índice 0 até o fim de
+    // event.results), em vez de ir só acrescentando a partir de event.resultIndex. O Chrome, em
+    // modo contínuo, às vezes reenvia um resultIndex que já tinha sido processado antes — somar
+    // incrementalmente nesses casos duplicava trechos inteiros da fala. Reconstruir do zero é
+    // idempotente: não importa quantas vezes o mesmo evento dispare, o texto final não duplica.
     recognition.onresult = (event: any) => {
+      let final = '';
       let interim = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
+      for (let i = 0; i < event.results.length; i++) {
         const resultado = event.results[i];
-        if (resultado.isFinal) acumulado += `${resultado[0].transcript} `;
+        if (resultado.isFinal) final += `${resultado[0].transcript} `;
         else interim += resultado[0].transcript;
       }
-      setTranscript(acumulado + interim);
+      textoFinalDaSessao = final;
+      setTranscript((prefixoAnterior + final + interim).trim());
     };
     recognition.onerror = (event: any) => {
       setErro(`Erro no reconhecimento de voz: ${event.error === 'not-allowed' ? 'permissão de microfone negada' : event.error}`);
@@ -103,7 +113,7 @@ export default function VoiceDictation({ onApply }: VoiceDictationProps) {
     // precisa de um segundo clique: falar e a IA preencher é uma ação só, como pedido.
     recognition.onend = () => {
       setGravando(false);
-      organizarComIA(acumulado.trim());
+      organizarComIA((prefixoAnterior + textoFinalDaSessao).trim());
     };
 
     recognitionRef.current = recognition;
