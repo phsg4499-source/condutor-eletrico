@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../lib/store';
 import { useToast } from '../lib/toast';
+import RichTextEditor from '../components/RichTextEditor';
 
 export default function Settings() {
   const { db, updateOrganization } = useStore();
@@ -77,6 +78,18 @@ export default function Settings() {
           Orçamentos com margem abaixo do mínimo configurado mostram um alerta na etapa de revisão e na tela do orçamento.
         </p>
         <button type="submit" className="ce-btn-glow bg-[#00B4E5] text-[#0b2338] font-semibold rounded-lg px-5 py-2.5 text-sm hover:bg-[#0069A8]">Salvar precificação</button>
+      </form>
+
+      <form onSubmit={submit} className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
+        <div>
+          <h2 className="text-[#0b2338] font-medium">Proposta técnica completa</h2>
+          <p className="text-xs text-slate-400 mt-1">
+            Texto institucional sugerido ao criar uma nova proposta técnica completa (etapa "Apresentação") — só um ponto
+            de partida, o orçamentista pode editar livremente em cada proposta.
+          </p>
+        </div>
+        <RichTextEditor value={form.apresentacao_padrao_html ?? ''} onChange={v => setForm(f => ({ ...f, apresentacao_padrao_html: v }))} />
+        <button type="submit" className="ce-btn-glow bg-[#00B4E5] text-[#0b2338] font-semibold rounded-lg px-5 py-2.5 text-sm hover:bg-[#0069A8]">Salvar texto institucional</button>
       </form>
 
       <form onSubmit={submit} className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">

@@ -32,6 +32,9 @@ export interface Organization {
   responsavel: string;
   experiencia: string;
   meta_faturamento_mensal: number;
+  // Texto institucional sugerido (rich text/HTML) para o campo "Apresentação" de uma proposta
+  // técnica completa nova — só um ponto de partida editável, nunca fixo/obrigatório.
+  apresentacao_padrao_html?: string;
   created_at: string;
   updated_at: string;
 }
@@ -164,6 +167,80 @@ export interface ExtraCost {
 
 export type FormaPagamento = 'pix' | 'dinheiro' | 'transferencia' | 'boleto' | 'debito' | 'credito' | 'entrada_parcelas' | 'a_combinar';
 
+export type UnidadePrazo = 'dias_uteis' | 'dias_corridos' | 'semanas' | 'meses';
+
+export interface BudgetAtividade {
+  id: string;
+  descricao: string;
+  quantidade?: number;
+  unidade?: string;
+  observacao?: string;
+  ordem: number;
+}
+
+export interface BudgetAmbiente {
+  id: string;
+  nome: string;
+  descricao?: string;
+  ordem: number;
+  atividades: BudgetAtividade[];
+}
+
+// Estrutura completa de uma "proposta técnica completa" (laudo/orçamento técnico elaborado) —
+// só existe quando o orçamentista escolhe esse modo na criação do orçamento. Ausente/undefined em
+// todo orçamento no modo "simples" (o padrão até aqui), inclusive nos já existentes no banco.
+// Nunca tem campo de valor unitário — o preço é sempre um valor global, em "valores.valor_total".
+export interface BudgetProposalDetails {
+  cliente: {
+    contato_nome?: string;
+    info_complementar_imovel?: string;
+  };
+  cidade_encerramento?: string; // se vazio, o PDF usa org.cidade
+  apresentacao_html?: string;
+  laudo_html?: string;
+  ambientes: BudgetAmbiente[];
+  ambientes_total_label?: string; // ex.: "pontos de iluminação" — se vazio, o total não é exibido
+  escopo: {
+    titulo?: string;
+    descricao_html?: string;
+    servicos_incluidos_html?: string;
+    servicos_nao_incluidos_html?: string;
+    premissas_html?: string;
+    responsabilidades_cliente_html?: string;
+    observacoes_materiais_html?: string;
+  };
+  valores: {
+    valor_total: number; // valor final para o cliente — nunca calculado a partir de itens
+    valor_total_extenso?: string; // sugerido automaticamente, editável
+    a_vista: {
+      ativo: boolean;
+      valor?: number;
+      desconto_percentual?: number;
+      desconto_valor?: number;
+      forma_pagamento?: string;
+    };
+    parcelado: { ativo: boolean; juros_info?: string };
+    condicoes_texto?: string;
+    etapas: { descricao: string; valor?: number; data?: string }[];
+  };
+  prazos: {
+    inicio: { valor?: number; unidade?: UnidadePrazo };
+    execucao: { valor?: number; unidade?: UnidadePrazo };
+    condicao_cronograma?: string;
+    garantia_materiais?: string;
+    garantia_observacoes?: string;
+    norma_aplicavel?: string;
+  };
+  encerramento: {
+    agradecimento_html?: string;
+    disponibilidade_esclarecimentos_ativo: boolean;
+    materiais_separados_ativo: boolean;
+    ressalvas_compatibilizacao_ativo: boolean;
+    aceite_ativo: boolean;
+    observacoes_finais_html?: string;
+  };
+}
+
 export interface Budget {
   id: string;
   organization_id: string;
@@ -194,6 +271,9 @@ export interface Budget {
   observacoes_cliente?: string;
   historico_status: { status: BudgetStatus; data: string }[];
   link_publico_token: string; // usado na URL pública (/proposta/:token) — não previsível, não é o id sequencial
+  // Presente somente em orçamentos criados no modo "Proposta técnica completa". A presença deste
+  // campo (em vez de um booleano separado) é o que determina o modo de um orçamento existente.
+  proposta_detalhada?: BudgetProposalDetails | null;
   created_at: string;
   updated_at: string;
 }

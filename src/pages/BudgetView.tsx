@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Download, MessageCircle, ArrowLeft, Repeat, Pencil, Trash2, Plus, Wallet, CheckCircle2, FileSignature, CalendarClock } from 'lucide-react';
+import { Download, MessageCircle, ArrowLeft, Repeat, Pencil, Trash2, Plus, Wallet, CheckCircle2, FileSignature, CalendarClock, Copy } from 'lucide-react';
 import { useStore } from '../lib/store';
 import { useToast } from '../lib/toast';
 import { calculateBudget, budgetAlerts } from '../lib/calculations';
@@ -19,7 +19,7 @@ import type { BudgetStatus, Payment } from '../types';
 export default function BudgetView() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { db, setBudgetStatus, convertBudgetToServiceOrder, deleteBudget, addPayment, updatePayment, deletePayment } = useStore();
+  const { db, setBudgetStatus, convertBudgetToServiceOrder, deleteBudget, duplicateBudget, addPayment, updatePayment, deletePayment } = useStore();
   const toast = useToast();
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [marcarRecebido, setMarcarRecebido] = useState<Payment | null>(null);
@@ -139,6 +139,16 @@ export default function BudgetView() {
     navigate('/app/orcamentos');
   }
 
+  async function handleDuplicate() {
+    const result = await duplicateBudget(budget!.id);
+    if (!result.ok || !result.budget) {
+      toast.show(result.error ?? 'Não foi possível duplicar o orçamento.', 'warning');
+      return;
+    }
+    toast.show('Orçamento duplicado como novo rascunho.');
+    navigate(`/app/orcamentos/${result.budget.id}/editar`);
+  }
+
   return (
     <div className="space-y-6 max-w-4xl">
       <Link to="/app/orcamentos" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-[#0b2338]"><ArrowLeft size={16} /> Voltar</Link>
@@ -167,6 +177,9 @@ export default function BudgetView() {
         <button onClick={handleWhatsapp} className="flex items-center gap-2 bg-emerald-600 text-[#0b2338] font-semibold px-4 py-2 rounded-lg text-sm hover:bg-emerald-500">
           <MessageCircle size={16} /> Enviar por WhatsApp
         </button>
+        <button onClick={handleDuplicate} className="flex items-center gap-2 border border-slate-200 text-slate-600 px-4 py-2 rounded-lg text-sm hover:bg-slate-100">
+          <Copy size={16} /> Duplicar
+        </button>
         {(budget.status === 'aprovado' || budget.status === 'aprovado_parcialmente') && (
           <button onClick={handleConvert} className="flex items-center gap-2 border border-slate-200 text-slate-600 px-4 py-2 rounded-lg text-sm hover:bg-slate-100">
             <Repeat size={16} /> Converter em ordem de serviço
@@ -192,53 +205,70 @@ export default function BudgetView() {
         </div>
       )}
 
-      <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
-        <h2 className="text-[#0b2338] font-medium text-sm">Itens</h2>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-slate-500 border-b border-slate-200">
-              <th className="py-2 font-medium">Item</th>
-              <th className="py-2 font-medium">Tipo</th>
-              <th className="py-2 font-medium">Qtd</th>
-              <th className="py-2 font-medium">Custo unit.</th>
-              <th className="py-2 font-medium">Valor unit.</th>
-              <th className="py-2 font-medium text-right">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {budget.itens.map(item => (
-              <tr key={item.id} className="border-b border-slate-200 last:border-0">
-                <td className="py-2 text-[#0b2338]">{item.nome}</td>
-                <td className="py-2 text-slate-500 capitalize">{item.tipo}</td>
-                <td className="py-2 text-slate-600">{item.quantidade} {item.unidade}</td>
-                <td className="py-2 text-slate-500">{formatMoney(item.custo_unitario)}</td>
-                <td className="py-2 text-slate-600">{formatMoney(item.valor_unitario)}</td>
-                <td className="py-2 text-[#0b2338] text-right">{formatMoney(item.quantidade * item.valor_unitario - item.desconto)}</td>
+      {budget.proposta_detalhada ? (
+        <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
+          <h2 className="text-[#0b2338] font-medium text-sm">Proposta técnica completa</h2>
+          <div className="grid sm:grid-cols-3 gap-3 text-sm">
+            <Row label="Ambientes" value={String(budget.proposta_detalhada.ambientes.length)} />
+            <Row label="Serviços listados" value={String(budget.itens.length)} />
+            <Row label="Aceite eletrônico" value={budget.proposta_detalhada.encerramento.aceite_ativo ? 'Incluído no PDF' : 'Não incluído'} />
+          </div>
+          <p className="text-[11px] text-slate-400">
+            Esta é uma proposta com laudo técnico, ambientes e escopo detalhado — sem preço por item, só o valor global
+            abaixo. Edite o orçamento para ver ou alterar o conteúdo completo (apresentação, laudo, ambientes, escopo etc.).
+          </p>
+        </div>
+      ) : (
+        <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
+          <h2 className="text-[#0b2338] font-medium text-sm">Itens</h2>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-slate-500 border-b border-slate-200">
+                <th className="py-2 font-medium">Item</th>
+                <th className="py-2 font-medium">Tipo</th>
+                <th className="py-2 font-medium">Qtd</th>
+                <th className="py-2 font-medium">Custo unit.</th>
+                <th className="py-2 font-medium">Valor unit.</th>
+                <th className="py-2 font-medium text-right">Total</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-        {budget.custos_extras.length > 0 && (
-          <div className="pt-2">
-            <h3 className="text-xs text-slate-500 mb-2">Custos adicionais</h3>
-            {budget.custos_extras.map(c => (
-              <div key={c.id} className="flex justify-between text-sm py-1">
-                <span className="text-slate-600">{c.descricao}</span>
-                <span className="text-[#0b2338]">{formatMoney(c.valor)}</span>
-              </div>
-            ))}
+            </thead>
+            <tbody>
+              {budget.itens.map(item => (
+                <tr key={item.id} className="border-b border-slate-200 last:border-0">
+                  <td className="py-2 text-[#0b2338]">{item.nome}</td>
+                  <td className="py-2 text-slate-500 capitalize">{item.tipo}</td>
+                  <td className="py-2 text-slate-600">{item.quantidade} {item.unidade}</td>
+                  <td className="py-2 text-slate-500">{formatMoney(item.custo_unitario)}</td>
+                  <td className="py-2 text-slate-600">{formatMoney(item.valor_unitario)}</td>
+                  <td className="py-2 text-[#0b2338] text-right">{formatMoney(item.quantidade * item.valor_unitario - item.desconto)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {budget.custos_extras.length > 0 && (
+            <div className="pt-2">
+              <h3 className="text-xs text-slate-500 mb-2">Custos adicionais</h3>
+              {budget.custos_extras.map(c => (
+                <div key={c.id} className="flex justify-between text-sm py-1">
+                  <span className="text-slate-600">{c.descricao}</span>
+                  <span className="text-[#0b2338]">{formatMoney(c.valor)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className={`grid gap-5 ${budget.proposta_detalhada ? '' : 'sm:grid-cols-2'}`}>
+        {!budget.proposta_detalhada && (
+          <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-2">
+            <h2 className="text-[#0b2338] font-medium text-sm mb-2">Valores internos</h2>
+            <Row label="Custo total" value={formatMoney(totals.totalCusto)} />
+            <Row label="Lucro bruto" value={formatMoney(totals.lucroBruto)} />
+            <Row label="Margem" value={`${totals.margemPercentual.toFixed(1)}%`} />
+            <p className="text-[11px] text-slate-400 pt-1">Estes dados não são exibidos ao cliente nem no PDF.</p>
           </div>
         )}
-      </div>
-
-      <div className="grid sm:grid-cols-2 gap-5">
-        <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-2">
-          <h2 className="text-[#0b2338] font-medium text-sm mb-2">Valores internos</h2>
-          <Row label="Custo total" value={formatMoney(totals.totalCusto)} />
-          <Row label="Lucro bruto" value={formatMoney(totals.lucroBruto)} />
-          <Row label="Margem" value={`${totals.margemPercentual.toFixed(1)}%`} />
-          <p className="text-[11px] text-slate-400 pt-1">Estes dados não são exibidos ao cliente nem no PDF.</p>
-        </div>
         <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-2">
           <h2 className="text-[#0b2338] font-medium text-sm mb-2">Condições comerciais</h2>
           <Row label="Valor final" value={formatMoney(totals.totalVenda)} />

@@ -9,6 +9,7 @@ import { calculateBudget } from '../../lib/calculations';
 import { generateBudgetPdf } from '../../lib/pdf';
 import { whatsappLink } from '../../lib/whatsapp';
 import { formatMoney, formatDate, addDays } from '../../lib/format';
+import RichTextEditor from '../../components/RichTextEditor';
 import type { Budget, BudgetLineItem, ExtraCost, Organization } from '../../types';
 
 const formasPagamentoLabel: Record<string, string> = {
@@ -18,8 +19,13 @@ const formasPagamentoLabel: Record<string, string> = {
 
 const RESPONDED_STATUSES = ['aprovado', 'aprovado_parcialmente', 'recusado', 'convertido_em_os'];
 
+function isRichEmpty(html?: string): boolean {
+  if (!html) return true;
+  return !html.replace(/<[^>]*>/g, '').trim();
+}
+
 interface ViewModel {
-  budget: Pick<Budget, 'id' | 'numero' | 'titulo' | 'tipo_servico' | 'local_servico' | 'data_emissao' | 'validade_dias' | 'prazo_estimado' | 'status' | 'desconto_percentual' | 'desconto_valor' | 'forma_pagamento' | 'entrada' | 'parcelas' | 'garantia' | 'observacoes_cliente' | 'itens' | 'custos_extras'>;
+  budget: Pick<Budget, 'id' | 'numero' | 'titulo' | 'tipo_servico' | 'local_servico' | 'data_emissao' | 'validade_dias' | 'prazo_estimado' | 'status' | 'desconto_percentual' | 'desconto_valor' | 'forma_pagamento' | 'entrada' | 'parcelas' | 'garantia' | 'observacoes_cliente' | 'itens' | 'custos_extras' | 'proposta_detalhada'>;
   cliente: { nome: string; telefone?: string; whatsapp?: string };
   org: Organization;
 }
@@ -86,17 +92,19 @@ export default function PublicProposal() {
           desconto_valor: Number(data.desconto_valor ?? 0), forma_pagamento: data.forma_pagamento,
           entrada: Number(data.entrada ?? 0), parcelas: Number(data.parcelas ?? 1), garantia: data.garantia,
           observacoes_cliente: data.observacoes_cliente, itens, custos_extras,
+          proposta_detalhada: data.proposta_detalhada ?? null,
         },
         cliente: { nome: data.cliente_nome, telefone: data.cliente_telefone, whatsapp: data.cliente_whatsapp },
         org: {
           id: '', razao_social: data.org_razao_social ?? data.org_nome_fantasia, nome_fantasia: data.org_nome_fantasia,
           documento: '', telefone: data.org_telefone, whatsapp: data.org_whatsapp, email: data.org_email,
-          endereco: '', cidade: '', estado: '', cep: '', logo_url: data.org_logo_url ?? undefined,
+          endereco: '', cidade: data.org_cidade ?? '', estado: '', cep: '', logo_url: data.org_logo_url ?? undefined,
           cor_principal: data.org_cor_principal ?? '#0069A8', cor_secundaria: data.org_cor_secundaria ?? '#00B4E5',
           instagram: data.org_instagram, condicoes_padrao: '', prazo_validade_padrao_dias: 10,
           garantia_padrao: '', modo_calculo_margem: 'markup_sobre_custo', margem_minima_percentual: 15,
           impostos_estimados_percentual: 0, responsavel: data.org_responsavel ?? '', experiencia: data.org_experiencia ?? '',
-          meta_faturamento_mensal: 0, created_at: '', updated_at: '',
+          meta_faturamento_mensal: 0, apresentacao_padrao_html: data.org_apresentacao_padrao_html ?? undefined,
+          created_at: '', updated_at: '',
         },
       });
       setLoading(false);
@@ -188,55 +196,143 @@ export default function PublicProposal() {
           {budget.local_servico && <p className="text-xs text-slate-400">Local: {budget.local_servico}</p>}
         </div>
 
-        {servicos.length > 0 && (
-          <div className="bg-white border border-slate-200 rounded-xl p-5">
-            <h2 className="text-sm font-medium text-[#0b2338] mb-3">Serviços</h2>
-            <div className="space-y-2">
-              {servicos.map((i, idx) => (
-                <div key={idx} className="flex justify-between text-sm">
-                  <span className="text-slate-600">{i.nome} <span className="text-slate-400">x{i.quantidade}</span></span>
-                  <span className="text-[#0b2338]">{formatMoney(i.quantidade * i.valor_unitario - i.desconto)}</span>
-                </div>
-              ))}
+        {budget.proposta_detalhada ? (
+          <>
+            {!isRichEmpty(budget.proposta_detalhada.apresentacao_html) && (
+              <div className="bg-white border border-slate-200 rounded-xl p-5">
+                <h2 className="text-sm font-medium text-[#0b2338] mb-2">Apresentação</h2>
+                <RichTextEditor readOnly value={budget.proposta_detalhada.apresentacao_html ?? ''} />
+              </div>
+            )}
+            {!isRichEmpty(budget.proposta_detalhada.laudo_html) && (
+              <div className="bg-white border border-slate-200 rounded-xl p-5">
+                <h2 className="text-sm font-medium text-[#0b2338] mb-2">Laudo técnico / diagnóstico</h2>
+                <RichTextEditor readOnly value={budget.proposta_detalhada.laudo_html ?? ''} />
+              </div>
+            )}
+            {budget.proposta_detalhada.ambientes.length > 0 && (
+              <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-3">
+                <h2 className="text-sm font-medium text-[#0b2338]">Detalhamento por ambientes</h2>
+                {[...budget.proposta_detalhada.ambientes].sort((a, b) => a.ordem - b.ordem).map(ambiente => (
+                  <div key={ambiente.id}>
+                    <p className="text-sm font-medium text-[#0069A8]">{ambiente.nome}</p>
+                    {ambiente.descricao && <p className="text-xs text-slate-400 italic">{ambiente.descricao}</p>}
+                    <ul className="mt-1 space-y-0.5">
+                      {[...ambiente.atividades].sort((a, b) => a.ordem - b.ordem).map(at => (
+                        <li key={at.id} className="text-sm text-slate-600 list-disc ml-4">
+                          {at.descricao}{at.quantidade ? ` (${at.quantidade}${at.unidade ? ` ${at.unidade}` : ''})` : ''}
+                          {at.observacao ? ` — ${at.observacao}` : ''}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+                {budget.proposta_detalhada.ambientes_total_label && (
+                  <p className="text-sm font-medium text-[#0069A8] pt-1">
+                    Total aproximado: {budget.proposta_detalhada.ambientes.reduce((acc, a) => acc + a.atividades.reduce((s, at) => s + (at.quantidade || 1), 0), 0)} {budget.proposta_detalhada.ambientes_total_label}
+                  </p>
+                )}
+              </div>
+            )}
+            {!isRichEmpty(budget.proposta_detalhada.escopo.descricao_html) && (
+              <div className="bg-white border border-slate-200 rounded-xl p-5">
+                <h2 className="text-sm font-medium text-[#0b2338] mb-2">{budget.proposta_detalhada.escopo.titulo || 'Escopo principal'}</h2>
+                <RichTextEditor readOnly value={budget.proposta_detalhada.escopo.descricao_html ?? ''} />
+              </div>
+            )}
+            {servicos.length + materiais.length > 0 && (
+              <div className="bg-white border border-slate-200 rounded-xl p-5">
+                <h2 className="text-sm font-medium text-[#0b2338] mb-3">Relação de serviços</h2>
+                <ul className="space-y-1">
+                  {budget.itens.map((i, idx) => (
+                    <li key={idx} className="text-sm text-slate-600 list-disc ml-4">
+                      {i.nome}{i.quantidade ? ` (${i.quantidade}${i.unidade ? ` ${i.unidade}` : ''})` : ''}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="bg-[#00B4E5] rounded-xl p-5">
+              <p className="text-xs font-semibold text-[#0b2338]/70 uppercase">Valor total</p>
+              <p className="text-2xl font-bold text-[#0b2338]">{formatMoney(totals.totalVenda)}</p>
+              <div className="flex flex-wrap gap-x-4 mt-1 text-sm text-[#0b2338]/80">
+                {budget.proposta_detalhada.valores.a_vista.ativo && budget.proposta_detalhada.valores.a_vista.valor && (
+                  <span>À vista: {formatMoney(budget.proposta_detalhada.valores.a_vista.valor)}</span>
+                )}
+                {budget.proposta_detalhada.valores.parcelado.ativo && budget.parcelas > 1 && (
+                  <span>{budget.parcelas}x de {formatMoney(totals.valorParcela)}</span>
+                )}
+              </div>
             </div>
-          </div>
-        )}
 
-        {materiais.length > 0 && (
-          <div className="bg-white border border-slate-200 rounded-xl p-5">
-            <h2 className="text-sm font-medium text-[#0b2338] mb-3">Materiais</h2>
-            <div className="space-y-2">
-              {materiais.map((i, idx) => (
-                <div key={idx} className="flex justify-between text-sm">
-                  <span className="text-slate-600">{i.nome} <span className="text-slate-400">x{i.quantidade}</span></span>
-                  <span className="text-[#0b2338]">{formatMoney(i.quantidade * i.valor_unitario - i.desconto)}</span>
-                </div>
-              ))}
+            <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-2 text-sm">
+              <div className="flex justify-between"><span className="text-slate-500">Garantia da mão de obra</span><span className="text-[#0b2338]">{budget.garantia || '—'}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Prazo estimado</span><span className="text-[#0b2338]">{budget.prazo_estimado || 'A combinar'}</span></div>
+              {budget.proposta_detalhada.prazos.norma_aplicavel && (
+                <div className="flex justify-between"><span className="text-slate-500">Norma aplicável</span><span className="text-[#0b2338]">{budget.proposta_detalhada.prazos.norma_aplicavel}</span></div>
+              )}
             </div>
-          </div>
-        )}
 
-        <div className="bg-[#00B4E5] rounded-xl p-5 flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold text-[#0b2338]/70 uppercase">Valor total</p>
-            <p className="text-2xl font-bold text-[#0b2338]">{formatMoney(totals.totalVenda)}</p>
-          </div>
-          {budget.parcelas > 1 && (
-            <p className="text-sm text-[#0b2338]/80 text-right">{budget.parcelas}x de {formatMoney(totals.valorParcela)}</p>
-          )}
-        </div>
+            {!isRichEmpty(budget.proposta_detalhada.encerramento.agradecimento_html) && (
+              <div className="bg-white border border-slate-200 rounded-xl p-5">
+                <RichTextEditor readOnly value={budget.proposta_detalhada.encerramento.agradecimento_html ?? ''} />
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            {servicos.length > 0 && (
+              <div className="bg-white border border-slate-200 rounded-xl p-5">
+                <h2 className="text-sm font-medium text-[#0b2338] mb-3">Serviços</h2>
+                <div className="space-y-2">
+                  {servicos.map((i, idx) => (
+                    <div key={idx} className="flex justify-between text-sm">
+                      <span className="text-slate-600">{i.nome} <span className="text-slate-400">x{i.quantidade}</span></span>
+                      <span className="text-[#0b2338]">{formatMoney(i.quantidade * i.valor_unitario - i.desconto)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-2 text-sm">
-          <div className="flex justify-between"><span className="text-slate-500">Forma de pagamento</span><span className="text-[#0b2338]">{formasPagamentoLabel[budget.forma_pagamento] ?? budget.forma_pagamento}</span></div>
-          <div className="flex justify-between"><span className="text-slate-500">Garantia</span><span className="text-[#0b2338]">{budget.garantia || '—'}</span></div>
-          <div className="flex justify-between"><span className="text-slate-500">Prazo estimado</span><span className="text-[#0b2338]">{budget.prazo_estimado || 'A combinar'}</span></div>
-        </div>
+            {materiais.length > 0 && (
+              <div className="bg-white border border-slate-200 rounded-xl p-5">
+                <h2 className="text-sm font-medium text-[#0b2338] mb-3">Materiais</h2>
+                <div className="space-y-2">
+                  {materiais.map((i, idx) => (
+                    <div key={idx} className="flex justify-between text-sm">
+                      <span className="text-slate-600">{i.nome} <span className="text-slate-400">x{i.quantidade}</span></span>
+                      <span className="text-[#0b2338]">{formatMoney(i.quantidade * i.valor_unitario - i.desconto)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
-        {budget.observacoes_cliente && (
-          <div className="bg-white border border-slate-200 rounded-xl p-5">
-            <h2 className="text-sm font-medium text-[#0b2338] mb-2">Observações</h2>
-            <p className="text-sm text-slate-500">{budget.observacoes_cliente}</p>
-          </div>
+            <div className="bg-[#00B4E5] rounded-xl p-5 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-[#0b2338]/70 uppercase">Valor total</p>
+                <p className="text-2xl font-bold text-[#0b2338]">{formatMoney(totals.totalVenda)}</p>
+              </div>
+              {budget.parcelas > 1 && (
+                <p className="text-sm text-[#0b2338]/80 text-right">{budget.parcelas}x de {formatMoney(totals.valorParcela)}</p>
+              )}
+            </div>
+
+            <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-2 text-sm">
+              <div className="flex justify-between"><span className="text-slate-500">Forma de pagamento</span><span className="text-[#0b2338]">{formasPagamentoLabel[budget.forma_pagamento] ?? budget.forma_pagamento}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Garantia</span><span className="text-[#0b2338]">{budget.garantia || '—'}</span></div>
+              <div className="flex justify-between"><span className="text-slate-500">Prazo estimado</span><span className="text-[#0b2338]">{budget.prazo_estimado || 'A combinar'}</span></div>
+            </div>
+
+            {budget.observacoes_cliente && (
+              <div className="bg-white border border-slate-200 rounded-xl p-5">
+                <h2 className="text-sm font-medium text-[#0b2338] mb-2">Observações</h2>
+                <p className="text-sm text-slate-500">{budget.observacoes_cliente}</p>
+              </div>
+            )}
+          </>
         )}
 
         <div className="flex gap-3">

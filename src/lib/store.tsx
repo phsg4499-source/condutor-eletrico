@@ -145,6 +145,7 @@ interface StoreContextValue {
   addBudget: (data: Partial<Budget>) => Promise<{ budget: Budget; ok: boolean; error?: string }>;
   updateBudget: (id: string, data: Partial<Budget>) => Promise<{ ok: boolean; error?: string }>;
   deleteBudget: (id: string) => Promise<{ ok: boolean; error?: string }>;
+  duplicateBudget: (id: string) => Promise<{ budget: Budget | null; ok: boolean; error?: string }>;
   // Retorna ok/erro da troca de status; se aprovando, também tenta lançar o pagamento pendente e
   // gerar a Ordem de Serviço — "warning" traz um aviso não-bloqueante caso essas duas etapas
   // automáticas falhem (o status em si já foi confirmado nesse caso).
@@ -446,6 +447,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Cria uma cópia independente de um orçamento existente (mesmos itens/custos extras/proposta
+  // detalhada), sempre como novo rascunho: número, id, token público e histórico de status são
+  // gerados do zero — nunca reaproveita nada que precise ser único.
+  const duplicateBudget: StoreContextValue['duplicateBudget'] = useCallback(async (id) => {
+    const original = db.budgets.find(b => b.id === id);
+    if (!original) return { budget: null, ok: false as const, error: 'Orçamento não encontrado.' };
+    const { id: _id, numero: _numero, link_publico_token: _token, historico_status: _hist, status: _status, created_at: _createdAt, updated_at: _updatedAt, ...rest } = original;
+    return addBudget({
+      ...rest,
+      titulo: `${original.titulo} (cópia)`,
+      itens: original.itens.map(i => ({ ...i, id: newId() })),
+      custos_extras: original.custos_extras.map(c => ({ ...c, id: newId() })),
+      proposta_detalhada: original.proposta_detalhada
+        ? {
+            ...original.proposta_detalhada,
+            ambientes: original.proposta_detalhada.ambientes.map(a => ({
+              ...a, id: newId(), atividades: a.atividades.map(at => ({ ...at, id: newId() })),
+            })),
+          }
+        : original.proposta_detalhada,
+    });
+  }, [db.budgets, addBudget]);
 
   function buildServiceOrderFromBudget(budget: Budget): ServiceOrder {
     return {
@@ -819,11 +842,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     authLoading,
     db, user, login, logout, updateOrganization,
     addClient, updateClient, addMaterial, updateMaterial, addService, updateService,
-    addBudget, updateBudget, deleteBudget, setBudgetStatus, convertBudgetToServiceOrder, setServiceOrderStatus, toggleChecklistItem, addQuoteRequest, addOrcamentista, updateOrcamentista,
+    addBudget, updateBudget, deleteBudget, duplicateBudget, setBudgetStatus, convertBudgetToServiceOrder, setServiceOrderStatus, toggleChecklistItem, addQuoteRequest, addOrcamentista, updateOrcamentista,
     addCompromisso, updateCompromisso, deleteCompromisso, addPayment, updatePayment, deletePayment, nextBudgetNumber,
     addReceipt, cancelReceipt, nextReceiptNumber,
   }), [authLoading, db, user, login, logout, updateOrganization, addClient, updateClient, addMaterial, updateMaterial,
-      addService, updateService, addBudget, updateBudget, deleteBudget, setBudgetStatus, convertBudgetToServiceOrder,
+      addService, updateService, addBudget, updateBudget, deleteBudget, duplicateBudget, setBudgetStatus, convertBudgetToServiceOrder,
       setServiceOrderStatus, toggleChecklistItem, addQuoteRequest, addOrcamentista, updateOrcamentista,
       addCompromisso, updateCompromisso, deleteCompromisso, addPayment, updatePayment, deletePayment, nextBudgetNumber,
       addReceipt, cancelReceipt, nextReceiptNumber]);

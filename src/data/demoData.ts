@@ -235,6 +235,55 @@ export const demoBudgets: Budget[] = [
     custos_extras: [], forma_pagamento: 'pix', entrada: 0, parcelas: 1,
     historico_status: [{ status: 'enviado', data: addDays(todayISO(), -8) }, { status: 'recusado', data: addDays(todayISO(), -7) }],
   }),
+  // Exemplo de "Proposta técnica completa" (dado demonstrativo) — mostra o segundo formato de
+  // orçamento no modo demonstração, sem depender de configurar o Supabase.
+  emptyTotalsBudget({
+    id: 'orc-6', numero: '2026-0006', client_id: null, cliente_nome_avulso: 'Marcos Andrade (demonstrativo)',
+    cliente_telefone_avulso: '(31) 90000-0000', cliente_whatsapp_avulso: '5531900000000',
+    titulo: 'Modernização elétrica residencial — iluminação e tomadas',
+    tipo_servico: 'Reforma elétrica', local_servico: 'Rua Exemplo, 901, apto 507 - Bairro Demonstrativo',
+    prazo_estimado: '10 dias úteis', garantia: '90 dias', forma_pagamento: 'credito', entrada: 0, parcelas: 4,
+    status: 'enviado', itens: [
+      { id: 'it-12', tipo: 'servico', nome: 'Adequação do quadro de distribuição', quantidade: 1, unidade: 'servico', custo_unitario: 0, valor_unitario: 0, desconto: 0, descricao: 'Balanceamento de cargas e provisão para ampliações' },
+      { id: 'it-13', tipo: 'servico', nome: 'Substituição de tomadas', quantidade: 18, unidade: 'unidade', custo_unitario: 0, valor_unitario: 0, desconto: 0, descricao: '6 inteligentes e as demais em cor preta' },
+    ],
+    custos_extras: [], historico_status: [{ status: 'enviado', data: addDays(todayISO(), -2) }],
+    proposta_detalhada: {
+      cliente: { contato_nome: 'Marcos Andrade', info_complementar_imovel: 'Apartamento, bloco 01 (dado demonstrativo)' },
+      cidade_encerramento: 'São Paulo',
+      apresentacao_html: '<p>É com grande satisfação que apresentamos nossa proposta de mão de obra para execução das instalações elétricas, em conformidade com a ABNT NBR 5410.</p>',
+      laudo_html: '<p>Foi realizada visita técnica para levantamento das necessidades da instalação elétrica e desenvolvimento do projeto de modernização da iluminação residencial.</p><p>Durante a vistoria, foi identificado que o imóvel receberá um novo projeto luminotécnico, composto predominantemente por iluminação em LED embutida.</p>',
+      ambientes: [
+        { id: 'amb-1', nome: 'Sala', ordem: 0, atividades: [
+          { id: 'at-1', descricao: 'Instalação de perfis de LED embutidos em formato "L"', quantidade: 3, unidade: 'metros', ordem: 0 },
+          { id: 'at-2', descricao: 'Ponto para pendente sobre a mesa de jantar', quantidade: 1, unidade: 'ponto', ordem: 1 },
+        ] },
+        { id: 'amb-2', nome: 'Cozinha', ordem: 1, atividades: [
+          { id: 'at-3', descricao: 'Instalação de trilho eletrificado', quantidade: 1, unidade: 'unidade', ordem: 0 },
+        ] },
+      ],
+      ambientes_total_label: 'pontos de iluminação',
+      escopo: {
+        titulo: 'Escopo principal — Adequação do quadro de distribuição',
+        descricao_html: '<p>Execução completa da reforma das instalações elétricas, contemplando toda a infraestrutura necessária para o novo projeto luminotécnico.</p>',
+        servicos_incluidos_html: '<ul><li>Infraestrutura elétrica (eletrodutos, caixas de passagem, cabeamento)</li><li>Novos pontos de iluminação</li><li>Adequação do quadro de distribuição</li></ul>',
+      },
+      valores: {
+        valor_total: 8380, valor_total_extenso: 'Oito mil trezentos e oitenta reais',
+        a_vista: { ativo: true, valor: 7760, forma_pagamento: 'Pix ou TED' },
+        parcelado: { ativo: true, juros_info: 'sem juros no cartão de crédito' },
+        condicoes_texto: '', etapas: [],
+      },
+      prazos: {
+        inicio: {}, execucao: { valor: 10, unidade: 'dias_uteis' },
+        norma_aplicavel: 'ABNT NBR 5410',
+      },
+      encerramento: {
+        disponibilidade_esclarecimentos_ativo: true, materiais_separados_ativo: true,
+        ressalvas_compatibilizacao_ativo: true, aceite_ativo: true,
+      },
+    },
+  }),
 ];
 
 export const demoServiceOrders: ServiceOrder[] = [

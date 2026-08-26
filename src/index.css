@@ -16,6 +16,19 @@
 html, body, #root { height: 100%; }
 body { background-color: #f4f7fa; }
 
+/* ===== Editor de texto rico (Tiptap) — proposta técnica completa ===== */
+.ce-richtext p { margin: 0 0 0.5em; line-height: 1.5; }
+.ce-richtext p:last-child { margin-bottom: 0; }
+.ce-richtext h3 { font-size: 1.05em; font-weight: 700; margin: 0.7em 0 0.35em; color: #0b2338; }
+.ce-richtext h3:first-child { margin-top: 0; }
+.ce-richtext ul, .ce-richtext ol { margin: 0 0 0.5em; padding-left: 1.4em; }
+.ce-richtext ul { list-style: disc; }
+.ce-richtext ol { list-style: decimal; }
+.ce-richtext li { margin: 0.15em 0; }
+.ce-richtext strong { font-weight: 700; }
+.ce-richtext em { font-style: italic; }
+.ce-richtext .ProseMirror { outline: none; }
+
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-thumb { background: #b9c6d1; border-radius: 4px; }
 

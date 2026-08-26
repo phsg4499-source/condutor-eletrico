@@ -17,7 +17,22 @@ export interface BudgetTotals {
   valorParcela: number;
 }
 
-export function calculateBudget(budget: Pick<Budget, 'itens' | 'custos_extras' | 'desconto_percentual' | 'desconto_valor' | 'entrada' | 'parcelas'>): BudgetTotals {
+export function calculateBudget(budget: Pick<Budget, 'itens' | 'custos_extras' | 'desconto_percentual' | 'desconto_valor' | 'entrada' | 'parcelas' | 'proposta_detalhada'>): BudgetTotals {
+  // Proposta técnica completa: o preço é sempre um valor global informado pelo orçamentista,
+  // nunca a soma de itens com valor unitário. Não há controle de custo/margem nesse formato —
+  // totalCusto acompanha totalVenda para nunca aparecer como "lucro" indevido no Dashboard/Relatórios.
+  if (budget.proposta_detalhada) {
+    const totalVenda = Math.max(0, budget.proposta_detalhada.valores.valor_total || 0);
+    const valorEntrada = budget.entrada || 0;
+    const saldoRestante = Math.max(0, totalVenda - valorEntrada);
+    const valorParcela = budget.parcelas > 0 ? saldoRestante / budget.parcelas : saldoRestante;
+    return {
+      subtotalMateriais: 0, subtotalServicos: 0, subtotalCustoMateriais: 0, subtotalCustoServicos: 0,
+      subtotalCustosExtras: 0, totalCusto: totalVenda, totalVendaBruto: totalVenda, descontoGeral: 0,
+      totalVenda, lucroBruto: 0, margemPercentual: 0, valorEntrada, saldoRestante, valorParcela,
+    };
+  }
+
   const servicos = budget.itens.filter(i => i.tipo === 'servico');
   const materiais = budget.itens.filter(i => i.tipo === 'material');
 
@@ -52,11 +67,22 @@ export function calculateBudget(budget: Pick<Budget, 'itens' | 'custos_extras' |
 }
 
 export function budgetAlerts(
-  budget: Pick<Budget, 'itens' | 'prazo_estimado' | 'forma_pagamento'>,
+  budget: Pick<Budget, 'itens' | 'prazo_estimado' | 'forma_pagamento' | 'proposta_detalhada'>,
   totals: BudgetTotals,
   margemMinima = 15,
 ): string[] {
   const alerts: string[] = [];
+
+  if (budget.proposta_detalhada) {
+    // Proposta técnica completa: sem itens com preço unitário nem controle de margem — os
+    // alertas relevantes aqui são outros (cobertos na Revisão do próprio formulário, que já
+    // reaproveita esta função para os campos em comum: prazo e forma de pagamento).
+    if (!totals.totalVenda) alerts.push('Valor total do orçamento ainda não foi preenchido.');
+    if (!budget.prazo_estimado) alerts.push('Orçamento sem prazo estimado definido.');
+    if (!budget.forma_pagamento) alerts.push('Orçamento sem condição de pagamento definida.');
+    return alerts;
+  }
+
   if (totals.totalVenda < totals.totalCusto) alerts.push('O valor de venda está abaixo do custo total.');
   if (totals.margemPercentual < margemMinima && totals.totalVenda > 0) alerts.push(`Margem de lucro abaixo do mínimo configurado (${margemMinima}%).`);
   if (budget.itens.some(i => i.valor_unitario <= 0)) alerts.push('Existem itens sem preço definido.');

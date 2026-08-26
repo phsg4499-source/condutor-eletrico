@@ -204,7 +204,7 @@ export async function remoteSetReceiptStatus(id: string, status: ReceiptStatus) 
 export async function remoteInsertBudget(budget: Budget) {
   const db = must();
   const { itens, custos_extras, historico_status, ...budgetRow } = budget;
-  const { error } = await db.from('budgets').insert(budgetRow);
+  const { error } = await db.from('budgets').insert({ ...budgetRow, proposta_detalhada: budget.proposta_detalhada ?? null });
   if (error) throw error;
 
   if (itens.length) {

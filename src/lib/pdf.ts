@@ -3,6 +3,7 @@ import autoTable from 'jspdf-autotable';
 import type { Budget, Organization, Receipt } from '../types';
 import { calculateBudget } from './calculations';
 import { formatMoney, formatDate, addDays, valorPorExtenso } from './format';
+import { generateTechnicalProposalPdf } from './technicalProposalPdf';
 
 // Gera o PDF profissional do orçamento para o CLIENTE.
 // Nunca inclui custo, margem, lucro ou observações internas.
@@ -29,6 +30,11 @@ function textoAberturaAbnt(nomeCliente: string): string {
 const TEXTO_FECHAMENTO_ABNT = `Agradecemos pela oportunidade de apresentar nossa proposta de mão de obra em conformidade com a norma NBR 5410.\n\nEstamos à disposição para discutir detalhes ou esclarecer quaisquer dúvidas que possam surgir. Podemos assegurar que nossos serviços seguirão rigorosamente os requisitos dessa norma, garantindo a segurança e a qualidade das instalações elétricas.\n\nAguardamos sua resposta positiva e permanecemos à disposição para quaisquer esclarecimentos.\n\nA lista de materiais será apresentada separadamente após a aprovação desta proposta.`;
 
 export function generateBudgetPdf(budget: Budget, client: { nome: string }, org: Organization): jsPDF {
+  // Proposta técnica completa: template próprio (ver technicalProposalPdf.ts). Orçamentos no
+  // formato simples (a grande maioria, e todos os já emitidos) seguem exatamente como sempre —
+  // nenhuma linha abaixo deste "if" é alterada por essa funcionalidade.
+  if (budget.proposta_detalhada) return generateTechnicalProposalPdf(budget, client, org);
+
   const doc = new jsPDF();
   const totals = calculateBudget(budget);
   const pageWidth = doc.internal.pageSize.getWidth();
