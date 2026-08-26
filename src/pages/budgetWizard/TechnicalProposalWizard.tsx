@@ -8,6 +8,7 @@ import { formatMoney, todayISO, valorPorExtenso } from '../../lib/format';
 import { generateBudgetPdf } from '../../lib/pdf';
 import RichTextEditor from '../../components/RichTextEditor';
 import DragList from '../../components/DragList';
+import VoiceDictation, { type AiProposalDraft } from '../../components/VoiceDictation';
 import StepShell, { Field, NumField, TextArea, Toggle } from './StepShell';
 import type {
   Budget, BudgetLineItem, BudgetProposalDetails, BudgetAmbiente, BudgetAtividade,
@@ -119,6 +120,56 @@ export default function TechnicalProposalWizard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [detalhes.valores.valor_total, extensoEditadoManualmente]);
 
+  // Aplica o rascunho organizado pela IA (ver VoiceDictation.tsx) nos campos de texto livre —
+  // nunca em valor/prazo/garantia/forma de pagamento, que continuam sempre digitados à mão.
+  // Ambientes vindos da IA são ACRESCENTADOS aos já existentes (nunca substituem), para nunca
+  // apagar algo que o orçamentista já tinha preenchido manualmente.
+  // Aplica o rascunho organizado pela IA (ver VoiceDictation.tsx) em TODOS os campos que ela
+  // conseguiu identificar no relato — texto livre, identificação, ambientes e, quando o relato
+  // trouxer isso claramente, também prazo/garantia/pagamento/valor. Só entra no lugar de um campo
+  // que ainda está vazio (nunca sobrescreve o que o orçamentista já preencheu manualmente).
+  // Ambientes são sempre ACRESCENTADOS aos já existentes, nunca substituídos.
+  function applyAiDraft(draft: AiProposalDraft) {
+    if (draft.titulo && !titulo.trim()) setTitulo(draft.titulo);
+    if (draft.tipo_servico && !tipoServico.trim()) setTipoServico(draft.tipo_servico);
+    if (draft.local_servico && !localServico.trim()) setLocalServico(draft.local_servico);
+    if (draft.cliente_nome && clientMode === 'avulso' && !novoClienteNome.trim()) setNovoClienteNome(draft.cliente_nome);
+    if (draft.garantia_mao_obra && !garantia.trim()) setGarantia(draft.garantia_mao_obra);
+
+    setDetalhes(prev => ({
+      ...prev,
+      apresentacao_html: !isRichTextEmpty(prev.apresentacao_html) ? prev.apresentacao_html : (draft.apresentacao_html || prev.apresentacao_html),
+      laudo_html: !isRichTextEmpty(prev.laudo_html) ? prev.laudo_html : (draft.laudo_html || prev.laudo_html),
+      escopo: {
+        ...prev.escopo,
+        descricao_html: !isRichTextEmpty(prev.escopo.descricao_html) ? prev.escopo.descricao_html : (draft.escopo_descricao_html || prev.escopo.descricao_html),
+        servicos_incluidos_html: !isRichTextEmpty(prev.escopo.servicos_incluidos_html) ? prev.escopo.servicos_incluidos_html : (draft.escopo_servicos_incluidos_html || prev.escopo.servicos_incluidos_html),
+        servicos_nao_incluidos_html: !isRichTextEmpty(prev.escopo.servicos_nao_incluidos_html) ? prev.escopo.servicos_nao_incluidos_html : (draft.escopo_servicos_nao_incluidos_html || prev.escopo.servicos_nao_incluidos_html),
+        premissas_html: !isRichTextEmpty(prev.escopo.premissas_html) ? prev.escopo.premissas_html : (draft.escopo_premissas_html || prev.escopo.premissas_html),
+        responsabilidades_cliente_html: !isRichTextEmpty(prev.escopo.responsabilidades_cliente_html) ? prev.escopo.responsabilidades_cliente_html : (draft.escopo_responsabilidades_cliente_html || prev.escopo.responsabilidades_cliente_html),
+      },
+      ambientes: [
+        ...prev.ambientes,
+        ...draft.ambientes.map((a, i) => ({
+          id: uid(), nome: a.nome, descricao: a.descricao, ordem: prev.ambientes.length + i,
+          atividades: a.atividades.map((at, j) => ({ id: uid(), descricao: at.descricao, quantidade: at.quantidade, unidade: at.unidade, ordem: j })),
+        })),
+      ],
+      prazos: {
+        ...prev.prazos,
+        execucao: (!prev.prazos.execucao.valor && draft.prazo_execucao_valor)
+          ? { valor: draft.prazo_execucao_valor, unidade: draft.prazo_execucao_unidade ?? 'dias_uteis' }
+          : prev.prazos.execucao,
+      },
+      valores: {
+        ...prev.valores,
+        valor_total: (!prev.valores.valor_total && typeof draft.valor_total === 'number') ? draft.valor_total : prev.valores.valor_total,
+        condicoes_texto: (!prev.valores.condicoes_texto && draft.forma_pagamento_observacao) ? draft.forma_pagamento_observacao : prev.valores.condicoes_texto,
+      },
+    }));
+    toast.show('Texto organizado pela IA aplicado aos campos da proposta. Revise antes de salvar.');
+  }
+
   function addAmbiente() {
     if (!novoAmbienteNome.trim()) return;
     updateAmbientes(ambientes => [...ambientes, { id: uid(), nome: novoAmbienteNome.trim(), ordem: ambientes.length, atividades: [] }]);
@@ -217,23 +268,28 @@ export default function TechnicalProposalWizard() {
     }
   }
 
+  // Nenhum campo é obrigatório para salvar — o orçamentista pode preencher aos poucos e voltar
+  // depois (a Revisão já sinaliza o que falta, sem bloquear o salvamento). O título recebe um
+  // valor padrão só para a listagem/PDF nunca ficarem com um cabeçalho vazio.
   async function saveBudget(status: 'rascunho' | 'pronto_para_envio') {
-    if (!titulo.trim()) { toast.show('Preencha o título da proposta (etapa 1).', 'warning'); setOpenStep(1); return; }
-    if (clientMode === 'existing' && !clientId) { toast.show('Selecione o cliente (etapa 2).', 'warning'); setOpenStep(2); return; }
-    if (clientMode === 'avulso' && !novoClienteNome.trim()) { toast.show('Informe o nome do cliente (etapa 2).', 'warning'); setOpenStep(2); return; }
     if (salvando) return;
 
+    const tituloFinal = titulo.trim() || 'Proposta técnica sem título';
     const responsavelSelecionado = orcamentistasAtivos.find(o => o.id === orcamentistaId);
-    const clientFields = clientMode === 'existing'
+    // client_id só é enviado quando há de fato um cliente selecionado — nunca uma string vazia
+    // (o Postgres rejeitaria "" como uuid inválido). Sem cliente selecionado nem nome avulso
+    // preenchido, o orçamento salva mesmo assim; resolveClienteInfo já mostra "Cliente não
+    // identificado" nesse caso.
+    const clientFields = (clientMode === 'existing' && clientId)
       ? { client_id: clientId, cliente_nome_avulso: null, cliente_telefone_avulso: null, cliente_whatsapp_avulso: null }
-      : { client_id: null, cliente_nome_avulso: novoClienteNome.trim(), cliente_telefone_avulso: novoClienteTelefone.trim(), cliente_whatsapp_avulso: (novoClienteWhatsapp || novoClienteTelefone).trim() };
+      : { client_id: null, cliente_nome_avulso: novoClienteNome.trim() || null, cliente_telefone_avulso: novoClienteTelefone.trim() || null, cliente_whatsapp_avulso: (novoClienteWhatsapp || novoClienteTelefone).trim() || null };
     const prazoTexto = buildPrazoTexto();
 
     setSalvando(true);
     try {
       if (isEditing && existingBudget) {
         const result = await updateBudget(existingBudget.id, {
-          ...clientFields, titulo, tipo_servico: tipoServico, local_servico: localServico,
+          ...clientFields, titulo: tituloFinal, tipo_servico: tipoServico, local_servico: localServico,
           data_emissao: dataEmissao, validade_dias: validadeDias, prazo_estimado: prazoTexto,
           responsavel: responsavelSelecionado?.nome ?? existingBudget.responsavel, orcamentista_id: orcamentistaId || undefined,
           itens, forma_pagamento: formaPagamento, entrada, parcelas, garantia,
@@ -245,7 +301,7 @@ export default function TechnicalProposalWizard() {
         return;
       }
       const result = await addBudget({
-        ...clientFields, titulo, tipo_servico: tipoServico, local_servico: localServico,
+        ...clientFields, titulo: tituloFinal, tipo_servico: tipoServico, local_servico: localServico,
         data_emissao: dataEmissao, validade_dias: validadeDias, prazo_estimado: prazoTexto,
         responsavel: responsavelSelecionado?.nome ?? db.organization.responsavel, orcamentista_id: orcamentistaId || undefined,
         status, itens, custos_extras: [], desconto_percentual: 0, desconto_valor: 0,
@@ -292,6 +348,8 @@ export default function TechnicalProposalWizard() {
         </p>
       </div>
 
+      <VoiceDictation onApply={applyAiDraft} />
+
       {step(1, 'Identificação da proposta', 'Número, título, datas e responsável', Boolean(titulo.trim()), (
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
@@ -300,7 +358,7 @@ export default function TechnicalProposalWizard() {
               {existingBudget?.numero ?? `${nextBudgetNumber()} (gerado automaticamente ao salvar)`}
             </p>
           </div>
-          <Field label="Título da proposta *" value={titulo} onChange={setTitulo} placeholder="Ex: Modernização elétrica residencial" />
+          <Field label="Título da proposta" value={titulo} onChange={setTitulo} placeholder="Ex: Modernização elétrica residencial" />
           <div>
             <label className="text-xs text-slate-500">Data de emissão</label>
             <input type="date" value={dataEmissao} onChange={e => setDataEmissao(e.target.value)}
@@ -347,7 +405,7 @@ export default function TechnicalProposalWizard() {
               </div>
             ) : (
               <>
-                <Field label="Nome do cliente *" value={novoClienteNome} onChange={setNovoClienteNome} placeholder="Ex: Marcelo Andrade" />
+                <Field label="Nome do cliente" value={novoClienteNome} onChange={setNovoClienteNome} placeholder="Ex: Marcelo Andrade" />
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Telefone" value={novoClienteTelefone} onChange={setNovoClienteTelefone} placeholder="(11) 90000-0000" />
                   <Field label="WhatsApp" value={novoClienteWhatsapp} onChange={setNovoClienteWhatsapp} placeholder="5511900000000" />
@@ -494,7 +552,7 @@ export default function TechnicalProposalWizard() {
       {step(8, 'Valores e formas de pagamento', 'Valor global, à vista, parcelamento e etapas', detalhes.valores.valor_total > 0, (
         <div className="space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
-            <NumField label="Valor total do orçamento (R$) *" value={detalhes.valores.valor_total || undefined} onChange={v => patchValores({ valor_total: v ?? 0 })} />
+            <NumField label="Valor total do orçamento (R$)" value={detalhes.valores.valor_total || undefined} onChange={v => patchValores({ valor_total: v ?? 0 })} />
             <div>
               <label className="text-xs text-slate-500">Forma de pagamento (resumo, usado em outras telas)</label>
               <select value={formaPagamento} onChange={e => setFormaPagamento(e.target.value as FormaPagamento)}

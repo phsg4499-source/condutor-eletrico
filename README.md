@@ -81,6 +81,33 @@ rotas do React Router (SPA rewrite) — ou seja, está pronto para importar sem 
 
 Build verificado localmente com `npm run build` (sem erros) antes da entrega.
 
+## Ditado por IA na Proposta técnica completa (teste)
+
+Na etapa de criação de uma **Proposta técnica completa** (orçamento > Novo orçamento), existe um
+painel "Ditar com IA (teste)": você grava um resumo falado da visita técnica (reconhecimento de
+voz do navegador — funciona no Chrome, computador ou Android) e o Claude organiza esse relato em
+linguagem técnica, preenchendo apresentação, laudo técnico, escopo e ambientes/atividades. Valor,
+prazos, garantia e forma de pagamento continuam sempre digitados manualmente — a IA nunca decide
+preço.
+
+A chamada ao Claude roda numa função serverless (`api/organizar-proposta.ts`), nunca no
+navegador — a chave da Anthropic não pode ficar no frontend. Para ativar:
+
+1. Crie uma conta em [console.anthropic.com](https://console.anthropic.com), ative o billing e
+   gere uma API key
+2. Na Vercel: **Settings > Environment Variables**, adicione `ANTHROPIC_API_KEY` com o valor da
+   chave (nunca com o prefixo `VITE_` — se tivesse esse prefixo, o Vite embutiria a chave no
+   código do navegador, expondo-a publicamente)
+3. Faça um novo deploy (ou clique em **Redeploy**) para a variável entrar em vigor
+
+Sem a variável configurada, o painel funciona normalmente (grava e mostra a transcrição), mas o
+botão "Organizar com IA" mostra um aviso claro de que a integração ainda não foi configurada — o
+resto do sistema não é afetado.
+
+Para testar localmente antes de configurar na Vercel, use a [Vercel CLI](https://vercel.com/docs/cli)
+(`npm i -g vercel`, depois `vercel dev`) com um arquivo `.env` na raiz do projeto contendo
+`ANTHROPIC_API_KEY=sua-chave` — `npm run dev` (Vite puro) não executa a função serverless.
+
 ## Identidade visual
 
 Arquivos da logo em `/brand` (SVG editável e PNG com fundo transparente): símbolo isolado, versão
