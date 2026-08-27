@@ -7,6 +7,7 @@ import { useToast } from '../../lib/toast';
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
 import { calculateBudget } from '../../lib/calculations';
 import { generateBudgetPdf } from '../../lib/pdf';
+import { openOrDownloadPdf } from '../../lib/pdfDownload';
 import { whatsappLink } from '../../lib/whatsapp';
 import { formatMoney, formatDate, addDays } from '../../lib/format';
 import RichTextEditor from '../../components/RichTextEditor';
@@ -120,8 +121,9 @@ export default function PublicProposal() {
     if (!vm) return;
     try {
       const doc = generateBudgetPdf(vm.budget as Budget, vm.cliente, vm.org);
-      doc.save(`orcamento-${vm.budget.numero}.pdf`);
+      openOrDownloadPdf(doc, `orcamento-${vm.budget.numero}.pdf`);
     } catch (err) {
+      console.error('Erro ao gerar PDF na página pública:', err);
       toast.show('Não foi possível gerar o PDF.', 'warning');
     }
   }

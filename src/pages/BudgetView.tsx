@@ -8,6 +8,7 @@ import { formatMoney, formatDate, addDays } from '../lib/format';
 import { BudgetStatusBadge, budgetStatusOptions } from '../components/StatusBadge';
 import { generateBudgetPdf } from '../lib/pdf';
 import { generateServiceContractPdf } from '../lib/contract';
+import { openOrDownloadPdf } from '../lib/pdfDownload';
 import { budgetWhatsappMessage, whatsappLink } from '../lib/whatsapp';
 import { resolveClienteInfo } from '../lib/clientInfo';
 import {
@@ -51,8 +52,8 @@ export default function BudgetView() {
   function handleDownloadPdf() {
     try {
       const doc = generateBudgetPdf(budget!, cliente, db.organization);
-      doc.save(`orcamento-${budget!.numero}.pdf`);
-      toast.show('PDF gerado e baixado.');
+      openOrDownloadPdf(doc, `orcamento-${budget!.numero}.pdf`);
+      toast.show('PDF gerado — abrindo em uma nova aba.');
     } catch (err) {
       console.error('Erro ao gerar PDF:', err);
       toast.show(`Não foi possível gerar o PDF: ${err instanceof Error ? err.message : 'erro desconhecido'}`, 'warning');
@@ -63,8 +64,8 @@ export default function BudgetView() {
     try {
       const client = budget!.client_id ? db.clients.find(c => c.id === budget!.client_id) : undefined;
       const doc = generateServiceContractPdf(budget!, cliente, client, db.organization);
-      doc.save(`contrato-orcamento-${budget!.numero}.pdf`);
-      toast.show('Contrato gerado e baixado.');
+      openOrDownloadPdf(doc, `contrato-orcamento-${budget!.numero}.pdf`);
+      toast.show('Contrato gerado — abrindo em uma nova aba.');
     } catch (err) {
       console.error('Erro ao gerar contrato:', err);
       toast.show(`Não foi possível gerar o contrato: ${err instanceof Error ? err.message : 'erro desconhecido'}`, 'warning');
